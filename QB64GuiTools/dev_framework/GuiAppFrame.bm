@@ -465,7 +465,7 @@ SELECT CASE UCASE$(LEFT$(ft$, 1))
                 tmp$ = RIGHT$(STRING$(tyl%, "0") + tmp$, tyl%): idx% = INSTR(tmp$, "-")
                 IF idx% > 0 THEN
                     typ$ = UCASE$(MID$(tmp$, idx% - 1, 1))
-                    IF typ$ <> "E" AND typ$ <> "D" THEN tmp$ = "-" + LEFT$(tmp$, idx% - 1) + MID$(tmp$, idx% + 1)
+                    IF INSTR("EDF", typ$) = 0 THEN tmp$ = "-" + LEFT$(tmp$, idx% - 1) + MID$(tmp$, idx% + 1)
                 END IF
             ELSE
                 tmp$ = "%" + tmp$
@@ -1158,7 +1158,7 @@ IF dhan%& <> 0 THEN
                     IF RegexMatch%(UCASE$(entr$) + CHR$(0), UCASE$(patt$) + CHR$(0)) THEN 'if match or faulty regex
                         eff% = SafeOpenFile%("B", curr$ + entr$)
                         IF eff% <> 0 THEN
-                            elof$ = LTRIM$(STR$(LOF(eff%) AND &HFFFFFFFFFFFFFFFF)) 'force int64 for STR$()
+                            elof$ = LTRIM$(STR$(LOF(eff%) AND &HFFFFFFFFFFFFFFFF)) 'force _INTEGER64 for STR$()
                             elof$ = SPACE$(11 - LEN(elof$)) + elof$
                             CLOSE eff%
                             nu&& = nu&& + VAL(elof$)

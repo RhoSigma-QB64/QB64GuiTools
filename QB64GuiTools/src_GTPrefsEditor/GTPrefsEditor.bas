@@ -1104,7 +1104,7 @@ IF section$ <> "Global.Colors" THEN
             fsDir$ = LEFT$(fsDir$, sPo% - 1)
         ELSE
             fsFile$ = fsDir$
-            IF _FILEEXISTS("qb64.exe") THEN
+            IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
                 fsDir$ = "QB64GuiTools\images\patterns"
             ELSE
                 fsDir$ = "..\images\patterns"
@@ -1311,7 +1311,7 @@ IF appFont& > 0 THEN _FONT appFont&: ELSE _FONT 16
 IF appIcon& < -1 THEN _ICON appIcon&
 'if you rather use $EXEICON then comment out the IF appIcon& ... line above
 'and uncomment and adjust the $EXEICON line below as you need instead, but
-'note it's QB64-GL only then, QB64-SDL will throw an error on $EXEICON
+'note it's QB64 v1.1+ then, older versions will throw an error on $EXEICON
 '$EXEICON:'QB64GuiTools\images\icons\Default.ico'
 '--- make screen visible ---
 _DELAY 0.025

@@ -224,7 +224,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 1024, 768, 0
-appCR$ = "The GuiTools Framework v0.15, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.16, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------
@@ -422,7 +422,7 @@ IF appFont& > 0 THEN _FONT appFont&: ELSE _FONT 16
 IF appIcon& < -1 THEN _ICON appIcon&
 'if you rather use $EXEICON then comment out the IF appIcon& ... line above
 'and uncomment and adjust the $EXEICON line below as you need instead, but
-'note it's QB64-GL only then, QB64-SDL will throw an error on $EXEICON
+'note it's QB64 v1.1+ then, older versions will throw an error on $EXEICON
 '$EXEICON:'QB64GuiTools\images\icons\Default.ico'
 '--- make screen visible ---
 _DELAY 0.025

@@ -212,7 +212,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 1024, 768, 0
-appCR$ = "The GuiTools Framework v0.15, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.16, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------
@@ -1340,8 +1340,8 @@ BackImage$ = ImageC$("INIT",_
 '-----
 done% = 0 'our main loop continuation boolean
 subClicks% = 1 'try to find out, what this is used for :)
-IF _FILEEXISTS("qb64.exe") THEN
-    'FileSelect$() initial drawer (if compiled to QB64 folder)
+IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
+    'FileSelect$() initial drawer (if compiled to qb64 folder)
     fsStartDir$ = "QB64GuiTools\images"
 ELSE
     'FileSelect$() initial drawer (if compiled to source folder)
@@ -1451,7 +1451,7 @@ WEND
 '--- Who did it? ---
 IF BoolTagTrue%(abou$, "CHECKED") THEN
     dummy$ = MessageBox$("", "About",_
-                         "The GuiTools Framework v0.15|" +_
+                         "The GuiTools Framework v0.16|" +_
                          "Done by RhoSigma, Roland Heyder|~" +_
                          "Thanx for your interest in my work.",_
                          "{SYM RhoSigma * 10 * 2}It's been a pleasure!")
@@ -1615,7 +1615,7 @@ IF appFont& > 0 THEN _FONT appFont&: ELSE _FONT 16
 IF appIcon& < -1 THEN _ICON appIcon&
 'if you rather use $EXEICON then comment out the IF appIcon& ... line above
 'and uncomment and adjust the $EXEICON line below as you need instead, but
-'note it's QB64-GL only then, QB64-SDL will throw an error on $EXEICON
+'note it's QB64 v1.1+ then, older versions will throw an error on $EXEICON
 '$EXEICON:'QB64GuiTools\images\icons\Default.ico'
 '--- make screen visible ---
 _DELAY 0.025

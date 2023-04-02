@@ -262,7 +262,7 @@ temp$ = COMMAND$
 IF INSTR(temp$, "IUGNEPO") = 0 AND INSTR(temp$, "XOBEGASSEM") = 0 AND INSTR(temp$, "TCELESELIF") = 0 AND INSTR(temp$, "WEIVEDIUG") = 0 THEN
     'NOTE: GuiTools internal command names are spelled in reverse order to
     '      avoid faulty detection in regular command lines given by the user.
-    temp$ = "REGULAR" 'regular user given command line
+    temp$ = "NWONKNU" 'regular user given command line
 END IF
 REDIM cmdArgs$(0)
 dummy% = ParseLine&(temp$, MKI$(&H0920), "'", cmdArgs$(), 5)
@@ -282,6 +282,7 @@ IF appGLVComp% THEN
     i% = INSTR(",1030,1031,1033,1034,1036,1040,1043,1044,1053,2055,2057,2058,2060,2070,4108,6153,", temp$)
     IF i% > 0 THEN appKBLIdent% = kbli%
 END IF
+temp$ = "" 'erase temp data
 
 '--- init global GuiApps management ---
 GOSUB CreateGlobalTemps
@@ -305,7 +306,7 @@ GOSUB UserInitHandler
 SELECT CASE cmdArgs$(0)
     CASE "IUGNEPO"
         '====================================================================
-        'Every program can have several independed GuiViews which appear in
+        'Every program can have several independent GuiViews which appear in
         'its own detached windows (see SUB OpenGuiView()). The program simply
         'calls itself given the appropriate command line options.
         '--------------------------------------------------------------------

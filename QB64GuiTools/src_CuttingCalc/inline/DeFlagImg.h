@@ -5,7 +5,7 @@
 
 // --- Array(s) representing the contents of file de20px.gif
 // ---------------------------------------------------------------------
-static const unsigned int32 DeFlagImgL0[] = {
+static const uint32_t DeFlagImgL0[] = {
     160,
     0x38464947,0x00206139,0x00E60014,0x00000000,0xFFFFFFFF,0xF2F200FF,0x00EEEE00,0xE200ECEC,
     0xD7D700E2,0x00D2D200,0xC800D1D1,0xB6B600C8,0x00B5B500,0xA700AFAF,0xA5A500A7,0x00A2A200,
@@ -29,7 +29,7 @@ static const unsigned int32 DeFlagImgL0[] = {
     0x0060260D,0x01442590,0x081E0C04,0xA8B44A1D,0x2C1107D1,0xEB30E868,0x170902C0,0x4A9D4832
 };
 
-static const unsigned int8 DeFlagImgB[] = {
+static const uint8_t DeFlagImgB[] = {
     28,
     0xB5,0xAA,0xD5,0x0C,0x1B,0x3C,0x80,0x00,0x31,0xCB,0x01,0x05,0x0E,0x1F,0xB6,0x8A,
     0x1D,0x4B,0xB6,0x6C,0x59,0x71,0x68,0xD3,0x06,0x02,0x00,0x3B
@@ -53,10 +53,10 @@ void KillDeFlagImgData(void)
 // --- full qualified output path and filename on success, otherwise an
 // --- empty string is returned (access/write errors, file truncated).
 // ---------------------------------------------------------------------
-const char *WriteDeFlagImgData(const char *FileName, int16 AutoClean)
+const char *WriteDeFlagImgData(const char *FileName, int16_t AutoClean)
 {
-    FILE *han = NULL; // file handle
-    int32 num = NULL; // written elements
+    FILE   *han = NULL; // file handle
+    int32_t num = NULL; // written elements
 
     #ifdef QB64_WINDOWS
     if (!_fullpath(DeFlagImgName, FileName, 8192)) return "";

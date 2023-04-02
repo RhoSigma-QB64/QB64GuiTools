@@ -35,10 +35,10 @@ END DECLARE
 CONST guiReservedPens% = 0 'no reserved pens
 REDIM SHARED fsNearCol%(&HFFFFFF)
 
-IF _FILEEXISTS("qb64.exe") THEN
-    path$ = "QB64GuiTools\dev_storage\" 'qb64 folder
+IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
+    path$ = "QB64GuiTools\dev_storage\" 'compiled to qb64 folder
 ELSE
-    path$ = "" 'source folder
+    path$ = "" 'compiled to source folder
 END IF
 
 appScreen& = _NEWIMAGE(480, 336, 256)

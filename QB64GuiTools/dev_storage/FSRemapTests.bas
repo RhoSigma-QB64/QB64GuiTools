@@ -26,10 +26,10 @@ DECLARE LIBRARY "QB64GuiTools\dev_framework\GuiAppFrame" 'Do not add .h here !!
 END DECLARE
 REDIM SHARED fsNearCol%(&HFFFFFF)
 
-IF _FILEEXISTS("qb64.exe") THEN
-    path$ = "QB64GuiTools\dev_storage\" 'qb64 folder
+IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
+    path$ = "QB64GuiTools\dev_storage\" 'compiled to qb64 folder
 ELSE
-    path$ = "" 'source folder
+    path$ = "" 'compiled to source folder
 END IF
 
 wid% = 800

@@ -5,7 +5,7 @@
 
 // --- Array(s) representing the contents of file RhoSigma32px.png
 // ---------------------------------------------------------------------
-static const unsigned int32 RhoSigmaImgL0[] = {
+static const uint32_t RhoSigmaImgL0[] = {
     248,
     0x474E5089,0x0A1A0A0D,0x0D000000,0x52444849,0x20000000,0x20000000,0x00000308,0x8AA44400,
     0x030000C6,0x544C5000,0x00000045,0x0007098D,0x89B3D100,0x89878E15,0x2C8B9AC6,0x1F441293,
@@ -40,7 +40,7 @@ static const unsigned int32 RhoSigmaImgL0[] = {
     0x08D36C81,0xBF587FDD,0x9EAFE98B,0x0F6AC5DE,0x013FF393,0x3A63EEE6,0x9A40BDFC,0x00000000
 };
 
-static const unsigned int8 RhoSigmaImgB[] = {
+static const uint8_t RhoSigmaImgB[] = {
     8,
     0x49,0x45,0x4E,0x44,0xAE,0x42,0x60,0x82
 };
@@ -63,10 +63,10 @@ void KillRhoSigmaImgData(void)
 // --- full qualified output path and filename on success, otherwise an
 // --- empty string is returned (access/write errors, file truncated).
 // ---------------------------------------------------------------------
-const char *WriteRhoSigmaImgData(const char *FileName, int16 AutoClean)
+const char *WriteRhoSigmaImgData(const char *FileName, int16_t AutoClean)
 {
-    FILE *han = NULL; // file handle
-    int32 num = NULL; // written elements
+    FILE   *han = NULL; // file handle
+    int32_t num = NULL; // written elements
 
     #ifdef QB64_WINDOWS
     if (!_fullpath(RhoSigmaImgName, FileName, 8192)) return "";

@@ -648,7 +648,7 @@ _DISPLAY: stim# = TIMER(0.001)
 tmpI$ = SPACE$(32)
 FOR vc& = 0 TO cntV&
     IF vc& = cntV& THEN numL& = (cntL& MOD 8180): ELSE numL& = 8180
-    PRINT #2, "static const unsigned int32 "; hdrName$; "L"; LTRIM$(STR$(vc&)); "[] = {"
+    PRINT #2, "static const uint32_t "; hdrName$; "L"; LTRIM$(STR$(vc&)); "[] = {"
     PRINT #2, "    "; LTRIM$(STR$(numL& * 8)); ","
     FOR z& = 1 TO numL&
         GET #1, , tmpI$: offI% = 1
@@ -673,7 +673,7 @@ res$ = GenC$("SET", OutputProgress$ + NewTag$("LEVEL", "100"))
 _AUTODISPLAY
 '--- read remaining BYTEs ---
 IF cntB& > 0 THEN
-    PRINT #2, "static const unsigned int8 "; hdrName$; "B[] = {"
+    PRINT #2, "static const uint8_t "; hdrName$; "B[] = {"
     PRINT #2, "    "; LTRIM$(STR$(cntB&)); ","
     PRINT #2, "    ";
     FOR x% = 1 TO cntB&
@@ -711,10 +711,10 @@ PRINT #2, "// --- Function to write the array(s) back into a file, will return t
 PRINT #2, "// --- full qualified output path and filename on success, otherwise an"
 PRINT #2, "// --- empty string is returned (access/write errors, file truncated)."
 PRINT #2, "// ---------------------------------------------------------------------"
-PRINT #2, "const char *Write"; hdrName$; "Data(const char *FileName, int16 AutoClean)"
+PRINT #2, "const char *Write"; hdrName$; "Data(const char *FileName, int16_t AutoClean)"
 PRINT #2, "{"
-PRINT #2, "    FILE *han = NULL; // file handle"
-PRINT #2, "    int32 num = NULL; // written elements"
+PRINT #2, "    FILE   *han = NULL; // file handle"
+PRINT #2, "    int32_t num = NULL; // written elements"
 PRINT #2, ""
 PRINT #2, "    #ifdef QB64_WINDOWS"
 PRINT #2, "    if (!_fullpath("; hdrName$; "Name, FileName, 8192)) return "; CHR$(34); CHR$(34); ";"
@@ -806,7 +806,7 @@ PRINT #2, "'--------------------------------------------------------------------
 PRINT #2, "FUNCTION Write"; tarName$; "Array$ (file$, clean%)"
 PRINT #2, "'--- declare C/C++ function ---"
 tmp$ = hdrPath$ + FileNamePart$(hdr$)
-IF _FILEEXISTS("qb64.exe") THEN
+IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
     IF LEFT$(tmp$, LEN(CurrDIR$)) = CurrDIR$ THEN tmp$ = MID$(tmp$, LEN(CurrDIR$) + 2)
 END IF
 PRINT #2, "DECLARE LIBRARY "; CHR$(34); tmp$; CHR$(34); " 'Do not add .h here !!"
@@ -925,7 +925,7 @@ appIcon& = _LOADIMAGE(RhoSigmaImgName$, 32)
 IF appIcon& < -1 THEN _ICON appIcon&
 'if you rather use $EXEICON then comment out the IF appIcon& ... line above
 'and uncomment and adjust the $EXEICON line below as you need instead, but
-'note it's QB64-GL only then, QB64-SDL will throw an error on $EXEICON
+'note it's QB64 v1.1+ then, older versions will throw an error on $EXEICON
 '$EXEICON:'QB64GuiTools\images\icons\Default.ico'
 '--- make screen visible ---
 _DELAY 0.025

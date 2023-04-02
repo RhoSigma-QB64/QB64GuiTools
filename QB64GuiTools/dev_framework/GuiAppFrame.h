@@ -13,7 +13,7 @@
 // | == Some low level support functions for the GuiTools Framework.   |
 // |                                                                   |
 // | == To activate the regex support you just need to uncomment the   |
-// | == "#define GTREGEX" line (52) below. But before doing so, please |
+// | == "#define GTREGEX" line (46) below. But before doing so, please |
 // | == carefully read the notes given right below this file header.   |
 // |                                                                   |
 // +-------------------------------------------------------------------+
@@ -23,30 +23,24 @@
 // +-------------------------------------------------------------------+
 
 /// QB64 versions using an old C/C++ compiler (all before QB64 v1.3)
-/// -> ancient QB64 v0.xxx (SDL/GL) 32-bit versions
-/// -> regular QB64 32-bit versions (stable & development)
-/// -> various QB64 64-bit versions (by Steve McNeill)
-/// -> current QB64-SDL 2020 version (by Steve McNeill)
 /// -----
-/// Before uncommenting the "#define GTREGEX" line below, you must modify the
-/// file internal\c\makeline.txt (SDL) or internal\c\makekline_win.txt (GL),
+/// Before uncommenting the "#define GTREGEX" line below, you must modify
+/// the file internal\c\makeline.txt (later internal\c\makekline_win.txt),
 /// adding the option -std=gnu++0x to the C/C++ compiler call. Otherwise
 /// you'll get a C/C++ compilation error in the IDE whenever you try to
 /// compile a GuiTools based programm.
 /// -----
 /// Note also that regex support is very experimental in the 32-bit compiler
 /// and obviously never got bugfixed or even finished. Many regex's doesn't
-/// work as expected, especially the char classes.
+/// work as expected, especially the char classes tend to crash.
 ///-------------------------------------------------------------------
 
 /// QB64 versions using an new C/C++ compiler (starting with QB64 v1.3)
-/// -> regular QB64 32-bit versions (stable & development)
-/// -> regular QB64 64-bit versions (stable & development)
-/// -> regular QB64-PE 32-bit versions (Phoenix Edition v0.5 and up)
-/// -> regular QB64-PE 64-bit versions (Phoenix Edition v0.5 and up)
+/// -> this also includes all Phoenix Edition releases from v0.1.0 up
 /// -----
 /// Just uncomment the "#define GTREGEX" line below and then enjoy regex's
 /// to its fullest extent, no additional compiler options are required.
+/// Both, 32-bit and 64-bit compiler versions work properly as expected.
 ///-------------------------------------------------------------------
 
 //#define GTREGEX // <<<<<<<<<< enable GuiTools regex support here
@@ -138,9 +132,9 @@ void RemoveMutex(ptrszint mtxHandle) {
 // Out: exist flag (INTEGER, true (-1) or false (0))
 // Err: (if no name is given, then "not existing" is implied)
 //--------------------------------------------------------------------
-int16 CheckMutex(const char *mtxName) {
+int16_t CheckMutex(const char *mtxName) {
     if (mtxName && mtxName[0] != '\0') {
-        int16 exFlag = 0; // error on Create... call implies "not existing"
+        int16_t exFlag = 0; // error on Create... call implies "not existing"
         HANDLE mtxHandle = CreateMutex(0, 0, mtxName);
         if (mtxHandle) {
             if (GetLastError() == ERROR_ALREADY_EXISTS) exFlag = -1;
@@ -210,9 +204,9 @@ void EndDirRead(ptrszint dirHandle) {
 // Out: match         (INTEGER, 0 = no match, 1 = positive match)
 // Err: out < 0       (call RegexError() to get the error message)
 //--------------------------------------------------------------------
-int16 RegexMatch(const char *qbStr, const char *qbRegex) {
+int16_t RegexMatch(const char *qbStr, const char *qbRegex) {
     #ifdef GTREGEX
-    int16 result;
+    int16_t result;
     try {result = regex_match(qbStr, std::regex(qbRegex));}
     catch (const std::regex_error& e) {result = ~e.code();}
     return result;
@@ -226,7 +220,7 @@ int16 RegexMatch(const char *qbStr, const char *qbRegex) {
 //  In: error code (INTEGER, usually the code returned by RegexMatch())
 // Out: error text (STRING, description for the given error code)
 //--------------------------------------------------------------------
-const char *RegexError(int16 errCode) {
+const char *RegexError(int16_t errCode) {
     #ifdef GTREGEX
     switch (~errCode) {
         // just in case somebody pass in the regular matching result as error
@@ -258,7 +252,7 @@ const char *RegexError(int16 errCode) {
 // See also the important notes placed at the top of this file.
 // Out: activation flag (INTEGER, true (-1) or false (0))
 //--------------------------------------------------------------------
-int16 RegexIsActive(void) {
+int16_t RegexIsActive(void) {
     #ifdef GTREGEX
     return -1; // true = regex support enabled
     #else
@@ -289,15 +283,15 @@ void UntitledToTop (void) {
 // Out: best matching pen (LONG, in given range min to max)
 //--------------------------------------------------------------------
 extern img_struct *img; // fwd reference
-uint32 FindColor(int32 r, int32 g, int32 b, int32 i, int32 mi, int32 ma) {
-    static   int32 v, v2, n1, n2, best, c, d1, d2, d3;
-    register int32 *p, n, t;
+uint32_t FindColor(int32_t r, int32_t g, int32_t b, int32_t i, int32_t mi, int32_t ma) {
+    static   int32_t v, v2, n1, n2, best, c, d1, d2, d3;
+    register int32_t *p, n, t;
     // initializing
     if (r < 0) r = 0; if (r > 255) r = 255;
     if (g < 0) g = 0; if (g > 255) g = 255;
     if (b < 0) b = 0; if (b > 255) b = 255;
     i = -i;
-    p = (int32*) img[i].pal;
+    p = (int32_t*) img[i].pal;
     if (img[i].text) n2 = 16; else n2 = img[i].mask + 1;
     if (mi <= 0) n1 = 0; else {n1 = mi; p += mi;}
     if ((ma > mi) && (n2 > ma)) n2 = ma + 1;
@@ -328,10 +322,10 @@ uint32 FindColor(int32 r, int32 g, int32 b, int32 i, int32 mi, int32 ma) {
 // Those objects can be used for easy inter process communication.
 //--------------------------------------------------------------------
 struct smObject {
-    int32 memSize;      // size of vBuffer (shared memory region)
-    HANDLE mapHandle;   // file mapping handle
-    void *vBuffer;      // view of file (shared memory region)
-    int8 *vFilled;      // content (*) is true, if vBuffer is filled with new data,
+    int32_t memSize;    // size of vBuffer (shared memory region)
+    HANDLE  mapHandle;  // file mapping handle
+    void   *vBuffer;    // view of file (shared memory region)
+    int8_t *vFilled;    // content (*) is true, if vBuffer is filled with new data,
 };                      // its use is optional and up to the communication routines
 
 // This function will try to create a new shared memory object with the
@@ -345,14 +339,14 @@ struct smObject {
 // Out: object handle (_OFFSET, save & use it to access/remove later)
 // Err: out = 0       (no name or invalid name, or out of memory)
 //--------------------------------------------------------------------
-ptrszint CreateSMObject(const char *smName, int32 smSize) {
+ptrszint CreateSMObject(const char *smName, int32_t smSize) {
     if (smName && smName[0] != '\0' && smSize > 0) {
         struct smObject *sm = 0;
         if (sm = (struct smObject*) malloc(sizeof(struct smObject))) {
             sm -> memSize = smSize;
             if (sm -> mapHandle = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, smSize + 1, smName)) {
                 if (sm -> vBuffer = MapViewOfFile(sm -> mapHandle, FILE_MAP_ALL_ACCESS, 0, 0, smSize + 1)) {
-                    sm -> vFilled = (int8*) sm -> vBuffer + smSize;
+                    sm -> vFilled = (int8_t*) sm -> vBuffer + smSize;
                     *(sm -> vFilled) = 0; // mark buffer content as obsolete
                     return (ptrszint) sm;
                 }
@@ -388,14 +382,14 @@ void RemoveSMObject(ptrszint smObj) {
 // Out: object handle (_OFFSET, save & use it to access/close later)
 // Err: out = 0       (no name or invalid name, or out of memory)
 //--------------------------------------------------------------------
-ptrszint OpenSMObject(const char *smName, int32 smSize) {
+ptrszint OpenSMObject(const char *smName, int32_t smSize) {
     if (smName && smName[0] != '\0' && smSize > 0) {
         struct smObject *sm = 0;
         if (sm = (struct smObject*) malloc(sizeof(struct smObject))) {
             sm -> memSize = smSize;
             if (sm -> mapHandle = OpenFileMapping(FILE_MAP_ALL_ACCESS, 0, smName)) {
                 if (sm -> vBuffer = MapViewOfFile(sm -> mapHandle, FILE_MAP_ALL_ACCESS, 0, 0, smSize + 1)) {
-                    sm -> vFilled = (int8*) sm -> vBuffer + smSize;
+                    sm -> vFilled = (int8_t*) sm -> vBuffer + smSize;
                     *(sm -> vFilled) = 0; // mark buffer content as obsolete
                     return (ptrszint) sm;
                 }
@@ -425,7 +419,7 @@ void CloseSMObject(ptrszint smObj) {
 void PutSMString(ptrszint smObj, const char *qbStr) {
     if (smObj && qbStr) {
         struct smObject *sm = (struct smObject*) smObj;
-        int32 sLen = strlen(qbStr) + 1;
+        int32_t sLen = strlen(qbStr) + 1;
         if ((!*(sm -> vFilled)) && (sLen <= sm -> memSize)) {
             memcpy(sm -> vBuffer, qbStr, sLen);
             *(sm -> vFilled) = -1; // data written, mark buffer content as new
@@ -450,10 +444,10 @@ const char *GetSMString(ptrszint smObj) {
 // program and the currently active GuiView window.
 // Note that shared memory access must be protected with LockMutex().
 //--------------------------------------------------------------------
-void ImageToSM(ptrszint smObj, int32 i) {
+void ImageToSM(ptrszint smObj, int32_t i) {
     if (smObj && i < -1) {
         struct smObject *sm = (struct smObject*) smObj;
-        i = -i; int32 pSize = img[i].width * img[i].height;
+        i = -i; int32_t pSize = img[i].width * img[i].height;
         if ((!*(sm -> vFilled)) && ((pSize + 1024) <= sm -> memSize)) {
             memcpy(sm -> vBuffer, img[i].pal, 1024);
             memcpy(sm -> vBuffer + 1024, img[i].offset, pSize);
@@ -462,10 +456,10 @@ void ImageToSM(ptrszint smObj, int32 i) {
     }
 }
 
-void SMToImage(ptrszint smObj, int32 i) {
+void SMToImage(ptrszint smObj, int32_t i) {
     if (smObj && i < -1) {
         struct smObject *sm = (struct smObject*) smObj;
-        i = -i; int32 pSize = img[i].width * img[i].height;
+        i = -i; int32_t pSize = img[i].width * img[i].height;
         if ((*(sm -> vFilled)) && ((pSize + 1024) <= sm -> memSize)) {
             memcpy(img[i].pal, sm -> vBuffer, 1024);
             memcpy(img[i].offset, sm -> vBuffer + 1024, pSize);

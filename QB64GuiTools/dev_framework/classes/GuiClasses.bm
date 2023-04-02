@@ -1119,7 +1119,7 @@ END FUNCTION
 '--- InkeyHit ---
 '----------------
 ' This alternative INKEY$ function is made for use with western european
-' languages (Cp1252 based) and any QB64-GL versions (>= 1.000). It will
+' languages (Cp1252 based) and any QB64 versions >= 1.000. It will
 ' directly map the inputs to the chars available in Cp437, hence you don't
 ' need to setup a custom unicode font and _MAPUNICODE table, you can stay
 ' with QB64's built-in fonts and standard codepage 437.
