@@ -1,0 +1,63 @@
+'============================================================
+'=== This file was created with MakeCARR.bas by RhoSigma, ===
+'=== you must $INCLUDE this at the end of your program.   ===
+'============================================================
+
+'=====================================================================
+'Function to write the array(s) defined in the respective .h file back
+'to disk. Make sure the path in the DECLARE LIBRARY statement does match
+'the actual .h file location. Call this FUNCTION once, before you will
+'access the represented file for the first time. After the call always
+'use the returned realFile$ ONLY to access the written file, don't add
+'any path or extension, as realFile$ is already a full qualified absolute
+'path and filename, which is made by expanding your maybe given relative
+'path and an maybe altered filename in order to avoid the overwriting of
+'an existing file of the same name in the given location. By this means
+'you'll always have easy access to the file, no matter how your current
+'working folder changes during runtime. If requested, the written file
+'can automatically be deleted for you when your program will end, so you
+'don't need to worry about the cleanup yourself. This cleanup feature is
+'implemented on the C/C++ level by using a "atexit()" function.
+'---------------------------------------------------------------------
+'SYNTAX: realFile$ = WritePlasmaImgArray$ (wantFile$, autoDel%)
+'
+'INPUTS: wantFile$ --> The filename you would like to write the array(s)
+'                      to, can contain a full or relative path.
+'        autoDel%  --> Shows whether you want the auto cleanup at the
+'                      program end or not (-1 = del file, 0 = don't del).
+'
+'RESULT: realFile$ --> On success the full qualified path and filename
+'                      finally used after applied checks, use ONLY this
+'                      returned name to access the file, don't add any
+'                      path or extension anymore.
+'                   -> On failure (write/access) this will be an empty
+'                      string, so you should check for it before trying
+'                      to access the file.
+'=====================================================================
+FUNCTION WritePlasmaImgArray$ (file$, clean%)
+'--- declare C/C++ function ---
+DECLARE LIBRARY "QB64GuiTools\src_MakeDATA\inline\PlasmaImg" 'Do not add .h here !!
+    FUNCTION WritePlasmaImgData$ (FileName$, BYVAL AutoClean%)
+END DECLARE
+'--- separate filename body & extension ---
+FOR po% = LEN(file$) TO 1 STEP -1
+    IF MID$(file$, po%, 1) = "." THEN
+        body$ = LEFT$(file$, po% - 1)
+        ext$ = MID$(file$, po%)
+        EXIT FOR
+    ELSEIF MID$(file$, po%, 1) = "\" OR MID$(file$, po%, 1) = "/" OR po% = 1 THEN
+        body$ = file$
+        ext$ = ""
+        EXIT FOR
+    END IF
+NEXT po%
+'--- avoid overwriting of existing files ---
+num% = 1
+WHILE _FILEEXISTS(file$)
+    file$ = body$ + "(" + LTRIM$(STR$(num%)) + ")" + ext$
+    num% = num% + 1
+WEND
+'--- write array & set result ---
+WritePlasmaImgArray$ = WritePlasmaImgData$(file$ + CHR$(0), clean%)
+END FUNCTION
+

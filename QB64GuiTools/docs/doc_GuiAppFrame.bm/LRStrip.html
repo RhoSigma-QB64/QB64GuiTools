@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>LRStrip</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_GuiAppFrame_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>LStrip$ &amp; RStrip$ <em>(function)</em></h2>
+<p>These functions will remove a range of defined chars before or after
+a string. The behavior in that is similar to LTRIM$/RTRIM$, but these
+functions are not limited to remove spaces and have different modes.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>stripped$ = LStrip$ (mode%, arg$)
+stripped$ = RStrip$ (mode%, arg$)
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>mode% <em>(INTEGER)</em></h4>
+<ul>
+<li>Any of the operation mode constants defined in the global CONSTs
+section in the <strong>dev_framework\GuiAppFrame.bi</strong> file (see also below).</li>
+</ul>
+<h4>arg$ <em>(STRING)</em></h4>
+<ul>
+<li>The string you want to strip out, may be a fixed length string
+or user type string element too.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>stripped$ <em>(STRING)</em></h4>
+<ul>
+<li>The given arg$ with all defined chars before or after it removed,
+depending on the used function.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>MODE CONSTANTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>stripZERO%</h4>
+<ul>
+<li>remove zeros (CHR$(0))</li>
+</ul>
+<h4>stripTAB%</h4>
+<ul>
+<li>remove tabulators (CHR$(9))</li>
+</ul>
+<h4>stripSPACE%</h4>
+<ul>
+<li>just like LTRIM$/RTRIM$ (remove spaces)</li>
+</ul>
+<h4>stripQUOTE%</h4>
+<ul>
+<li>remove quotation marks (CHR$(34))</li>
+</ul>
+<h4>stripFIX%</h4>
+<ul>
+<li>trim partly uninitialized fixed length strings (remove zeros and spaces)</li>
+</ul>
+<h4>stripWHITE%</h4>
+<ul>
+<li>whitespaces (remove tabulators and spaces)</li>
+</ul>
+<h4>stripALL%</h4>
+<ul>
+<li>all (remove zeros, tabulators, spaces and quotes)</li>
+</ul>
+<h1></h1>
+<blockquote>
+<p><strong><em>SPECIAL MODES:</em></strong></p>
+<h4>stripTEXT%</h4>
+<ul>
+<li>Find the real text start/end (ie. remove whitspaces and quotes), use it to
+remove also in-quoted whitespace (eg. &quot;&nbsp;&nbsp;&nbsp;TEXT&nbsp;&nbsp;&nbsp;&quot;
+becomes just TEXT after using L- and <a href="">RStrip$()</a> on it.</li>
+</ul>
+<h4>stripVALUE%</h4>
+<ul>
+<li>Prepare a number string as argument for VAL(...), ie. <a href="">LStrip$()</a> is to find
+the first -, +, ., &amp; or digit (0-9), while <a href="">RStrip$()</a> is to find the first digit
+(0-9) from the right side.</li>
+<li>
+Additionally some simple checks are done by <a href="">LStrip$()</a>:
+<ul>
+<li>1.) &amp; is accepted only if followed by B, H or O (any case)</li>
+<li>2.) +, - is accepted only if followed by . or digit</li>
+<li>3.) . accepted only if followed by digit</li>
+</ul>
+</li>
+<li>However, there is still the chance of misformatted numbers, especially if you
+don't know the source of the numbers (external input etc.).</li>
+</ul>
+</blockquote>
+</blockquote>
+<hr />
+<p><em><a href="_GuiAppFrame_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

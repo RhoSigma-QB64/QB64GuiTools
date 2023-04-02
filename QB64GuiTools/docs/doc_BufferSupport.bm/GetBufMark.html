@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>GetBufMark</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>GetBufMark <em>(function)</em></h2>
+<p>This function will return the current position of the marker with the given
+ID. The returned position remains valid until you write or delete data in
+the respective buffer, which will automatically recalculate all markers to
+keep track of its positions.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>mPos&amp; = GetBufMark&amp; (buf$(), markID%)
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of any existing and initialized buffer, from which you
+wanna query the marker position.</li>
+</ul>
+<h4>markID% <em>(INTEGER)</em></h4>
+<ul>
+<li>Any ID number in the range 1 to 100, which identifies the desired marker.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>mPos&amp; <em>(LONG)</em></h4>
+<ul>
+<li>On success (positive value) this is the retrieved marker position.</li>
+<li>On failure (negative value) it is any of the error numbers defined in
+the <strong>BufferSupport.bi</strong> file (see also <a href="BufferSupport-Common.html">Common-Info</a>).</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

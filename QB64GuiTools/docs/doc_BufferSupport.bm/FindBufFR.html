@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FindBufFR</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>FindBufFwd &amp; FindBufRev <em>(function)</em></h2>
+<p>These functions will search for the criteria, which were earlier associated
+with the find data specified by the given ID (see <a href="SetBufFind.html">SetBufFind()</a>). Depending
+on the called function the search will be performed in forward or reverse
+direction but in both cases starting at the current buffer position. If the
+criteria is found, then the found position is returned and it will also
+automatically become the new current buffer position. If the criteria is
+otherwise not found, then zero (0) is returned and the current buffer
+position remains unchanged. The returned position remains valid until you
+write or delete data in the respective buffer. Be also aware of (negative)
+error returns.</p>
+<p>For a sequential search to find all occurrences of the criteria in the buffer,
+you simply call the same direction search function ever again until you get no
+more hits. Different from INSTR, you don't need to manually displace the start
+position by 1 byte for the next call to avoid finding the same occurrence again,
+as the buffer keeps track of the last found occurrence and will do this
+automatically as required.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>found&amp; = FindBufFwd&amp; (buf$(), findID%, method%, treat%)
+found&amp; = FindBufRev&amp; (buf$(), findID%, method%, treat%)
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of any existing and initialized buffer, in which you
+wanna search the specified data.</li>
+</ul>
+<h4>findID% <em>(INTEGER)</em></h4>
+<ul>
+<li>Any ID number in the range 1 to 100, which identifies the desired find data.</li>
+</ul>
+<h4>method% <em>(INTEGER)</em></h4>
+<ul>
+<li>This flag determines how to use the specified find data, ie. how the search
+shall actually be performed. It should be one of the flags defined in the
+<strong>BufferSupport.bi</strong> file (see also below).</li>
+</ul>
+<h4>treat% <em>(INTEGER)</em></h4>
+<ul>
+<li>This flag determines how to treat any lower/upper case differences in the
+search criteria and the searched buffer data. It should be one of the flags
+defined in the <strong>BufferSupport.bi</strong> file (see also below).</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>found&amp; <em>(LONG)</em></h4>
+<ul>
+<li>Either the found position on success, or zero (0), if no more occurrences
+of the specified find data were found.</li>
+<li>If the return value is negative, then it is any of the error numbers defined
+in the <strong>BufferSupport.bi</strong> file (see also <a href="BufferSupport-Common.html">Common-Info</a>).</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>METHOD FLAGS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>SBF_FullData</h4>
+<ul>
+<li>Do a regular search for the specified criteria, hence use the find data in
+whole (ie. look for the string as given via <a href="SetBufFind.html">SetBufFind()</a> in its entire form).</li>
+</ul>
+<h4>SBF_Delimiter</h4>
+<ul>
+<li>Make a delimiter search, hence the specified find data are not directly
+used as a string, but as a list of delimiter chars to look for. The function
+returns as soon as any of the listed delimiter chars is found.</li>
+</ul>
+<h4>SBF_InvDelimiter</h4>
+<ul>
+<li>Make a inverse delimiter search. As for the above, the specified find data
+are used as a list of delimiter chars, but here the function returns as soon
+as any char is found, which is not listed as delimiter.</li>
+</ul>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>TREATMENT FLAGS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>SBF_AsWritten</h4>
+<ul>
+<li>Simply treat all find data and buffer data as is, hence &quot;Foo&quot; &lt;&gt; &quot;foo&quot;.</li>
+</ul>
+<h4>SBF_IgnoreCase</h4>
+<ul>
+<li>Use this flag to ignore the written case of all data, hence &quot;Foo&quot; = &quot;foo&quot;.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

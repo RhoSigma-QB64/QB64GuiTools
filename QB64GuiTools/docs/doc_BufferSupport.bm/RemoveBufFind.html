@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>RemoveBufFind</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>RemoveBufFind <em>(function)</em></h2>
+<p>This function will remove (free) the find data with the given ID, so the ID
+becomes available for reuse. Use this function on no longer needed find data.</p>
+<p>If you otherwise just want to update any existing find data with new search
+criteria, then you don't need to call this function, instead just call
+<a href="SetBufFind.html">SetBufFind()</a> on the existing find data again to set the new criteria.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>err% = RemoveBufFind% (buf$(), findID%)
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of any existing and initialized buffer, from which you
+wanna remove the find data.</li>
+</ul>
+<h4>findID% <em>(INTEGER)</em></h4>
+<ul>
+<li>Any ID number in the range 1 to 100, which identifies the find data to remove.</li>
+<li>Accidental removal of already free (unused) find data won't hurt.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>err% <em>(INTEGER)</em></h4>
+<ul>
+<li>This is usually zero (0) on success, or error SBE_BadIDNumber, if the
+given ID number was out of the valid range (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
+<li>No other errors may happen, so if you make sure your used IDs are valid,
+then you may waive to explicit error checking.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

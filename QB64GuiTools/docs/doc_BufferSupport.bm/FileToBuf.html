@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FileToBuf</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>FileToBuf <em>(sub)</em></h2>
+<p>This subroutine will load the entire contents of the given file into the
+specified buffer. The given buffer does not need to be initialized yet, as
+this call includes the required init procedure. However, it will not hurt,
+if the buffer is already initialized or even used and filled with data. But
+note, that in this case all previous content of the buffer is discarded
+and replaced by the loaded file data.</p>
+<p>The call will also clear all markers and find data. The current buffer
+position is set to the first byte and the buffer will use the OS native
+line endings.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>FileToBuf buf$(), fileSpec$
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This must be a 1-dimensional REDIMed (dynamic) <em>STRING</em> array of at least
+one element, it will be initialized and filled by this routine to become a
+usable buffer. In alternative it can also be the array of any existing buffer.</li>
+</ul>
+<h4>fileSpec$ <em>(STRING)</em></h4>
+<ul>
+<li>The name of the file to load into the buffer. You may also add a path,
+if required. Make sure the specified file exists to avoid errors.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>NOTES:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>Although the buffer is in OS native line endings mode after loading, the
+loaded file is not converted automatically into the respective format, as
+this would probably corrupt files containing binary data.</li>
+<li>If you work with pure text files from different OS's you may want to call
+the <a href="ConvBufToAnyEol.md">ConvBufToNativeEol()</a> subroutine right after loading the text file.</li>
+<li>In alternative you can also force the buffer to use the one or other line
+endings logic using the subroutines <a href="ConvBufToAnyEol.md">ConvBufToWinEol()</a> or <a href="ConvBufToAnyEol.md">ConvBufToLnxMacEol()</a>.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

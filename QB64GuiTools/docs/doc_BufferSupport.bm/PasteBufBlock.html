@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>PasteBufBlock</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>PasteBufBlock <em>(function)</em></h2>
+<p>This function will insert data from the clipboard into the specified buffer.
+It can simply insert the clipboard data starting at the current buffer position
+or it may replace a given data block in the buffer with the data from clipboard.
+In either case the current buffer position is on the first byte behind the
+just inserted or replaced data after the call. This function is in that the
+counterpart to the <a href="CopyBufBlock.html">CopyBufBlock()</a> and <a href="CutBufBlock.html">CutBufBlock()</a> functions.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>err% = PasteBufBlock% (buf$(), bound&amp;)
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of any existing and initialized buffer, in which you
+wanna paste the data.</li>
+</ul>
+<h4>bound&amp; <em>(LONG)</em></h4>
+<ul>
+<li>If zero (0), then the clipboard data are simply inserted starting at the
+current buffer (cursor) position.</li>
+<li>If it's greater zero (&gt;0), then this is the position of the opposite end
+of the data block which shall be replaced with the clipboard data (the 1st
+end is the current buffer position).</li>
+<li>The bound may be less than, equal to, or greater than the current position,
+although equal would result into replacing nothing and instead simply inserting
+the data in the current position again.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>err% <em>(INTEGER)</em></h4>
+<ul>
+<li>This is usually zero (0) on success, or error SBE_OutOfBounds, if the
+given bound was out of the valid buffer data, which is 1 to <a href="GetBufLen.html">GetBufLen()</a> + 1
+(see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
+<li>No other errors may happen, and this one only if a bound &gt;0 was given,
+so if you make sure your bound position is valid or if you pass in zero (0),
+then you may waive to explicit error checking.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

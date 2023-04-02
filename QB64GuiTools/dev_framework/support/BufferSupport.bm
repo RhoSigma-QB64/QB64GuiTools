@@ -1,0 +1,679 @@
+'+---------------+---------------------------------------------------+
+'| ###### ###### |     .--. .         .-.                            |
+'| ##  ## ##   # |     |   )|        (   ) o                         |
+'| ##  ##  ##    |     |--' |--. .-.  `-.  .  .-...--.--. .-.        |
+'| ######   ##   |     |  \ |  |(   )(   ) | (   ||  |  |(   )       |
+'| ##      ##    |     '   `'  `-`-'  `-'-' `-`-`|'  '  `-`-'`-      |
+'| ##     ##   # |                            ._.'                   |
+'| ##     ###### | Sources & Documents placed under the MIT License. |
+'+---------------+---------------------------------------------------+
+'|                                                                   |
+'| === BufferSupport.bm ===                                          |
+'|                                                                   |
+'| == This include file is part of the GuiTools Framework Project.   |
+'| == It provides the SUBs and FUNCTIONs of the String Buffer API.   |
+'|                                                                   |
+'+-------------------------------------------------------------------+
+'| Done by RhoSigma, R.Heyder, provided AS IS, use at your own risk. |
+'| Find me in the QB64 Forum or mail to support@rhosigma-cw.net for  |
+'| any questions or suggestions. Thanx for your interest in my work. |
+'+-------------------------------------------------------------------+
+
+'--- docs\doc_BufferSupport.bm\InitBuf.html
+'---------------------------------------------------------------------
+SUB InitBuf (buf$())
+'--- prepare array ---
+REDIM buf$(0 TO 105)
+'--- init buffer ---
+buf$(0) = "" '                        => the actual string buffer
+buf$(1) = MKL$(1) + MKL$(0) + "EolU" '=> cursor position + buffer length + active EOL logic
+buf$(2) = "BM|" + SPACE$(404) '       => space for 100 +1 buffer markers
+buf$(3) = "FP|" + SPACE$(404) '       => space for 100 +1 found at positions
+buf$(4) = "FL|" + SPACE$(404) '       => space for 100 +1 find data lenghts
+FOR idx% = 1 TO 101
+    MID$(buf$(2), idx% * 4, 4) = MKL$(&HCAFEBABE)
+    MID$(buf$(3), idx% * 4, 4) = MKL$(&HCAFEBABE)
+    MID$(buf$(4), idx% * 4, 4) = MKL$(&HCAFEBABE)
+    buf$(idx% + 4) = "" '             => space for 100 +1 find data copies (5-104/105)
+NEXT idx% '                           => note the +1/105 is reserved for internal use
+END SUB '                                and never returned by FreeBufMark/FindID()
+
+'--- docs\doc_BufferSupport.bm\FileToBuf.html
+'---------------------------------------------------------------------
+SUB FileToBuf (buf$(), fileSpec$)
+'--- init array as buffer ---
+InitBuf buf$()
+'--- read file ---
+ff% = FREEFILE
+OPEN fileSpec$ FOR BINARY LOCK WRITE AS ff%
+fl& = LOF(ff%)
+buf$(0) = SPACE$(fl&)
+GET ff%, , buf$(0)
+CLOSE ff%
+'--- set cursor & buffer length ---
+MID$(buf$(1), 1, 4) = MKL$(1)
+MID$(buf$(1), 5, 4) = MKL$(fl&)
+END SUB
+
+'--- docs\doc_BufferSupport.bm\BufToFile.html
+'---------------------------------------------------------------------
+SUB BufToFile (buf$(), fileSpec$)
+'--- write file (overwrite existing !!!) ---
+ff% = FREEFILE
+OPEN fileSpec$ FOR OUTPUT LOCK WRITE AS ff%: CLOSE ff%
+OPEN fileSpec$ FOR BINARY LOCK WRITE AS ff%
+PUT ff%, , buf$(0)
+CLOSE ff%
+END SUB
+
+'--- docs\doc_BufferSupport.bm\CopyBuf.html
+'---------------------------------------------------------------------
+SUB CopyBuf (buf$(), destBuf$())
+'--- init dest array as buffer ---
+InitBuf destBuf$()
+'--- copy all buffer values ---
+FOR idx% = 0 TO 105
+    destBuf$(idx%) = buf$(idx%)
+NEXT idx%
+END SUB
+
+'--- docs\doc_BufferSupport.bm\BufInsertFile.html
+'---------------------------------------------------------------------
+SUB BufInsertFile (buf$(), fileSpec$)
+'--- load file into a temp buffer ---
+REDIM tmp$(0)
+FileToBuf tmp$(), fileSpec$
+'--- then insert into buffer ---
+BufInsertBuf buf$(), tmp$()
+'--- cleanup ---
+ERASE tmp$
+END SUB
+
+'--- docs\doc_BufferSupport.bm\BufInsertBuf.html
+'---------------------------------------------------------------------
+SUB BufInsertBuf (buf$(), fromBuf$())
+'--- insert data of another buffer ---
+WriteBufRawData buf$(), fromBuf$(0)
+END SUB
+
+'--- docs\doc_BufferSupport.bm\ReadBufLine.html
+'---------------------------------------------------------------------
+FUNCTION ReadBufLine$ (buf$())
+'--- prepare values ---
+cur& = GetBufPos&(buf$())
+brc$ = BufEolSeq$(buf$()): brl% = LEN(brc$)
+'--- find next line break ---
+eol& = INSTR(cur&, buf$(0), brc$)
+IF eol& = 0 THEN eol& = GetBufLen&(buf$()) + 1: brl% = 0
+'--- read from buffer ---
+ReadBufLine$ = MID$(buf$(0), cur&, eol& - cur&)
+MID$(buf$(1), 1, 4) = MKL$(eol& + brl%)
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\WriteBufLine.html
+'---------------------------------------------------------------------
+SUB WriteBufLine (buf$(), text$)
+'--- prepare values ---
+cur& = GetBufPos&(buf$()): txl& = LEN(text$)
+brc$ = BufEolSeq$(buf$()): brl% = LEN(brc$)
+chg& = txl& + brl%
+'--- write into buffer ---
+buf$(0) = LEFT$(buf$(0), cur& - 1) + text$ + brc$ + MID$(buf$(0), cur&)
+MID$(buf$(1), 1, 4) = MKL$(cur& + chg&)
+MID$(buf$(1), 5, 4) = MKL$(GetBufLen&(buf$()) + chg&)
+'--- adjust marks & find positions ---
+RecalcBufMarks buf$(), cur&, chg&
+RecalcBufFinds buf$(), cur&, chg&
+END SUB
+
+'--- docs\doc_BufferSupport.bm\DeleteBufLine.html
+'---------------------------------------------------------------------
+SUB DeleteBufLine (buf$())
+'--- prepare values ---
+cur& = GetBufPos&(buf$()): eob& = GetBufLen&(buf$()) + 1
+brc$ = BufEolSeq$(buf$()): brl% = LEN(brc$)
+'--- find next line break ---
+eol& = INSTR(cur&, buf$(0), brc$)
+IF eol& = 0 THEN eol& = eob&: brl% = 0
+chg& = (eol& + brl%) - cur&
+'--- delete from buffer ---
+buf$(0) = LEFT$(buf$(0), cur& - 1) + MID$(buf$(0), eol& + brl%)
+MID$(buf$(1), 5, 4) = MKL$((eob& - 1) - chg&)
+'--- adjust marks & find positions ---
+RecalcBufMarks buf$(), cur&, -chg&
+RecalcBufFinds buf$(), cur&, -chg&
+END SUB
+
+'--- docs\doc_BufferSupport.bm\ReadBufRawData.html
+'---------------------------------------------------------------------
+FUNCTION ReadBufRawData$ (buf$(), size&) 'size change intended
+'--- prepare values ---
+cur& = GetBufPos&(buf$()): eob& = GetBufLen&(buf$()) + 1
+IF size& > eob& - cur& THEN size& = eob& - cur&
+'--- read from buffer ---
+ReadBufRawData$ = MID$(buf$(0), cur&, size&)
+MID$(buf$(1), 1, 4) = MKL$(cur& + size&)
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\WriteBufRawData.html
+'---------------------------------------------------------------------
+SUB WriteBufRawData (buf$(), rawData$)
+'--- prepare values ---
+cur& = GetBufPos&(buf$()): rdl& = LEN(rawData$)
+'--- write into buffer ---
+buf$(0) = LEFT$(buf$(0), cur& - 1) + rawData$ + MID$(buf$(0), cur&)
+MID$(buf$(1), 1, 4) = MKL$(cur& + rdl&)
+MID$(buf$(1), 5, 4) = MKL$(GetBufLen&(buf$()) + rdl&)
+MID$(buf$(1), 9, 4) = "EolU"
+'--- adjust marks & find positions ---
+RecalcBufMarks buf$(), cur&, rdl&
+RecalcBufFinds buf$(), cur&, rdl&
+END SUB
+
+'--- docs\doc_BufferSupport.bm\DeleteBufRawData.html
+'---------------------------------------------------------------------
+SUB DeleteBufRawData (buf$(), size&) 'size change intended
+'--- prepare values ---
+cur& = GetBufPos&(buf$()): eob& = GetBufLen&(buf$()) + 1
+IF size& > eob& - cur& THEN size& = eob& - cur&
+'--- delete from buffer ---
+buf$(0) = LEFT$(buf$(0), cur& - 1) + MID$(buf$(0), cur& + size&)
+MID$(buf$(1), 5, 4) = MKL$((eob& - 1) - size&)
+'--- adjust marks & find positions ---
+RecalcBufMarks buf$(), cur&, -size&
+RecalcBufFinds buf$(), cur&, -size&
+END SUB
+
+'--- docs\doc_BufferSupport.bm\GetBufMemData.html
+'---------------------------------------------------------------------
+SUB GetBufMemData (buf$(), memData AS _MEM)
+'--- get memory data size ---
+DIM sizeRef AS _MEM
+sizeRef = _MEM(memData.SIZE)
+IF INSTR(_OS$, "[64BIT]") > 0 THEN
+    _MEMGET sizeRef, sizeRef.OFFSET, size&&
+ELSE
+    _MEMGET sizeRef, sizeRef.OFFSET, temp&
+    size&& = temp&
+END IF
+_MEMFREE sizeRef
+'--- read amount of data from buffer ---
+datStr$ = ReadBufRawData$(buf$(), size&&)
+'--- then copy into the memory block ---
+_MEMPUT memData, memData.OFFSET, datStr$
+END SUB
+
+'--- docs\doc_BufferSupport.bm\PutBufMemData.html
+'---------------------------------------------------------------------
+SUB PutBufMemData (buf$(), memData AS _MEM)
+'--- get memory data size ---
+DIM sizeRef AS _MEM
+sizeRef = _MEM(memData.SIZE)
+IF INSTR(_OS$, "[64BIT]") > 0 THEN
+    _MEMGET sizeRef, sizeRef.OFFSET, size&&
+ELSE
+    _MEMGET sizeRef, sizeRef.OFFSET, temp&
+    size&& = temp&
+END IF
+_MEMFREE sizeRef
+'--- read out the memory block ---
+datStr$ = SPACE$(size&&)
+_MEMGET memData, memData.OFFSET, datStr$
+'--- then write it into the buffer ---
+WriteBufRawData buf$(), datStr$
+END SUB
+
+'--- docs\doc_BufferSupport.bm\FreeBufMarkID.html
+'---------------------------------------------------------------------
+FUNCTION FreeBufMarkID% (buf$())
+'--- default return (error) ---
+FreeBufMarkID% = SBE_BadIDNumber
+'--- find a free mark ---
+FOR idx% = 1 TO 100
+    IF CVL(MID$(buf$(2), idx% * 4, 4)) = &HCAFEBABE THEN
+        FreeBufMarkID% = idx%
+        EXIT FOR
+    END IF
+NEXT idx%
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\SetBufMark.html
+'---------------------------------------------------------------------
+FUNCTION SetBufMark% (buf$(), markID%)
+'--- check range ---
+SetBufMark% = SBE_BadIDNumber
+IF (markID% < 1 OR markID% > 100) AND (LEN(buf$(1)) = 12) THEN EXIT FUNCTION
+'--- set mark ---
+MID$(buf$(2), markID% * 4, 4) = MID$(buf$(1), 1, 4)
+SetBufMark% = 0
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\RemoveBufMark.html
+'---------------------------------------------------------------------
+FUNCTION RemoveBufMark% (buf$(), markID%)
+'--- check range ---
+RemoveBufMark% = SBE_BadIDNumber
+IF (markID% < 1 OR markID% > 100) AND (LEN(buf$(1)) = 12) THEN EXIT FUNCTION
+'--- remove (unset) mark ---
+MID$(buf$(2), markID% * 4, 4) = MKL$(&HCAFEBABE)
+RemoveBufMark% = 0
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\GetBufMark.html
+'---------------------------------------------------------------------
+FUNCTION GetBufMark& (buf$(), markID%)
+'--- check range ---
+GetBufMark& = SBE_BadIDNumber
+IF (markID% < 1 OR markID% > 100) AND (LEN(buf$(1)) = 12) THEN EXIT FUNCTION
+'--- return mark position, if set ---
+GetBufMark& = CVL(MID$(buf$(2), markID% * 4, 4))
+SELECT CASE GetBufMark&
+    CASE &HCAFEBABE: GetBufMark& = SBE_UnusedID
+    CASE &HDEADBEEF: GetBufMark& = SBE_ClearedID
+END SELECT
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\GotoBufMark.html
+'---------------------------------------------------------------------
+FUNCTION GotoBufMark% (buf$(), markID%)
+'--- goto mark, if valid ---
+mark& = GetBufMark&(buf$(), markID%)
+IF mark& > 0 THEN
+    MID$(buf$(1), 1, 4) = MKL$(mark&)
+    GotoBufMark% = 0
+ELSE
+    GotoBufMark% = mark&
+END IF
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\FreeBufFindID.html
+'---------------------------------------------------------------------
+FUNCTION FreeBufFindID% (buf$())
+'--- default return (error) ---
+FreeBufFindID% = SBE_BadIDNumber
+'--- find a free mark ---
+FOR idx% = 1 TO 100
+    IF CVL(MID$(buf$(4), idx% * 4, 4)) = &HCAFEBABE THEN
+        FreeBufFindID% = idx%
+        EXIT FOR
+    END IF
+NEXT idx%
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\SetBufFind.html
+'---------------------------------------------------------------------
+FUNCTION SetBufFind% (buf$(), findID%, find$)
+'--- check range ---
+SetBufFind% = SBE_BadIDNumber
+IF (findID% < 1 OR findID% > 100) AND (LEN(buf$(1)) = 12) THEN EXIT FUNCTION
+'--- set find data ---
+MID$(buf$(4), findID% * 4, 4) = MKL$(LEN(find$))
+buf$(findID% + 4) = find$
+SetBufFind% = 0
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\RemoveBufFind.html
+'---------------------------------------------------------------------
+FUNCTION RemoveBufFind% (buf$(), findID%)
+'--- check range ---
+RemoveBufFind% = SBE_BadIDNumber
+IF (findID% < 1 OR findID% > 100) AND (LEN(buf$(1)) = 12) THEN EXIT FUNCTION
+'--- remove find data ---
+MID$(buf$(3), findID% * 4, 4) = MKL$(&HCAFEBABE)
+MID$(buf$(4), findID% * 4, 4) = MKL$(&HCAFEBABE)
+buf$(findID% + 4) = ""
+RemoveBufFind% = 0
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\FindBufFR.html
+'---------------------------------------------------------------------
+FUNCTION FindBufFwd& (buf$(), findID%, method%, treat%)
+'--- check range ---
+FindBufFwd& = SBE_BadIDNumber
+IF (findID% < 1 OR findID% > 100) AND (LEN(buf$(1)) = 12) THEN EXIT FUNCTION
+'--- prepare & check values ---
+cPos& = GetBufPos&(buf$()): eob& = GetBufLen&(buf$()) + 1
+fPos& = CVL(MID$(buf$(3), findID% * 4, 4))
+fLen& = CVL(MID$(buf$(4), findID% * 4, 4))
+IF fPos& > 0 AND fPos& < eob& AND cPos& = fPos& THEN cPos& = cPos& + 1
+FindBufFwd& = SBE_UnusedID
+IF fLen& = &HCAFEBABE OR fLen& = 0 THEN EXIT FUNCTION
+'--- perform forward search ---
+IF treat% = 0 THEN
+    find$ = buf$(findID% + 4)
+    WHILE cPos& < eob&
+        SELECT CASE method%
+            CASE IS < 0: IF INSTR(find$, MID$(buf$(0), cPos&, 1)) = 0 THEN EXIT WHILE
+            CASE IS > 0: IF INSTR(find$, MID$(buf$(0), cPos&, 1)) > 0 THEN EXIT WHILE
+            CASE ELSE: IF MID$(buf$(0), cPos&, fLen&) = find$ THEN EXIT WHILE
+        END SELECT
+        cPos& = cPos& + 1
+    WEND
+ELSE
+    temp$ = UCASE$(buf$(0))
+    find$ = UCASE$(buf$(findID% + 4))
+    WHILE cPos& < eob&
+        SELECT CASE method%
+            CASE IS < 0: IF INSTR(find$, MID$(temp$, cPos&, 1)) = 0 THEN EXIT WHILE
+            CASE IS > 0: IF INSTR(find$, MID$(temp$, cPos&, 1)) > 0 THEN EXIT WHILE
+            CASE ELSE: IF MID$(temp$, cPos&, fLen&) = find$ THEN EXIT WHILE
+        END SELECT
+        cPos& = cPos& + 1
+    WEND
+END IF
+'--- set & return result ---
+IF cPos& < eob& THEN MID$(buf$(1), 1, 4) = MKL$(cPos&)
+MID$(buf$(3), findID% * 4, 4) = MKL$(cPos&)
+FindBufFwd& = -(cPos& * (NOT cPos& = eob&))
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\FindBufFR.html
+'---------------------------------------------------------------------
+FUNCTION FindBufRev& (buf$(), findID%, method%, treat%)
+'--- check range ---
+FindBufRev& = SBE_BadIDNumber
+IF (findID% < 1 OR findID% > 100) AND (LEN(buf$(1)) = 12) THEN EXIT FUNCTION
+'--- prepare & check values ---
+cPos& = GetBufPos&(buf$()): eob& = GetBufLen&(buf$()) + 1
+fPos& = CVL(MID$(buf$(3), findID% * 4, 4))
+fLen& = CVL(MID$(buf$(4), findID% * 4, 4))
+IF fPos& > 0 AND fPos& < eob& AND cPos& = fPos& THEN cPos& = cPos& - 1
+FindBufRev& = SBE_UnusedID
+IF fLen& = &HCAFEBABE OR fLen& = 0 THEN EXIT FUNCTION
+'--- perform reverse search ---
+IF treat% = 0 THEN
+    find$ = buf$(findID% + 4)
+    WHILE cPos& > 0
+        SELECT CASE method%
+            CASE IS < 0: IF INSTR(find$, MID$(buf$(0), cPos&, 1)) = 0 THEN EXIT WHILE
+            CASE IS > 0: IF INSTR(find$, MID$(buf$(0), cPos&, 1)) > 0 THEN EXIT WHILE
+            CASE ELSE: IF MID$(buf$(0), cPos&, fLen&) = find$ THEN EXIT WHILE
+        END SELECT
+        cPos& = cPos& - 1
+    WEND
+ELSE
+    temp$ = UCASE$(buf$(0))
+    find$ = UCASE$(buf$(findID% + 4))
+    WHILE cPos& > 0
+        SELECT CASE method%
+            CASE IS < 0: IF INSTR(find$, MID$(temp$, cPos&, 1)) = 0 THEN EXIT WHILE
+            CASE IS > 0: IF INSTR(find$, MID$(temp$, cPos&, 1)) > 0 THEN EXIT WHILE
+            CASE ELSE: IF MID$(temp$, cPos&, fLen&) = find$ THEN EXIT WHILE
+        END SELECT
+        cPos& = cPos& - 1
+    WEND
+END IF
+'--- set & return result ---
+IF cPos& > 0 THEN MID$(buf$(1), 1, 4) = MKL$(cPos&)
+MID$(buf$(3), findID% * 4, 4) = MKL$(cPos&)
+FindBufRev& = cPos&
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\CopyBufBlock.html
+'---------------------------------------------------------------------
+FUNCTION CopyBufBlock% (buf$(), bound&)
+'--- get & check positions ---
+CopyBufBlock% = SBE_OutOfBounds
+IF bound& < 1 OR bound& > GetBufLen&(buf$()) + 1 THEN EXIT FUNCTION
+sPo& = bound&: ePo& = GetBufPos&(buf$())
+IF ePo& < sPo& THEN SWAP sPo&, ePo&
+'--- copy block to clip ---
+_CLIPBOARD$ = MID$(buf$(0), sPo&, ePo& - sPo&)
+CopyBufBlock% = 0
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\CutBufBlock.html
+'---------------------------------------------------------------------
+FUNCTION CutBufBlock% (buf$(), bound&)
+'--- get & check positions ---
+CutBufBlock% = SBE_OutOfBounds
+IF bound& < 1 OR bound& > GetBufLen&(buf$()) + 1 THEN EXIT FUNCTION
+sPo& = bound&: ePo& = GetBufPos&(buf$())
+IF ePo& < sPo& THEN SWAP sPo&, ePo&
+'--- copy block to clip ---
+_CLIPBOARD$ = MID$(buf$(0), sPo&, ePo& - sPo&)
+'--- then delete block ---
+old& = SeekBuf&(buf$(), sPo&, SBM_BufStart)
+DeleteBufRawData buf$(), ePo& - sPo&
+CutBufBlock% = 0
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\PasteBufBlock.html
+'---------------------------------------------------------------------
+FUNCTION PasteBufBlock% (buf$(), bound&)
+'--- replace check ---
+IF bound& <> 0 THEN
+    '--- get & check positions ---
+    PasteBufBlock% = SBE_OutOfBounds
+    IF bound& < 1 OR bound& > GetBufLen&(buf$()) + 1 THEN EXIT FUNCTION
+    sPo& = bound&: ePo& = GetBufPos&(buf$())
+    IF ePo& < sPo& THEN SWAP sPo&, ePo&
+    '--- delete old block ---
+    old& = SeekBuf&(buf$(), sPo&, SBM_BufStart)
+    DeleteBufRawData buf$(), ePo& - sPo&
+END IF
+'--- finally paste block from clip ---
+WriteBufRawData buf$(), _CLIPBOARD$
+PasteBufBlock% = 0
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\SeekBuf.html
+'---------------------------------------------------------------------
+FUNCTION SeekBuf& (buf$(), displace&, mode%)
+'--- prepare values ---
+disp& = displace&
+cur& = GetBufPos&(buf$()): eob& = GetBufLen&(buf$()) + 1
+brc$ = BufEolSeq$(buf$()): brl% = LEN(brc$)
+'--- select origin ---
+SELECT CASE mode%
+    CASE SBM_PosRestore: origin& = disp&: disp& = 0
+    CASE SBM_BufStart: origin& = 1
+    CASE SBM_BufCurrent: origin& = cur&
+    CASE SBM_BufEnd: origin& = eob&
+    CASE SBM_LineStart
+        origin& = cur&
+        IF cur& > 1 AND cur& < eob& THEN
+            IF brl% = 2 AND ASC(buf$(0), cur& - 1) = 13 AND ASC(buf$(0), cur&) = 10 THEN
+                origin& = cur& - 1
+            END IF
+        END IF
+        WHILE origin& > 1
+            IF MID$(buf$(0), origin& - 1, brl%) = brc$ THEN
+                IF brl% = 2 THEN origin& = origin& + 1
+                EXIT WHILE
+            END IF
+            origin& = origin& - 1
+        WEND
+    CASE SBM_LineEnd
+        origin& = cur&
+        IF cur& > 1 AND cur& < eob& THEN
+            IF brl% = 2 AND ASC(buf$(0), cur& - 1) = 13 AND ASC(buf$(0), cur&) = 10 THEN
+                origin& = cur& - 1
+            END IF
+        END IF
+        origin& = INSTR(origin&, buf$(0), brc$)
+        IF origin& = 0 THEN origin& = eob&
+    CASE IS > 0 'buffer markers mode
+        SeekBuf& = GetBufMark&(buf$(), mode%)
+        IF SeekBuf& < 0 THEN EXIT FUNCTION
+        origin& = SeekBuf&
+    CASE ELSE
+        SeekBuf& = SBE_UnknownMode
+        EXIT FUNCTION
+END SELECT
+'--- seek to new position ---
+newPos& = origin& + disp&
+IF newPos& < 1 OR newPos& > eob& THEN
+    SeekBuf& = SBE_OutOfBounds
+ELSE
+    MID$(buf$(1), 1, 4) = MKL$(newPos&)
+    SeekBuf& = cur&
+END IF
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\GetBufPos.html
+'---------------------------------------------------------------------
+FUNCTION GetBufPos& (buf$())
+'--- return cursor position in buffer ---
+GetBufPos& = CVL(MID$(buf$(1), 1, 4))
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\GetBufLen.html
+'---------------------------------------------------------------------
+FUNCTION GetBufLen& (buf$())
+'--- return actual buffer length ---
+GetBufLen& = CVL(MID$(buf$(1), 5, 4))
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\EndOfBuf.html
+'---------------------------------------------------------------------
+FUNCTION EndOfBuf% (buf$())
+'--- return EndOfBuffer condition ---
+EndOfBuf% = (GetBufPos&(buf$()) > GetBufLen&(buf$()))
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\BufEolSeq.html
+'---------------------------------------------------------------------
+FUNCTION BufEolSeq$ (buf$())
+'--- return buffer specific EndOfLine sequence ---
+SELECT CASE MID$(buf$(1), 9, 4)
+    CASE "EolU", "EolN" 'OS native logic
+        BufEolSeq$ = CHR$(13) + CHR$(10) 'default is Windows
+        IF INSTR(_OS$, "[LINUX]") > 0 THEN BufEolSeq$ = CHR$(10) 'true for MacOSX too
+    CASE "EolL" 'forced Linux/MacOSX
+        BufEolSeq$ = CHR$(10)
+    CASE "EolW" 'forced Windows
+        BufEolSeq$ = CHR$(13) + CHR$(10)
+END SELECT
+END FUNCTION
+
+'--- docs\doc_BufferSupport.bm\ConvBufToAnyEol.html
+'---------------------------------------------------------------------
+SUB ConvBufToNativeEol (buf$())
+'--- convert buffer to OS native EndOfLine sequence ---
+IF INSTR(_OS$, "[LINUX]") > 0 THEN 'true for MacOSX too
+    ConvBufToLnxMacEol buf$()
+ELSE
+    ConvBufToWinEol buf$()
+END IF
+MID$(buf$(1), 9, 4) = "EolN"
+END SUB
+
+'--- docs\doc_BufferSupport.bm\ConvBufToAnyEol.html
+'---------------------------------------------------------------------
+SUB ConvBufToLnxMacEol (buf$())
+'--- check current EndOfLine sequence ---
+IF MID$(buf$(1), 9, 4) = "EolL" THEN EXIT SUB
+IF MID$(buf$(1), 9, 4) = "EolN" AND LEN(BufEolSeq$(buf$())) = 1 THEN EXIT SUB
+'--- prepare values ---
+buf$(1) = buf$(1) + CHR$(12)
+IF MID$(buf$(0), GetBufPos&(buf$()), 2) = CHR$(13) + CHR$(10) THEN
+    res& = SeekBuf&(buf$(), 1, SBM_BufCurrent)
+END IF
+res% = SetBufMark%(buf$(), 101)
+res% = SetBufFind%(buf$(), 101, CHR$(13) + CHR$(10))
+'--- search & convert ---
+res& = SeekBuf&(buf$(), 0, SBM_BufStart)
+DO
+    po& = FindBufFwd&(buf$(), 101, SBF_FullData, SBF_AsWritten)
+    IF po& > 0 THEN DeleteBufRawData buf$(), 1
+LOOP UNTIL po& = 0
+MID$(buf$(1), 9, 4) = "EolL"
+'--- restore old position & cleanup ---
+res& = SeekBuf&(buf$(), 0, 101)
+res% = RemoveBufFind%(buf$(), 101)
+res% = RemoveBufMark%(buf$(), 101)
+buf$(1) = LEFT$(buf$(1), 12)
+END SUB
+
+'--- docs\doc_BufferSupport.bm\ConvBufToAnyEol.html
+'---------------------------------------------------------------------
+SUB ConvBufToWinEol (buf$())
+'--- check current EndOfLine sequence ---
+IF MID$(buf$(1), 9, 4) = "EolW" THEN EXIT SUB
+IF MID$(buf$(1), 9, 4) = "EolN" AND LEN(BufEolSeq$(buf$())) = 2 THEN EXIT SUB
+IF MID$(buf$(1), 9, 4) = "EolU" THEN ConvBufToLnxMacEol buf$() 'safety measure
+'--- prepare values ---
+buf$(1) = buf$(1) + CHR$(12)
+res% = SetBufMark%(buf$(), 101)
+res% = SetBufFind%(buf$(), 101, CHR$(10))
+'--- search & convert ---
+res& = SeekBuf&(buf$(), 0, SBM_BufStart)
+DO
+    po& = FindBufFwd&(buf$(), 101, SBF_FullData, SBF_AsWritten)
+    IF po& > 0 THEN WriteBufRawData buf$(), CHR$(13)
+LOOP UNTIL po& = 0
+MID$(buf$(1), 9, 4) = "EolW"
+'--- restore old position & cleanup ---
+res& = SeekBuf&(buf$(), 0, 101)
+IF MID$(buf$(0), GetBufPos&(buf$()), 1) = CHR$(10) THEN
+    res& = SeekBuf&(buf$(), 0, SBM_LineEnd)
+END IF
+res% = RemoveBufFind%(buf$(), 101)
+res% = RemoveBufMark%(buf$(), 101)
+buf$(1) = LEFT$(buf$(1), 12)
+END SUB
+
+'--- undocumented - for internal use only
+'---------------------------------------------------------------------
+SUB RecalcBufMarks (buf$(), bufPos&, change&)
+'--- check special case (no change) ---
+IF change& = 0 THEN EXIT SUB
+'--- recalc all used marks ---
+FOR idx% = 1 TO 101
+    mark& = CVL(MID$(buf$(2), idx% * 4, 4))
+    IF mark& <> &HCAFEBABE AND mark& <> &HDEADBEEF THEN
+        SELECT CASE change&
+            CASE IS > 0
+                IF bufPos& <= mark& THEN mark& = mark& + change&
+            CASE IS < 0
+                IF bufPos& < mark& THEN
+                    absChg& = ABS(change&)
+                    IF absChg& <= (mark& - bufPos&) THEN
+                        mark& = mark& - absChg&
+                    ELSE
+                        mark& = &HDEADBEEF
+                    END IF
+                ELSEIF bufPos& = mark& THEN
+                    mark& = &HDEADBEEF
+                END IF
+        END SELECT
+        MID$(buf$(2), idx% * 4, 4) = MKL$(mark&)
+    END IF
+NEXT idx%
+END SUB
+
+'--- undocumented - for internal use only
+'---------------------------------------------------------------------
+SUB RecalcBufFinds (buf$(), bufPos&, change&)
+'--- check special case (no change) ---
+IF change& = 0 THEN EXIT SUB
+'--- recalc all used found at positions ---
+FOR idx% = 1 TO 101
+    found& = CVL(MID$(buf$(3), idx% * 4, 4))
+    length& = CVL(MID$(buf$(4), idx% * 4, 4))
+    IF found& <> &HCAFEBABE AND found& <> &HDEADBEEF THEN
+        SELECT CASE change&
+            CASE IS > 0
+                IF bufPos& <= found& THEN
+                    found& = found& + change&
+                ELSEIF bufPos& > found& AND bufPos& < (found& + length&) THEN
+                    found& = &HDEADBEEF
+                END IF
+            CASE IS < 0
+                IF bufPos& < found& THEN
+                    absChg& = ABS(change&)
+                    IF absChg& <= (found& - bufPos&) THEN
+                        found& = found& - absChg&
+                    ELSE
+                        found& = &HDEADBEEF
+                    END IF
+                ELSEIF bufPos& >= found& AND bufPos& < (found& + length&) THEN
+                    found& = &HDEADBEEF
+                END IF
+        END SELECT
+        MID$(buf$(3), idx% * 4, 4) = MKL$(found&)
+    END IF
+NEXT idx%
+END SUB
+

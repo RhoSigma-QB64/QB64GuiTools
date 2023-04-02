@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ParseLine</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_GuiAppFrame_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>ParseLine <em>(function)</em></h2>
+<p>Parse the given input line, ie. break the line up into its individual
+words or components.</p>
+<p>Any number of whitespaces (Tab/Space) will separate the components
+unless they appear in quoted sections. Parts of the line enclosed by
+quotation marks will be handled as one word or component. For more
+specific information see the <strong><em>PARSING RULES</em></strong> below.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>ub&amp; = ParseLine&amp; (inpLine$, outArray$(), minUB&amp;)
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>inpLine$ <em>(STRING)</em></h4>
+<ul>
+<li>The input line which you want to process.</li>
+</ul>
+<h4>outArray$() <em>(STRING array)</em></h4>
+<ul>
+<li>This must be a 1-dimensional REDIMed (dynamic) <em>STRING</em> array of at
+least one element, in which the individual components will be stored.
+The array will be internally adjusted as needed for the number of
+components found in the input line. It will always keep the lower
+bound, but will raise or reduce the upper bound as needed.</li>
+</ul>
+<h4>minUB&amp; <em>(LONG)</em></h4>
+<ul>
+<li>Should be either zero or the minimum upper bound, which the output
+array shall have after the call. This can be used, if you expect a fix
+number of components. If there are not enough components, then the
+unused array elements remain empty. Note that the array may still grow
+bigger, if the input line has more components than expected.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>ub&amp; <em>(LONG)</em></h4>
+<ul>
+<li>The final upper bound of the output array after parsing. It will
+be negative (-1) if there was nothing to parse (ie. the input line
+was either empty or was whitespace only), the given array remains
+unchanged in that case.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>PARSING RULES:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>Whitespaces (Tab/Space) will regulary separate words or components.</li>
+<li>Opening quotation marks will also separate (even without a leading
+whitespace), ie. it will also finish the actually processed component.</li>
+<li>Closing quotation marks (even without trailing whitespace) will
+regulary finish the actual (quoted) component.</li>
+<li>Quoted components may be empty (&quot;&quot;) and produce an empty array entry
+in that case.</li>
+<li>Any opened quoted component with no closing quotation mark in the
+remaining input line will be closed by end of line, ie. the complete
+remaining line is taken as one quoted component.</li>
+<li>With respect to the latter two points, an opening quotation mark as
+very last char in the input line will produce an additional empty array
+entry (as it is in fact an empty quoted component closed by end of line).</li>
+</ul>
+<h6><em>Quoting rules:</em></h6>
+<ul>
+<li>Very simple and logic, the 1st quotation mark opens, the 2nd does
+close, 3rd will open again, 4th does close again and so on.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_GuiAppFrame_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

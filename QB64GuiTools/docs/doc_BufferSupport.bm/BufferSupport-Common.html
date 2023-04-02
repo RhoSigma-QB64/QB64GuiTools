@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BufferSupport-Common</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>Common Results</h2>
+<p>Many functions of the Stringbuffer system may return common error codes in
+certain situations. The following error codes are defined as CONSTs in the
+<strong>BufferSupport.bi</strong> file.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>WARNINGS &amp; ERRORS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>SBE_UnknownMode</h4>
+<ul>
+<li>Is returned by function <a href="SeekBuf.html">SeekBuf()</a> only, it means the given mode argument
+was not recognized by the function. This may be because of an typo in the mode
+name, look up the correct spelling in file <strong>BufferSupport.bi</strong>, if in doubt.</li>
+</ul>
+<h4>SBE_OutOfBounds</h4>
+<ul>
+<li>This error may be returned by several functions, it means a given or by a
+displacement calculated position is out of the valid buffer data range, which
+is usually 1 to <a href="GetBufLen.html">GetBufLen()</a> + 1.</li>
+</ul>
+<h4>SBE_BadIDNumber</h4>
+<ul>
+<li>Is mainly returned by the various marker and find functions, but also by
+<a href="SeekBuf.html">SeekBuf()</a>, if you make a marker seek. It means, that the given marker
+or find ID was out of the valid range 1 to 100.</li>
+<li>If returned by <a href="FreeBufMarkID.html">FreeBufMarkID()</a> or <a href="FreeBufFindID.html">FreeBufFindID()</a>, then there are no more
+unused IDs available. You should always remove no longer needed markers and
+find data to make its IDs available for reuse (see <a href="RemoveBufMark.html">RemoveBufMark()</a> and
+<a href="RemoveBufFind.html">RemoveBufFind()</a>).</li>
+</ul>
+<h4>SBE_UnusedID</h4>
+<ul>
+<li>Also returned by the various marker and find functions, it means you tried
+to get, goto, seek or remove an unused marker, find or remove unused find data.
+However, this can be seen as warning for you only, as the respective functions
+will simply ignore those calls.</li>
+</ul>
+<h4>SBE_ClearedID</h4>
+<ul>
+<li>Similar to the above, but only returned by the marker related functions and
+<a href="SeekBuf.html">SeekBuf()</a>. It means the accessed marker is invalid, because the data at the
+marked position were deleted. It's also more or less just a warning. You may
+reassign the respective marker ID to a new position directly or remove the
+marker to make its ID available for later reuse.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

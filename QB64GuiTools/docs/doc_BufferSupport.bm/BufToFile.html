@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BufToFile</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>BufToFile <em>(sub)</em></h2>
+<p>This subroutine will save the regular data of the given buffer as is into
+the specified file. Any set markers and find data are not part of the regular
+data, hence they don't get saved to the file. An existing file with the
+same name will be overwritten.</p>
+<p>The buffer itself remains completely unchanged and in same state regarding
+the current buffer position, markers, find data and active line endings
+logic, hence you could easily setup an auto-save via a timer and after save
+go on working with the buffer.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>BufToFile buf$(), fileSpec$
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of any existing and initialized buffer, which shall
+be written into the file. The buffer may still be empty, which would write
+an empty file then.</li>
+</ul>
+<h4>fileSpec$ <em>(STRING)</em></h4>
+<ul>
+<li>The name of the file to save the buffer into. You may also add a path,
+if required. Make sure any specified path exists to avoid errors.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>NOTES:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>If you save a pure text file and want the line endings suitable for a
+specific OS, then you may want to call the appropriate conversion subroutine
+<a href="ConvBufToAnyEol.md">ConvBufToNativeEol()</a>, <a href="ConvBufToAnyEol.md">ConvBufToWinEol()</a> or <a href="ConvBufToAnyEol.md">ConvBufToLnxMacEol()</a> right
+before calling this function.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

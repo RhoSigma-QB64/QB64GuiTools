@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>CopyBuf</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>CopyBuf <em>(sub)</em></h2>
+<p>This subroutine will copy the entire contents of the given source buffer to
+the destination buffer. The destination buffer does not need to be initialized
+yet, as this call includes the required init procedure. However, it will not
+hurt, if the destination buffer is already initialized or even used and filled
+with data. But note, that in this case all previous content of the destination
+buffer is discarded and replaced by the copied data.</p>
+<p>The copy will also include all markers and find data, as well as the current
+buffer position and the active line endings logic of the source buffer. Hence,
+you get an exact clone of the source buffer.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>CopyBuf buf$(), destBuf$()
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of any existing and initialized buffer, which you want
+to copy (source buffer). The buffer may still be empty, which would create
+an empty copy then.</li>
+</ul>
+<h4>destBuf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This must be a 1-dimensional REDIMed (dynamic) <em>STRING</em> array of at least
+one element, it will be initialized and filled by this routine to become an
+clone of the given source buffer. In alternative it can also be the array
+of any existing buffer (destination buffer).</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

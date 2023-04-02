@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>DeleteBufLine</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>DeleteBufLine <em>(sub)</em></h2>
+<p>This subroutine will delete (cut out) the remaining part of the current line,
+ie. it will erase data from the specified buffer starting at the current buffer
+position (which may be anywhere in the line) and continuing until it finds
+the next line break (according to the active line endings logic of the buffer)
+or until the buffer end, if no more line breaks exist. The erase does include
+the found line break (if any).</p>
+<p>The call will also recalculate all markers to maintain its respective
+positions. Any markers formerly set on the deleted data will be invalidated.
+The current buffer position remains unchanged after the call, as the following
+data (if any) will move up to fill the gap (ie. the next line's start will
+be on that position then). Hence, sequential deleting is easily possible with
+subsequent calls.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>DeleteBufLine buf$()
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>
+<p>This is the array of any existing and initialized buffer, from which you
+wanna erase data.</p>
+</li>
+<li>
+<p>Depending on the current buffer position, this will not necessarily erase
+the entire line as it is present in the buffer.</p>
+</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>NOTES:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>To make sure you erase a line entirely, you may want to move the current
+buffer position to the start of line before calling this subroutine, if this
+is not guaranteed automatically (eg. by deleting lines sequentially).</li>
+<li>You may move the current buffer position to the line start using the
+function <a href="SeekBuf.html">SeekBuf()</a> with an displacement of zero (0) and mode SBM_LineStart.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

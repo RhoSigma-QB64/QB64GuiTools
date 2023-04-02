@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>SetBufMark</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>SetBufMark <em>(function)</em></h2>
+<p>This function will bookmark the current buffer position in the marker with
+the given ID. The marker will now track the position while writing or deleting
+data in the buffer.</p>
+<p>You may also call this function to update any existing marker to a new
+position at any time.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>err% = SetBufMark% (buf$(), markID%)
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of any existing and initialized buffer, in which you
+wanna set the marker.</li>
+</ul>
+<h4>markID% <em>(INTEGER)</em></h4>
+<ul>
+<li>Any ID number in the range 1 to 100, which identifies this marker. You
+may give this as literal number under self control or use <a href="FreeBufMarkID.html">FreeBufMarkID()</a>
+to obtain the next free (unused) ID.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>err% <em>(INTEGER)</em></h4>
+<ul>
+<li>This is usually zero (0) on success, or error SBE_BadIDNumber, if the
+given ID number was out of the valid range (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
+<li>No other errors may happen, so if you make sure your used IDs are valid,
+then you may waive to explicit error checking.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>NOTES:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>You should remove no longer needed buffer markers to make its IDs
+available for reuse.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

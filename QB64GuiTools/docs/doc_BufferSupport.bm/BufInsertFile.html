@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BufInsertFile</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>BufInsertFile <em>(sub)</em></h2>
+<p>This subroutine will insert the entire contents of the given file into
+the specified buffer starting at the current buffer (cursor) position.</p>
+<p>The call will also recalculate all markers to maintain its respective
+positions. The current buffer position is updated accordingly and is on
+the first byte behind the inserted data after the call.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>BufInsertFile buf$(), fileSpec$
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of any existing and initialized buffer, in which you
+want to insert the file data.</li>
+</ul>
+<h4>fileSpec$ <em>(STRING)</em></h4>
+<ul>
+<li>The name of the file to insert. You may also add a path, if required.
+Make sure the specified file exists to avoid errors.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>NOTES:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>If you've inserted a pure text file, which is using different line endings
+than your given buffer (maybe a file from a different OS), then you may want
+to call the appropriate conversion subroutine <a href="ConvBufToAnyEol.md">ConvBufToNativeEol()</a>,
+<a href="ConvBufToAnyEol.md">ConvBufToWinEol()</a> or <a href="ConvBufToAnyEol.md">ConvBufToLnxMacEol()</a> right after inserting the text file
+to bring all data in line with your given buffer's line endings again.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

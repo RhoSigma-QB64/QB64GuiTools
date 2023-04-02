@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>BufInsertBuf</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>BufInsertBuf <em>(sub)</em></h2>
+<p>This subroutine will insert the entire regular contents of the given source
+buffer into the specified destination buffer starting at the current buffer
+(cursor) position of the destination buffer. Any set markers and find data
+are not part of the regular data, hence they are not transferred over to the
+destination buffer.</p>
+<p>The call will also recalculate all markers of the specified destination
+buffer to maintain its respective positions. The current buffer position is
+updated accordingly and is on the first byte behind the inserted data after
+the call.</p>
+<p>The source buffer itself remains completely unchanged and in same state
+regarding the current buffer position, markers, find data and active line
+endings logic, hence you can simply go on working with the source buffer.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>BufInsertBuf buf$(), fromBuf$()
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of any existing and initialized buffer, in which you
+want to insert the data (destination buffer).</li>
+</ul>
+<h4>fromBuf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of another existing and initialized buffer, from which
+you wanna take the data (source buffer).</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>NOTES:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>If you've inserted pure text from a buffer with a different line endings
+logic than your given destination buffer, then you may want to call the
+appropriate conversion subroutine <a href="ConvBufToAnyEol.md">ConvBufToNativeEol()</a>, <a href="ConvBufToAnyEol.md">ConvBufToWinEol()</a>
+or <a href="ConvBufToAnyEol.md">ConvBufToLnxMacEol()</a> right after inserting the text to bring all data in
+line with your destination buffer's line endings again.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

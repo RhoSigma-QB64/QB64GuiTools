@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>RemoveBufMark</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>RemoveBufMark <em>(function)</em></h2>
+<p>This function will remove (free) the marker with the given ID, so the ID
+becomes available for reuse. Use this function on no longer needed markers.</p>
+<p>If you otherwise just want to update the position of any existing marker,
+then you don't need to call this function, instead just call <a href="SetBufMark.html">SetBufMark()</a>
+on the existing marker again to set the new position.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>err% = RemoveBufMark% (buf$(), markID%)
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>buf$() <em>(STRING array)</em></h4>
+<ul>
+<li>This is the array of any existing and initialized buffer, from which you
+wanna remove the marker.</li>
+</ul>
+<h4>markID% <em>(INTEGER)</em></h4>
+<ul>
+<li>Any ID number in the range 1 to 100, which identifies the marker to remove.</li>
+<li>Accidental removal of already free (unused) markers won't hurt.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>err% <em>(INTEGER)</em></h4>
+<ul>
+<li>This is usually zero (0) on success, or error SBE_BadIDNumber, if the
+given ID number was out of the valid range (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
+<li>No other errors may happen, so if you make sure your used IDs are valid,
+then you may waive to explicit error checking.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->
