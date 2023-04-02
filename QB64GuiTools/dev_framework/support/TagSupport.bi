@@ -22,13 +22,11 @@
 '-----------------------------
 '--- Various tag constants ---
 '-----------------------------
-'--- These four constants define the tokens used for tag name and data
-'--- separation within a tag string to uniquely identify a certain tag.
-'--- Also an CHR$(0) replacement is used internally to allow C/C++ level
-'--- operations without problems, but don't worry, it will be converted
-'--- back automatically when you query tags using function GetTagData$().
+'--- These constants define the tokens used to uniquely identify single
+'--- tags within a tag string. There's also an CHR$(0) replacement, which
+'--- is used internally to allow C/C++ level operations without problems.
 '--- The used control chars (ASCII 28-31) do not conflict with regular
-'--- tag writings nor with Ctrl shortcut sequences.
+'--- tag data writings nor with Ctrl shortcut sequences.
 '-----
 CONST tagIntr$ = "" 'tag item introducer
 CONST tagSepa$ = "" 'tag name <-> tag data separator

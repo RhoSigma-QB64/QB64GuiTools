@@ -11,16 +11,11 @@
 <body>
 <p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
 <hr />
-<h2>FileToBuf <em>(sub)</em></h2>
-<p>This subroutine will load the entire contents of the given file into the
-specified buffer. The given buffer does not need to be initialized yet, as
-this call includes the required init procedure. However, it will not hurt,
-if the buffer is already initialized or even used and filled with data. But
-note, that in this case all previous content of the buffer is discarded
-and replaced by the loaded file data.</p>
-<p>The call will also clear all markers and find data. The current buffer
-position is set to the first byte and the buffer will use the OS native
-line endings.</p>
+<h2>FileToBuf <em>(function)</em></h2>
+<p>This function will load the entire contents of the given file into a new
+buffer and return its buffer handle. The current buffer position is on the
+first byte, the buffer will use the OS native line endings mode and its
+initial state after loading the file is &quot;unchanged&quot;.</p>
 <hr />
 <blockquote>
 <blockquote>
@@ -32,7 +27,7 @@ line endings.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>FileToBuf buf$(), fileSpec$
+<pre><code>handle% = FileToBuf% (fileSpec$)
 </code></pre>
 
 </blockquote>
@@ -47,16 +42,31 @@ line endings.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
-<ul>
-<li>This must be a 1-dimensional REDIMed (dynamic) <em>STRING</em> array of at least
-one element, it will be initialized and filled by this routine to become a
-usable buffer. In alternative it can also be the array of any existing buffer.</li>
-</ul>
 <h4>fileSpec$ <em>(STRING)</em></h4>
 <ul>
-<li>The name of the file to load into the buffer. You may also add a path,
-if required. Make sure the specified file exists to avoid errors.</li>
+<li>The name of the file you wanna load into the buffer. You may also add
+a path, if required.</li>
+<li>Make sure the specified file exists and its size is &lt;= 2GiB to avoid
+file loading errors, those are not caught by this function (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>handle% <em>(INTEGER)</em></h4>
+<ul>
+<li>The handle of the new loaded buffer, which you must later pass to the
+various other buffer functions to designate this buffer for operation.</li>
+<li>If no more buffers are available, then error SBE_NoMoreBuffers is
+returned (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
 </ul>
 </blockquote>
 <hr />
@@ -72,12 +82,14 @@ if required. Make sure the specified file exists to avoid errors.</li>
 </blockquote>
 <ul>
 <li>Although the buffer is in OS native line endings mode after loading, the
-loaded file is not converted automatically into the respective format, as
-this would probably corrupt files containing binary data.</li>
-<li>If you work with pure text files from different OS's you may want to call
-the <a href="ConvBufToAnyEol.html">ConvBufToNativeEol()</a> subroutine right after loading the text file.</li>
+file's data is not converted automatically into the respective format, as
+this would corrupt data in binary files.</li>
+<li>If you know you work with plain text files, but you are not sure about
+the origin (which OS) of the files, then you should call the <a href="ConvBufToAnyEol.html">ConvBufToNativeEol()</a>
+subroutine right after loading, to convert the file data into your OS's
+native line endings format.</li>
 <li>In alternative you can also force the buffer to use the one or other line
-endings logic using the subroutines <a href="ConvBufToAnyEol.html">ConvBufToWinEol()</a> or <a href="ConvBufToAnyEol.html">ConvBufToLnxMacEol()</a>.</li>
+endings mode using the subroutines <a href="ConvBufToAnyEol.html">ConvBufToWinEol()</a> or <a href="ConvBufToAnyEol.html">ConvBufToLnxMacEol()</a>.</li>
 </ul>
 </blockquote>
 <hr />

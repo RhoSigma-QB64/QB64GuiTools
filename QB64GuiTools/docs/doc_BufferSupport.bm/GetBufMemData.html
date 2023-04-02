@@ -33,7 +33,7 @@ buffer end is reached or not.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>GetBufMemData buf$(), memData AS _MEM
+<pre><code>GetBufMemData handle%, memData AS _MEM
 </code></pre>
 
 </blockquote>
@@ -48,10 +48,9 @@ buffer end is reached or not.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, from which you
-wanna read.</li>
+<li>This is the handle of any valid buffer, from which you wanna read.</li>
 </ul>
 <h4>memData <em>(_MEM block)</em></h4>
 <ul>
@@ -77,8 +76,8 @@ position in advance:
 <ul>
 <li><a href="SeekBuf.html">SeekBuf()</a> with an appropriate displacement and seek mode.</li>
 <li><a href="GotoBufMark.html">GotoBufMark()</a> to restore to an earlier marked position.</li>
-<li><a href="FindBufFR.html">FindBufFwd()</a> or <a href="FindBufFR.html">FindBufRev()</a> to move to the next or previous occurrence of
-the designated find data (starting from the current position).</li>
+<li><a href="FindBufFR.html">FindBufFwd()</a> or <a href="FindBufFR.html">FindBufRev()</a> to move to the next or previous occurrence
+of any criteria.</li>
 </ul>
 </li>
 </ul>

@@ -15,7 +15,7 @@
 <p>This function will return the remaining part of the current line, ie. it
 reads data from the specified buffer starting at the current buffer position
 (which may be anywhere in the line) and continuing until it finds the next
-line break (according to the active line endings logic of the buffer) or
+line break (according to the active line endings mode of the buffer) or
 until the buffer end, if no more line breaks exist. The operation is in that
 very similar to LINE INPUT when reading from text files.</p>
 <p>The current buffer position is updated accordingly and is on the first byte
@@ -33,7 +33,7 @@ use <a href="EndOfBuf.html">EndOfBuf()</a> to check, whether the buffer end is r
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>text$ = ReadBufLine$ (buf$())
+<pre><code>text$ = ReadBufLine$ (handle%)
 </code></pre>
 
 </blockquote>
@@ -48,10 +48,9 @@ use <a href="EndOfBuf.html">EndOfBuf()</a> to check, whether the buffer end is r
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, from which you
-wanna read.</li>
+<li>This is the handle of any valid buffer, from which you wanna read.</li>
 </ul>
 </blockquote>
 <hr />
@@ -72,8 +71,8 @@ similar to LINE INPUT, which returns lines also without the line breaks,
 when reading from text files.</li>
 <li>Depending on the current buffer position, this must not necessarily be the
 entire line as it is present in the buffer (see Notes).</li>
-<li>Will be an empty string, if you try to read past the buffer end. However,
-no error is thrown in such a case.</li>
+<li>Will be an empty string, if the <a href="EndOfBuf.html">EndOfBuf()</a> condition is already true (-1)
+when the read operation begins. However, no error will occur in such a case.</li>
 </ul>
 </blockquote>
 <hr />
@@ -89,8 +88,8 @@ no error is thrown in such a case.</li>
 </blockquote>
 <ul>
 <li>To make sure you read a line entirely, you may want to move the current
-buffer position to the start of line before calling this function, if this
-is not guaranteed automatically (eg. by reading lines sequentially).</li>
+buffer position to the start of the line before calling this function, if
+this is not guaranteed automatically (eg. by reading lines sequentially).</li>
 <li>You may move the current buffer position to the line start using the
 function <a href="SeekBuf.html">SeekBuf()</a> with an displacement of zero (0) and mode SBM_LineStart.</li>
 </ul>

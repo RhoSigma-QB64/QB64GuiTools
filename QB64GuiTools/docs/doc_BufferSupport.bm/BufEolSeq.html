@@ -13,11 +13,12 @@
 <hr />
 <h2>BufEolSeq$ <em>(function)</em></h2>
 <p>This function will return the used &quot;End Of Line&quot; char sequence of the
-specified buffer, ie. the line break char(s), which is usually CHR$(10) for
-Linux/MacOSX based text files and CHR$(13) + CHR$(10) for Windows based text
-files.</p>
+specified buffer, ie. the line break char(s), which are internally added
+to each text line written with <a href="WriteBufLine.html">WriteBufLine()</a>. This is usually CHR$(10)
+for Linux/MacOSX based text files and CHR$(13) + CHR$(10) for Windows
+based text files.</p>
 <p>Buffers may be converted between the different line ending modes using the
-<a href="ConvBufToAnyEol.html">ConvBufToNativeEol()</a>, <a href="ConvBufToAnyEol.html">ConvBufToLnxMacEol()</a> and <a href="ConvBufToAnyEol.html">ConvBufToWinEol()</a> functions.</p>
+<a href="ConvBufToAnyEol.html">ConvBufToNativeEol()</a>, <a href="ConvBufToAnyEol.html">ConvBufToLnxMacEol()</a> and <a href="ConvBufToAnyEol.html">ConvBufToWinEol()</a> routines.</p>
 <hr />
 <blockquote>
 <blockquote>
@@ -29,7 +30,7 @@ files.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>eolSeq$ = BufEolSeq$ (buf$())
+<pre><code>eolSeq$ = BufEolSeq$ (handle%)
 </code></pre>
 
 </blockquote>
@@ -44,10 +45,10 @@ files.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, from which you
-wanna retrieve the &quot;End Of Line&quot; char sequence.</li>
+<li>This is the handle of any valid buffer, from which you want
+the &quot;End Of Line&quot; char sequence.</li>
 </ul>
 </blockquote>
 <hr />

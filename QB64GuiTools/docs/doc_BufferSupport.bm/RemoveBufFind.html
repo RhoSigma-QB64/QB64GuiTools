@@ -12,11 +12,10 @@
 <p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
 <hr />
 <h2>RemoveBufFind <em>(function)</em></h2>
-<p>This function will remove (free) the find data with the given ID, so the ID
-becomes available for reuse. Use this function on no longer needed find data.</p>
-<p>If you otherwise just want to update any existing find data with new search
-criteria, then you don't need to call this function, instead just call
-<a href="SetBufFind.html">SetBufFind()</a> on the existing find data again to set the new criteria.</p>
+<p>This function will remove (free) the search criteria with the given ID number,
+it's the counterpart to the <a href="SetBufFind.html">SetBufFind()</a> function. The given ID is returned
+to the buffer system for reuse. Use this function to remove no longer needed
+search criteria.</p>
 <hr />
 <blockquote>
 <blockquote>
@@ -28,7 +27,7 @@ criteria, then you don't need to call this function, instead just call
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>err% = RemoveBufFind% (buf$(), findID%)
+<pre><code>err% = RemoveBufFind% (handle%, findID%)
 </code></pre>
 
 </blockquote>
@@ -43,15 +42,15 @@ criteria, then you don't need to call this function, instead just call
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, from which you
-wanna remove the find data.</li>
+<li>This is the handle of any valid buffer, from which you wanna remove
+the search criteria.</li>
 </ul>
 <h4>findID% <em>(INTEGER)</em></h4>
 <ul>
-<li>Any ID number in the range 1 to 100, which identifies the find data to remove.</li>
-<li>Accidental removal of already free (unused) find data won't hurt.</li>
+<li>The ID number of the criteria to remove. You got the ID from the
+respective <a href="SetBufFind.html">SetBufFind()</a> call.</li>
 </ul>
 </blockquote>
 <hr />
@@ -69,8 +68,6 @@ wanna remove the find data.</li>
 <ul>
 <li>This is usually zero (0) on success, or error SBE_BadIDNumber, if the
 given ID number was out of the valid range (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
-<li>No other errors may happen, so if you make sure your used IDs are valid,
-then you may waive to explicit error checking.</li>
 </ul>
 </blockquote>
 <hr />

@@ -28,7 +28,7 @@ bgimg% = -1 'background image: use image = -1, blank screen = 0
 '-----------------------------------------------
 DECLARE LIBRARY "QB64GuiTools\dev_framework\GuiAppFrame" 'Do not add .h here !!
     FUNCTION FindColor& (BYVAL r&, BYVAL g&, BYVAL b&, BYVAL i&, BYVAL mi&, BYVAL ma&)
-    'This is a replacement for the _RGB function. It works for upto 8-bit
+    'This is a replacement for the _RGB function. It works for up to 8-bit
     '(256 colors) images only and needs a valid image. It can limit the
     'number of pens to search and uses a better color matching algorithm.
 END DECLARE

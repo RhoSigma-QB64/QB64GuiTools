@@ -382,8 +382,8 @@ RETURN
 '----------------------------------
 meFromMULtoDIV:
 IF dobj& <> guiASCObject& THEN
-    IF into% THEN dval$ = STR$(CLNG(VAL(LStrip$(stripVALUE%, mval$)) / rati#)): ELSE dval$ = STR$(VAL(LStrip$(stripVALUE%, mval$)) / rati#)
-    IF dfmt$ <> "" THEN dval$ = LStrip$(stripVALUE%, IndexFormat$("0{" + dfmt$ + "}", dval$, "|")): ELSE dval$ = LTRIM$(dval$)
+    IF into% THEN dval$ = STR$(CLNG(VAL(LStrip$(stmVALUE%, mval$)) / rati#)): ELSE dval$ = STR$(VAL(LStrip$(stmVALUE%, mval$)) / rati#)
+    IF dfmt$ <> "" THEN dval$ = LStrip$(stmVALUE%, IndexFormat$("0{" + dfmt$ + "}", dval$, "|")): ELSE dval$ = LTRIM$(dval$)
     resu$ = GenC$("SET", NewTag$("OBJECT", LTRIM$(STR$(dobj&))) + NewTag$(dtag$, dval$))
     SetTag guiObjects$(objData%, this&), "MULLAST", mval$
     SetTag guiObjects$(objData%, this&), "DIVLAST", dval$
@@ -392,8 +392,8 @@ RETURN
 '----------------------------------
 meFromDIVtoMUL:
 IF mobj& <> guiASCObject& THEN
-    IF into% THEN mval$ = STR$(CLNG(VAL(LStrip$(stripVALUE%, dval$)) * rati#)): ELSE mval$ = STR$(VAL(LStrip$(stripVALUE%, dval$)) * rati#)
-    IF mfmt$ <> "" THEN mval$ = LStrip$(stripVALUE%, IndexFormat$("0{" + mfmt$ + "}", mval$, "|")): ELSE mval$ = LTRIM$(mval$)
+    IF into% THEN mval$ = STR$(CLNG(VAL(LStrip$(stmVALUE%, dval$)) * rati#)): ELSE mval$ = STR$(VAL(LStrip$(stmVALUE%, dval$)) * rati#)
+    IF mfmt$ <> "" THEN mval$ = LStrip$(stmVALUE%, IndexFormat$("0{" + mfmt$ + "}", mval$, "|")): ELSE mval$ = LTRIM$(mval$)
     resu$ = GenC$("SET", NewTag$("OBJECT", LTRIM$(STR$(mobj&))) + NewTag$(mtag$, mval$))
     SetTag guiObjects$(objData%, this&), "MULLAST", mval$
     SetTag guiObjects$(objData%, this&), "DIVLAST", dval$

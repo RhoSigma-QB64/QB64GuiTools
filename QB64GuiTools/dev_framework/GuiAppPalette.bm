@@ -54,12 +54,8 @@ _PALETTECOLOR 38, _RGB32(17, 17, 17): _PALETTECOLOR 39, _RGB32(0, 0, 0)
 
 '--- Finally a HSB colorspace matrix, consisting of 3 brightness levels,
 '--- each with 3 saturation circles of 24 different hue values. These
-'--- colors were optimized, using the CAD system at my working place,
-'--- to produce a perfect overlapping harmony throughout the entire HSB
-'--- colorspace. Think of it, as each color is the centerpoint of a
-'--- sphere of the same diameter, and that the HSB colorspace cylinder
-'--- is evenly filled with these spheres. This way we get an optimal
-'--- nearest color behavior for the Floyd-Steinberg remapping.
+'--- colors were chosen in a way, which gives an optimal nearest color
+'--- behavior for the Floyd-Steinberg remapping.
 '---------------------------------------------------------------------
 _PALETTECOLOR 40, _RGB32(15, 15, 255): _PALETTECOLOR 41, _RGB32(75, 15, 255)
 _PALETTECOLOR 42, _RGB32(135, 15, 255): _PALETTECOLOR 43, _RGB32(195, 15, 255)

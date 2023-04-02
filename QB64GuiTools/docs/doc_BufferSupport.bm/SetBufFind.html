@@ -12,12 +12,10 @@
 <p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
 <hr />
 <h2>SetBufFind <em>(function)</em></h2>
-<p>This function will initialize the find data with the given ID with the
-specified search criteria. The given criteria will be copied for internal
-use, hence if given via a variable, then you can immediately reuse the
-variable after this call.</p>
-<p>You may also call this function to specify new search criteria for any
-existing find data at any time.</p>
+<p>This function will define new search criteria. The given criteria will
+be copied for internal use and a unique ID number for later use with the
+functions <a href="FindBufFR.html">FindBufFwd()</a> and <a href="FindBufFR.html">FindBufRev()</a> is returned. You may define up
+to 100 different criteria in each buffer.</p>
 <hr />
 <blockquote>
 <blockquote>
@@ -29,7 +27,7 @@ existing find data at any time.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>err% = SetBufFind% (buf$(), findID%, find$)
+<pre><code>findID% = SetBufFind% (handle%, find$)
 </code></pre>
 
 </blockquote>
@@ -44,25 +42,23 @@ existing find data at any time.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, in which you
-wanna set the find data.</li>
-</ul>
-<h4>findID% <em>(INTEGER)</em></h4>
-<ul>
-<li>Any ID number in the range 1 to 100, which identifies this find data. You
-may give this as literal number under self control or use <a href="FreeBufFindID.html">FreeBufFindID()</a> to
-obtain the next free (unused) ID.</li>
+<li>This is the handle of any valid buffer, for which you wanna define the
+new search criteria.</li>
 </ul>
 <h4>find$ <em>(STRING)</em></h4>
 <ul>
-<li>This are the search criteria to look for, when using <a href="FindBufFR.html">FindBufFwd()</a> or
-<a href="FindBufFR.html">FindBufRev()</a> with the given find data ID.</li>
-<li>The string can contain regular text as well as control chars and converted
-numbers (_MK$ or STR$), just as you need.</li>
-<li>For the delimiter search it should simply contain all chars, which shall
-be recognized as delimiters (eg. &quot;{[()]}&quot;).</li>
+<li>
+The search criteria to look for, when calling the actual search
+functions with the returned ID:
+<ul>
+<li>This can be a regular text string to look for, but can also contain
+control chars and converted numbers (_MK$ or STR$), just as you need.</li>
+<li>For a delimiter search this string should simply list all chars, which
+shall be recognized as delimiters (eg. &quot;,.{[()]}&quot;).</li>
+</ul>
+</li>
 </ul>
 </blockquote>
 <hr />
@@ -76,12 +72,11 @@ be recognized as delimiters (eg. &quot;{[()]}&quot;).</li>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>err% <em>(INTEGER)</em></h4>
+<h4>findID% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is usually zero (0) on success, or error SBE_BadIDNumber, if the
-given ID number was out of the valid range (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
-<li>No other errors may happen, so if you make sure your used IDs are valid,
-then you may waive to explicit error checking.</li>
+<li>On success (positive value) this is the ID number of the new defined
+criteria, on failure (negative value) it is any of the error numbers defined
+in the <strong>simplebuffer.bi</strong> file (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
 </ul>
 </blockquote>
 <hr />
@@ -96,8 +91,8 @@ then you may waive to explicit error checking.</li>
 </blockquote>
 </blockquote>
 <ul>
-<li>You should remove no longer needed find data to make its IDs
-available for reuse.</li>
+<li>You should always remove no longer needed search criteria to make its
+IDs available for reuse.</li>
 </ul>
 </blockquote>
 <hr />

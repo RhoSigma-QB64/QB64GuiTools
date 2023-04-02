@@ -13,7 +13,7 @@
 // | == Some low level support functions for the GuiTools Framework.   |
 // |                                                                   |
 // | == To activate the regex support you just need to uncomment the   |
-// | == "#define GTREGEX" line (53) below. But before doing so, please |
+// | == "#define GTREGEX" line (52) below. But before doing so, please |
 // | == carefully read the notes given right below this file header.   |
 // |                                                                   |
 // +-------------------------------------------------------------------+
@@ -22,13 +22,11 @@
 // | any questions or suggestions. Thanx for your interest in my work. |
 // +-------------------------------------------------------------------+
 
-/// QB64 versions using an old C/C++ compiler (anything published before
-/// January, 5th 2019) and current 3rd party SDL versions, ie.
-/// -> old QB64 v0.xxx (SDL/GL) 32-bit versions (from www.qb64.net or from
-///    the Historical Versions available at www.qb64.org)
-/// -> regular QB64 32-bit versions (stable & development from www.qb64.org)
-/// -> various QB64 64-bit versions (provided by Steve McNeill)
-/// -> current QB64-SDL 2020 version (provided by Steve McNeill)
+/// QB64 versions using an old C/C++ compiler (all before QB64 v1.3)
+/// -> ancient QB64 v0.xxx (SDL/GL) 32-bit versions
+/// -> regular QB64 32-bit versions (stable & development)
+/// -> various QB64 64-bit versions (by Steve McNeill)
+/// -> current QB64-SDL 2020 version (by Steve McNeill)
 /// -----
 /// Before uncommenting the "#define GTREGEX" line below, you must modify the
 /// file internal\c\makeline.txt (SDL) or internal\c\makekline_win.txt (GL),
@@ -41,10 +39,11 @@
 /// work as expected, especially the char classes.
 ///-------------------------------------------------------------------
 
-/// QB64 versions using an new C/C++ compiler (anything published after
-/// January, 5th 2019), ie.
-/// -> regular QB64 32-bit versions (stable & development from www.qb64.org)
-/// -> regular QB64 64-bit versions (stable & development from www.qb64.org)
+/// QB64 versions using an new C/C++ compiler (starting with QB64 v1.3)
+/// -> regular QB64 32-bit versions (stable & development)
+/// -> regular QB64 64-bit versions (stable & development)
+/// -> regular QB64-PE 32-bit versions (Phoenix Edition v0.5 and up)
+/// -> regular QB64-PE 64-bit versions (Phoenix Edition v0.5 and up)
 /// -----
 /// Just uncomment the "#define GTREGEX" line below and then enjoy regex's
 /// to its fullest extent, no additional compiler options are required.
@@ -283,7 +282,7 @@ void UntitledToTop (void) {
     }
 }
 
-// This is a replacement for the _RGB function. It works for upto 8-bit
+// This is a replacement for the _RGB function. It works for up to 8-bit
 // (256 colors) images only and needs a valid image. It can limit the
 // number of pens to search and uses a better color matching algorithm.
 //  In: red, green, blue, image (<-1), min pen, max pen (all LONGs)

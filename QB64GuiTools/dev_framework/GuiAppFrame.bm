@@ -334,21 +334,21 @@ END FUNCTION
 '---------------------------------------------------------------------
 SUB SetPrintMode (pm%)
 SELECT CASE pm%
-    CASE 1: _PRINTMODE _KEEPBACKGROUND
-    CASE 2: _PRINTMODE _ONLYBACKGROUND
-    CASE 3: _PRINTMODE _FILLBACKGROUND
+    CASE pmKEEP%: _PRINTMODE _KEEPBACKGROUND
+    CASE pmONLY%: _PRINTMODE _ONLYBACKGROUND
+    CASE pmFILL%: _PRINTMODE _FILLBACKGROUND
 END SELECT
 END SUB
 
-'--- docs\doc_GuiAppframe.bm\Bin.html
+'--- docs\doc_GuiAppframe.bm\BinStr.html
 '---------------------------------------------------------------------
-FUNCTION Bin$ (value&&)
+FUNCTION BinStr$ (value&&)
 '--- init ---
 temp~&& = value&&
-binStr$ = STRING$(64, "0"): charPos% = 64: highPos% = 64
+binTmp$ = STRING$(64, "0"): charPos% = 64: highPos% = 64
 '--- convert ---
 DO
-    IF (temp~&& AND 1) THEN MID$(binStr$, charPos%, 1) = "1": highPos% = charPos%
+    IF (temp~&& AND 1) THEN ASC(binTmp$, charPos%) = 49: highPos% = charPos%
     charPos% = charPos% - 1: temp~&& = temp~&& \ 2
 LOOP UNTIL temp~&& = 0
 '--- adjust negative size ---
@@ -358,7 +358,7 @@ IF value&& < 0 THEN
     IF -value&& < &H0000000080~&& THEN highPos% = 57
 END IF
 '--- set result ---
-Bin$ = MID$(binStr$, highPos%)
+BinStr$ = MID$(binTmp$, highPos%)
 END FUNCTION
 
 '--- docs\doc_GuiAppframe.bm\IndexFormat.html
@@ -452,7 +452,7 @@ SELECT CASE UCASE$(LEFT$(ft$, 1))
     CASE "B", "D", "H", "O", "R" 'extended number formatting (bin/dec/hex/oct/real)
         typ$ = LEFT$(ft$, 1): tyl% = VAL(MID$(ft$, 2))
         SELECT CASE typ$
-            CASE "B", "b": tmp$ = Bin$(VAL(argArr$(idx%)))
+            CASE "B", "b": tmp$ = BinStr$(VAL(argArr$(idx%)))
             CASE "D", "d": tmp$ = LTRIM$(STR$(_ROUND(VAL(argArr$(idx%)))))
             CASE "H", "h"
                 tmp$ = HEX$(VAL(argArr$(idx%)))
@@ -504,56 +504,61 @@ END FUNCTION
 FUNCTION LStrip$ (mode%, arg$)
 le& = LEN(arg$)
 FOR x& = 1 TO le&
-    mi% = ASC(arg$, x&)
-    IF x& < le& THEN nx% = ASC(UCASE$(MID$(arg$, x& + 1, 1))): ELSE nx% = 0
+    ch% = ASC(arg$, x&)
+    IF x& < le& THEN
+        nch% = ASC(arg$, x& + 1)
+        IF nch% >= 97 THEN nch% = nch% - 32
+    ELSE
+        nch% = -1
+    END IF
     SELECT CASE mode%
-        CASE stripZERO%
-            IF mi% <> 0 THEN EXIT FOR
-        CASE stripTAB%
-            IF mi% <> 9 THEN EXIT FOR
-        CASE stripSPACE%
-            IF mi% <> 32 THEN EXIT FOR
-        CASE stripQUOTE%
-            IF mi% <> 34 THEN EXIT FOR
-        CASE stripFIX%
-            IF mi% <> 0 AND mi% <> 32 THEN EXIT FOR
-        CASE stripWHITE%
-            IF mi% <> 9 AND mi% <> 32 THEN EXIT FOR
-        CASE stripALL%
-            IF mi% <> 0 AND mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
-        CASE stripTEXT%
-            IF mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
-        CASE stripVALUE%
-            IF (mi% = 38 AND (nx% = 66 OR nx% = 72 OR nx% = 79)) OR ((mi% = 43 OR mi% = 45) AND (nx% = 46 OR (nx% >= 48 AND nx% <= 57))) OR (mi% = 46 AND (nx% >= 48 AND nx% <= 57)) OR (mi% >= 48 AND mi% <= 57) THEN EXIT FOR
+        CASE stmZERO%
+            IF (ch% <> 0) THEN EXIT FOR
+        CASE stmCTRL%
+            IF (ch% > 31 AND ch% <> 127) THEN EXIT FOR
+        CASE stmBLANK%
+            IF (ch% <> 9 AND ch% <> 32) THEN EXIT FOR
+        CASE stmWHITE%
+            IF ((ch% < 9 OR ch% > 13) AND ch% <> 32) THEN EXIT FOR
+        CASE stmQUOTE%
+            IF (ch% <> 34) THEN EXIT FOR
+        CASE stmFIXED%
+            IF (ch% <> 0) AND (ch% <> 9 AND ch% <> 32) THEN EXIT FOR
+        CASE stmTEXT%
+            IF (ch% > 31 AND ch% <> 127) AND (ch% <> 9 AND ch% <> 32) AND (ch% <> 34) THEN EXIT FOR
+        CASE stmVALUE%
+            IF (ch% = 38 AND (nch% = 66 OR nch% = 72 OR nch% = 79)) OR _
+               ((ch% = 43 OR ch% = 45) AND (nch% = 46 OR (nch% >= 48 AND nch% <= 57))) OR _
+               (ch% = 46 AND (nch% >= 48 AND nch% <= 57)) OR _
+               (ch% >= 48 AND ch% <= 57) THEN EXIT FOR
     END SELECT
 NEXT x&
-LStrip$ = RIGHT$(arg$, LEN(arg$) - x& + 1)
+LStrip$ = MID$(arg$, x&)
 END FUNCTION
 
 '--- docs\doc_GuiAppframe.bm\LRStrip.html
 '---------------------------------------------------------------------
 FUNCTION RStrip$ (mode%, arg$)
-FOR x& = LEN(arg$) TO 1 STEP -1
-    mi% = ASC(arg$, x&)
+le& = LEN(arg$)
+FOR x& = le& TO 1 STEP -1
+    ch% = ASC(arg$, x&)
     SELECT CASE mode%
-        CASE stripZERO%
-            IF mi% <> 0 THEN EXIT FOR
-        CASE stripTAB%
-            IF mi% <> 9 THEN EXIT FOR
-        CASE stripSPACE%
-            IF mi% <> 32 THEN EXIT FOR
-        CASE stripQUOTE%
-            IF mi% <> 34 THEN EXIT FOR
-        CASE stripFIX%
-            IF mi% <> 0 AND mi% <> 32 THEN EXIT FOR
-        CASE stripWHITE%
-            IF mi% <> 9 AND mi% <> 32 THEN EXIT FOR
-        CASE stripALL%
-            IF mi% <> 0 AND mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
-        CASE stripTEXT%
-            IF mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
-        CASE stripVALUE%
-            IF mi% >= 48 AND mi% <= 57 THEN EXIT FOR
+        CASE stmZERO%
+            IF (ch% <> 0) THEN EXIT FOR
+        CASE stmCTRL%
+            IF (ch% > 31 AND ch% <> 127) THEN EXIT FOR
+        CASE stmBLANK%
+            IF (ch% <> 9 AND ch% <> 32) THEN EXIT FOR
+        CASE stmWHITE%
+            IF ((ch% < 9 OR ch% > 13) AND ch% <> 32) THEN EXIT FOR
+        CASE stmQUOTE%
+            IF (ch% <> 34) THEN EXIT FOR
+        CASE stmFIXED%
+            IF (ch% <> 0) AND (ch% <> 9 AND ch% <> 32) THEN EXIT FOR
+        CASE stmTEXT%
+            IF (ch% > 31 AND ch% <> 127) AND (ch% <> 9 AND ch% <> 32) AND (ch% <> 34) THEN EXIT FOR
+        CASE stmVALUE%
+            IF (ch% >= 48 AND ch% <= 57) THEN EXIT FOR
     END SELECT
 NEXT x&
 RStrip$ = LEFT$(arg$, x&)
@@ -565,18 +570,21 @@ FUNCTION RInstr& (start&, source$, find$)
 '--- avoid side effect on passed arg ---
 iStart& = start&
 '--- get string length, set search range ---
-sle& = LEN(source$): fle& = LEN(find$): dst& = sle& - fle& + 1 'default start position
-IF iStart& = 0 OR iStart& > dst& THEN iStart& = dst&
-IF sle& < fle& THEN iStart& = 0
+sLe& = LEN(source$): fLe& = LEN(find$): dStPo& = sLe& - fLe& + 1 'default start position
+IF iStart& <= 0 OR iStart& > dStPo& THEN iStart& = dStPo&
+IF sLe& < fLe& THEN iStart& = 0
 '--- perform search ---
-x& = 0
-IF fle& > 0 THEN 'avoid a match of "" = ""
-    FOR x& = iStart& TO 1 STEP -1
-        IF MID$(source$, x&, fle&) = find$ THEN EXIT FOR
-    NEXT x&
+sPo& = sLe&
+IF fLe& > 0 THEN 'avoid a match of "" = ""
+    FOR sPo& = iStart& TO 1 STEP -1
+        FOR fPo& = 0 TO fLe& - 1
+            IF ASC(source$, sPo& + fPo&) <> ASC(find$, fPo& + 1) THEN EXIT FOR
+        NEXT fPo&
+        IF fPo& = fLe& THEN EXIT FOR
+    NEXT sPo&
 END IF
 '--- return result ---
-RInstr& = x&
+RInstr& = sPo&
 END FUNCTION
 
 '--- docs\doc_GuiAppframe.bm\ParseLine.html
@@ -1217,6 +1225,44 @@ IF actu$ = "0" AND opMode% <> fsmSAVE% THEN file$ = ""
 resu$ = StringC$("SET", fsfi$ + NewTag$("TEXT", file$))
 resu$ = ListviewC$("SET", fslv$ + ro$ + NewTag$("ACTUAL", actu$) + ListTag$(flis$))
 RETURN
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\SearchFile.html
+'---------------------------------------------------------------------
+FUNCTION SearchFile$ (startDir$, mustHave$, file$)
+'--- check & init variables ---
+IF startDir$ = "" THEN iPath$ = CurrDIR$: ELSE iPath$ = startDir$
+iMust$ = UCASE$(mustHave$): iFile$ = UCASE$(FilePart$(file$))
+found% = 0: SearchFile$ = ""
+'--- check/get full start path ---
+IF NOT _DIREXISTS(iPath$) THEN EXIT FUNCTION
+ocd$ = CurrDIR$: CHDIR iPath$: iPath$ = CurrDIR$: CHDIR ocd$
+'--- search in path & sub-folders ---
+InitLocalStack
+DO
+    IF RIGHT$(iPath$, 1) <> "\" THEN iPath$ = iPath$ + "\"
+    dhan%& = BeginDirRead%&(iPath$ + CHR$(0))
+    IF dhan%& <> 0 THEN
+        DO
+            entry$ = GetDirEntry$(dhan%&)
+            IF entry$ <> "" AND entry$ <> "." AND entry$ <> ".." THEN
+                IF _DIREXISTS(iPath$ + entry$) THEN
+                    PushStr iPath$ + entry$
+                ELSE
+                    IF UCASE$(entry$) = iFile$ THEN
+                        IF INSTR(UCASE$(iPath$), iMust$) > 0 THEN
+                            SearchFile$ = iPath$ + FilePart$(file$)
+                            found% = -1
+                        END IF
+                    END IF
+                END IF
+            END IF
+        LOOP UNTIL found% OR entry$ = ""
+        EndDirRead dhan%
+    END IF
+    iPath$ = PopStr$
+LOOP UNTIL found% OR iPath$ = ""
+RestoreStack
 END FUNCTION
 
 '--- docs\doc_GuiAppframe.bm\SafeOpenFile.html

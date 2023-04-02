@@ -31,41 +31,48 @@
 '+-------------------------------------------------------------------+
 </code></pre>
 
-<h1>The Stringbuffer System</h1>
+<h1>The Simplebuffer System</h1>
 <hr />
 <blockquote>
-<p><em>You may use it for simple file buffering or as general purpose storage.
-You can read and write data, search data (fwd/rev), copy &amp; paste data blocks
-and use bookmarks. The buffer system supports Windows as well as Linux/MacOSX
+<p><em>You may use it for simple file buffering, as container for your own text
+editor or as general purpose storage for your application data. You can
+read and write data, search data (fwd/rev), copy &amp; paste data blocks and
+use bookmarks. The buffer system supports Windows as well as Linux/MacOSX
 line endings and can convert one to the other.</em></p>
 </blockquote>
 <hr />
 <h3><u>Table of Contents</u></h3>
 <blockquote>
-<p><strong><em>GENERAL</em></strong></p>
+<p><strong><em>GENERAL NOTES</em></strong></p>
 </blockquote>
 <ul>
 <li>
 <a href="BufferSupport-Common.html">Common Info</a>
 <ul>
-<li>informations about common inputs and results</li>
+<li>general informations about the buffers and possible errors</li>
 </ul>
 </li>
 </ul>
 <blockquote>
-<p><strong><em>INIT, LOAD &amp; SAVE BUFFERS</em></strong></p>
+<p><strong><em>SETUP, LOAD &amp; SAVE BUFFERS</em></strong></p>
 </blockquote>
 <ul>
 <li>
-<a href="InitBuf.html">InitBuf</a>
+<a href="CreateBuf.html">CreateBuf</a>
 <ul>
-<li>init a new string array to be usable as string buffer</li>
+<li>prepare a new empty buffer and return its handle</li>
+</ul>
+</li>
+<li>
+<a href="DisposeBuf.html">DisposeBuf</a>
+<ul>
+<li>destroy a buffer and erase all its data, its handle becomes available for reuse</li>
 </ul>
 </li>
 <li>
 <a href="FileToBuf.html">FileToBuf</a>
 <ul>
-<li>load an entire file into a buffer (init is implied)</li>
+<li>load an entire file into a new buffer</li>
 </ul>
 </li>
 <li>
@@ -75,9 +82,9 @@ line endings and can convert one to the other.</em></p>
 </ul>
 </li>
 <li>
-<a href="CopyBuf.html">CopyBuf</a>
+<a href="CloneBuf.html">CloneBuf</a>
 <ul>
-<li>create an exact clone of any buffer (init is implied)</li>
+<li>create an exact clone of any buffer into a new buffer</li>
 </ul>
 </li>
 <li>
@@ -100,13 +107,13 @@ line endings and can convert one to the other.</em></p>
 <li>
 <a href="ReadBufLine.html">ReadBufLine$</a>
 <ul>
-<li>read a line from any buffer (SB-Synonym for LINE INPUT)</li>
+<li>read a line from any buffer (Simplebuffer synonym for LINE INPUT #file,...)</li>
 </ul>
 </li>
 <li>
 <a href="WriteBufLine.html">WriteBufLine</a>
 <ul>
-<li>write a line into any buffer (SB-Synonym for PRINT #file,...)</li>
+<li>write a line into any buffer (Simplebuffer synonym for PRINT #file,...)</li>
 </ul>
 </li>
 <li>
@@ -118,13 +125,13 @@ line endings and can convert one to the other.</em></p>
 <li>
 <a href="ReadBufRawData.html">ReadBufRawData$</a>
 <ul>
-<li>read any amount of raw bytes from any buffer (SB-Synonym for GET #file,...)</li>
+<li>read any amount of raw bytes from any buffer (Simplebuffer synonym for GET #file,...)</li>
 </ul>
 </li>
 <li>
 <a href="WriteBufRawData.html">WriteBufRawData</a>
 <ul>
-<li>write any amount of raw bytes into any buffer (SB-Synonym for PUT #file,...)</li>
+<li>write any amount of raw bytes into any buffer (Simplebuffer synonym for PUT #file,...)</li>
 </ul>
 </li>
 <li>
@@ -151,15 +158,9 @@ line endings and can convert one to the other.</em></p>
 </blockquote>
 <ul>
 <li>
-<a href="FreeBufMarkID.html">FreeBufMarkID</a>
-<ul>
-<li>get next unused marker ID (mimics FREEFILE for bookmarks)</li>
-</ul>
-</li>
-<li>
 <a href="SetBufMark.html">SetBufMark</a>
 <ul>
-<li>set a bookmark at the current buffer (cursor) position</li>
+<li>set a bookmark at the current buffer position and return its ID</li>
 </ul>
 </li>
 <li>
@@ -171,13 +172,13 @@ line endings and can convert one to the other.</em></p>
 <li>
 <a href="GetBufMark.html">GetBufMark</a>
 <ul>
-<li>return any bookmark's current (byte) position in the buffer</li>
+<li>return any bookmark's current byte position in the buffer</li>
 </ul>
 </li>
 <li>
 <a href="GotoBufMark.html">GotoBufMark</a>
 <ul>
-<li>make any marked position becoming the current buffer position</li>
+<li>recall any bookmark and make it the new current buffer position</li>
 </ul>
 </li>
 </ul>
@@ -186,28 +187,22 @@ line endings and can convert one to the other.</em></p>
 </blockquote>
 <ul>
 <li>
-<a href="FreeBufFindID.html">FreeBufFindID</a>
-<ul>
-<li>get next unused find data ID (mimics FREEFILE for search criteria)</li>
-</ul>
-</li>
-<li>
 <a href="SetBufFind.html">SetBufFind</a>
 <ul>
-<li>define the search criteria for any find data</li>
+<li>define the criteria (find or delimiter string) for a new search and return its ID</li>
 </ul>
 </li>
 <li>
 <a href="RemoveBufFind.html">RemoveBufFind</a>
 <ul>
-<li>free (delete) any find data, its ID becomes available for reuse</li>
+<li>free (delete) any search criteria, its ID becomes available for reuse</li>
 </ul>
 </li>
 <li>
 <a href="FindBufFR.html">FindBufFwd &amp; FindBufRev</a>
 <ul>
 <li>search for any defined criteria in forward or reverse direction</li>
-<li>may search a regular data string or any number of delimiter chars</li>
+<li>may search a regular find string or any number of delimiter chars</li>
 </ul>
 </li>
 </ul>
@@ -237,32 +232,38 @@ from the buffer</li>
 </li>
 </ul>
 <blockquote>
-<p><strong><em>POSITION CONTROL</em></strong></p>
+<p><strong><em>POSITION &amp; STATE CONTROL</em></strong></p>
 </blockquote>
 <ul>
 <li>
 <a href="SeekBuf.html">SeekBuf</a>
 <ul>
-<li>set the current buffer (cursor) position according to the given placement
+<li>set the current buffer position according to the given placement
 characteristics</li>
 </ul>
 </li>
 <li>
 <a href="GetBufPos.html">GetBufPos</a>
 <ul>
-<li>return the current buffer (cursor) position in any buffer</li>
+<li>return the current buffer position of the specified buffer</li>
 </ul>
 </li>
 <li>
 <a href="GetBufLen.html">GetBufLen</a>
 <ul>
-<li>return the current data size stored in any buffer</li>
+<li>return the current data size stored in the specified buffer</li>
 </ul>
 </li>
 <li>
 <a href="EndOfBuf.html">EndOfBuf</a>
 <ul>
-<li>return the current &quot;End Of Buffer&quot; condition (SB-Synonym for EOF)</li>
+<li>return the current &quot;End Of Buffer&quot; condition (Simplebuffer synonym for EOF)</li>
+</ul>
+</li>
+<li>
+<a href="IsBufChanged.html">IsBufChanged</a>
+<ul>
+<li>return the current &quot;Change&quot; state of the specified buffer</li>
 </ul>
 </li>
 </ul>

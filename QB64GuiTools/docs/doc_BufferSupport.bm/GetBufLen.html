@@ -26,7 +26,7 @@ or delete data in the respective buffer.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>size&amp; = GetBufLen&amp; (buf$())
+<pre><code>size&amp; = GetBufLen&amp; (handle%)
 </code></pre>
 
 </blockquote>
@@ -41,10 +41,10 @@ or delete data in the respective buffer.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, from which you
-wanna retrieve the current data size.</li>
+<li>This is the handle of any valid buffer, from which you wanna retrieve
+the current data size.</li>
 </ul>
 </blockquote>
 <hr />
@@ -60,7 +60,8 @@ wanna retrieve the current data size.</li>
 </blockquote>
 <h4>size&amp; <em>(LONG)</em></h4>
 <ul>
-<li>The current amount of data (in bytes) present in the buffer.</li>
+<li>The current amount of data (in bytes) present in the buffer, which is
+limited to a maximum of 2GiB per buffer (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
 </ul>
 </blockquote>
 <hr />

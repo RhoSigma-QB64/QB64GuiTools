@@ -581,7 +581,7 @@ IF packed% THEN
     PRINT #2, "'=== If your program is NOT a GuiTools based application, ==="
     PRINT #2, "'=== then it must also $INCLUDE: 'lzwpacker.bm' available ==="
     PRINT #2, "'=== from the Libraries Collection here:                  ==="
-    PRINT #2, "'===    https://www.qb64.org/forum/index.php?topic=809    ==="
+    PRINT #2, "'=== http://qb64phoenix.com/forum/forumdisplay.php?fid=23 ==="
 END IF
 PRINT #2, "'============================================================"
 PRINT #2, ""

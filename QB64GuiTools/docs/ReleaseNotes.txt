@@ -24,25 +24,38 @@ TODO:
   forms (like an <iframe> in HTML) in alternative for multiple windows
 - continue work on the GuiTools Framwork documentation
   - if you have questions about anything what's not yet documented in any
-    source file or the PDF, then please don't hesitate to ask for help in
-    the forums or via e-mail (support@rhosigma-cw.net)
+    source, HTML or PDF file, then please don't hesitate to ask for help
+    in the forums or via e-mail (support@rhosigma-cw.net)
 - add menus (pulldown and/or popup?)
   - placed on a hovering layer with autoclean when selection is done
   - low priority as I've no urgent need for it, using toolbars instead
 
 HISTORY:
 --------
+>> 06/20/2022 v0.15
+   - one final fix regarding the old recursion bug in GTPrefsEditor.bas
+   - overhaul of LStrip$(), RStrip$() and its respective mode constants
+     to make it more compliant with the usual character classification
+     (http://www.cplusplus.com/reference/cctype/)
+   - improved RInstr&() for better speed (approx. 75% faster now) and to
+     give same results as _INSTRREV in all possible cases
+   - added new function SearchFile$(), which will recursively search a
+     drive or folder for a specified file
+   - adapted the ImageClass its image search tree to use SearchFile$()
+     instead of hardcoding all folders of the search tree
+   - from QB64 v2.1 respectively QB64-PE v0.5 (QB64 Phoenix Edition) there
+     will be a built-in _BIN$() function, to avoid conflicts I've renamed
+     my own function into BinStr$()
+   - complete overhaul of the included BufferSupport.bi/.bm library
+   - some more minor program flow changes under the hood
+   - continued revision of sub/function documentation (work in progress)
+
 >> 10/04/2021 v0.14
    - the entire GuiTools Framework got an overhaul to not longer relying
      on the old recursion bug, which got finally fixed in QB64 v2.0
-     (https://www.qb64.org/forum/index.php?topic=4209), GuiTools now
-     successfully runs on all QB64 versions from v0.954 (SDL) upto the
-     latest v2.0 development builds
    - makes chunk routines SeekChunk&() and SizeUpdate() more compliant
-     with the EA IFF-85 standard (https://1fish2.github.io/IFF/) and
-     respectively adjusted all calls to it
-   - improved ParseLine&() function to allow several separator and quoting
-     chars and respectively adjusted all calls to it
+     with the EA IFF-85 standard (https://1fish2.github.io/IFF/)
+   - improved ParseLine&() to allow several separator and quoting chars
    - several minor program flow changes under the hood
    - continued revision of sub/function documentation (work in progress)
 
@@ -56,9 +69,7 @@ HISTORY:
      event handler using SUB SourceDestGuiView() first to designate the view
    - bugfix in GuiViews cleanup and minor changes in display logic, also
      added SUB DeleteGuiView() as counterpart to CreateGuiView()
-   - replaced the old Format[n]$ functions with my new IndexFormat$() and
-     accordingly adjusted all calls to it (new function is also available
-     in the Forum's "Sample Gallery" board for standalone use)
+   - replaced the old Format[n]$ functions with my new IndexFormat$()
    - replaced old INKEY$ workaround (for german keyboard layout) with an
      adapted version of forum member moises1953's enhanced InkeyHit$()
      routine (permission was granted), which has support for most western
@@ -88,7 +99,7 @@ HISTORY:
      for any error code which might be returned by RegexMatch%()
    - added functions to create and use shared memory objects for IPC in
      GuiAppFrame.h (required for the multiple windows communication)
-   - added Bin$() number to binary string converter in file GuiAppFrame.bm
+   - added BinStr$() number to binary string converter in file GuiAppFrame.bm
    - did rethink my label naming scheme and changed especially DATA labels
      to be more descriptive and unique in the global namespace
 

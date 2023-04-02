@@ -54,13 +54,13 @@ of a former call to the <a href="LzwPack.html">LzwPack$()</a> function.</li>
 <li>There is a hidden feature in this library. In your main module you may
 define &quot;DIM SHARED lzwProgress$&quot; <em>(STRING)</em> and put the handle of any ProgressC
 class object defined in your GUI into that variable before actually
-calling <a href="LzwUnpack.html">LzwUnpack$()</a>. In that case the ProgressC object is updated while
+calling <font color="#3232e0">LzwUnpack$()</font>. In that case the ProgressC object is updated while
 unpacking the data. If lzwProgress$ is left empty or not even DIM SHARED,
 then unpacking is done quietly. Note that lzwProgress$ is automatically
 cleared out after unpacking is finished to avoid accidentally reusing a
 maybe not longer valid object, hence you must newly provide the ProgressC
 object for each call. I use this unusual input way here, to keep the
-parameter list for the <a href="LzwUnpack.html">LzwUnpack$()</a> call compatible to that one provided
+parameter list for the <font color="#3232e0">LzwUnpack$()</font> call compatible to that one provided
 in my <strong>lzwpacker.bm</strong> library or expressed different, this feature is a
 GuiTools based addition, which shall not interfere with <strong>lzwpacker.bm</strong>.</li>
 </ul>

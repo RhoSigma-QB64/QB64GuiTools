@@ -1096,7 +1096,7 @@ sectTags$ = GenC$("GET", SectLView$ + NewTag$("TAGNAMES", "DATA"))
 section$ = GetTagData$(sectTags$, "DATA", "")
 GetPrefs section$, options
 IF section$ <> "Global.Colors" THEN
-    fsDir$ = RStrip$(stripFIX%, options.csetIMAGE)
+    fsDir$ = RStrip$(stmFIXED%, options.csetIMAGE)
     IF fsDir$ <> "" THEN
         sPo% = RInstr&(0, fsDir$, "\")
         IF sPo% > 0 THEN
@@ -1111,7 +1111,7 @@ IF section$ <> "Global.Colors" THEN
             END IF
         END IF
     END IF
-    tmpF$ = RStrip$(stripFIX%, options.csetIMAGE)
+    tmpF$ = RStrip$(stmFIXED%, options.csetIMAGE)
     res$ = GenC$("SET", ImageOpt$ + NewTag$("TEXT", tmpF$))
     IF tmpF$ <> "" OR section$ = "PagerC.WallPen" THEN
         res$ = GenC$("SET", TileOpt$ + NewTag$("ACTUAL", LTRIM$(STR$(options.csetTILE + 2))) + NewTag$("DISABLED", "no"))
@@ -1168,7 +1168,7 @@ found% = 0
 IF SeekChunk&(iff%, 1, CHcsetID$) > 0 THEN
     WHILE NOT EOF(iff%)
         GET iff%, , opts
-        IF RStrip$(stripFIX%, opts.csetCLASS) = sect$ THEN
+        IF RStrip$(stmFIXED%, opts.csetCLASS) = sect$ THEN
             found% = -1
             EXIT WHILE
         END IF
@@ -1205,7 +1205,7 @@ IF SeekChunk&(iff%, 1, CHcsetID$) > 0 THEN
     WHILE NOT EOF(iff%)
         ptr& = SEEK(iff%)
         GET iff%, , temp(0)
-        IF RStrip$(stripFIX%, temp(0).csetCLASS) = sect$ THEN EXIT WHILE
+        IF RStrip$(stmFIXED%, temp(0).csetCLASS) = sect$ THEN EXIT WHILE
     WEND
     ERASE temp
 END IF
@@ -1241,23 +1241,23 @@ guiMediaDisk% = ASC(prefs$, 252): guiMediaDrawer% = ASC(prefs$, 251): guiMediaFi
 END SUB
 '----------------------------------
 FUNCTION StdColors$
-StdColors$ = ""
-StdColors$ = StdColors$ + CHR$(136) + CHR$(136) + CHR$(136) + CHR$(0) + CHR$(0) + CHR$(0)
-StdColors$ = StdColors$ + CHR$(51) + CHR$(51) + CHR$(51) + CHR$(238) + CHR$(238) + CHR$(238)
-StdColors$ = StdColors$ + CHR$(170) + CHR$(34) + CHR$(0) + CHR$(221) + CHR$(85) + CHR$(0)
-StdColors$ = StdColors$ + CHR$(238) + CHR$(187) + CHR$(0) + CHR$(0) + CHR$(136) + CHR$(0)
-StdColors$ = StdColors$ + CHR$(102) + CHR$(187) + CHR$(0) + CHR$(102) + CHR$(136) + CHR$(102)
-StdColors$ = StdColors$ + CHR$(85) + CHR$(187) + CHR$(204) + CHR$(51) + CHR$(102) + CHR$(119)
-StdColors$ = StdColors$ + CHR$(0) + CHR$(119) + CHR$(187) + CHR$(136) + CHR$(34) + CHR$(0)
-StdColors$ = StdColors$ + CHR$(238) + CHR$(136) + CHR$(136) + CHR$(187) + CHR$(85) + CHR$(85)
-StdColors$ = StdColors$ + CHR$(238) + CHR$(119) + CHR$(34) + CHR$(221) + CHR$(136) + CHR$(68)
-StdColors$ = StdColors$ + CHR$(68) + CHR$(170) + CHR$(119) + CHR$(17) + CHR$(119) + CHR$(85)
-StdColors$ = StdColors$ + CHR$(153) + CHR$(0) + CHR$(255) + CHR$(102) + CHR$(0) + CHR$(204)
-StdColors$ = StdColors$ + CHR$(187) + CHR$(119) + CHR$(0) + CHR$(153) + CHR$(85) + CHR$(0)
-StdColors$ = StdColors$ + SPACE$(177)
-StdColors$ = StdColors$ + CHR$(18) + CHR$(22) + CHR$(12) + CHR$(13) + CHR$(11)
-StdColors$ = StdColors$ + CHR$(4) + CHR$(7) + CHR$(0) + CHR$(2) + CHR$(3)
-StdColors$ = StdColors$ + CHR$(13) + CHR$(17) + CHR$(6) + CHR$(1) + CHR$(9)
+temp$ = CHR$(136) + CHR$(136) + CHR$(136) + CHR$(0) + CHR$(0) + CHR$(0)
+temp$ = temp$ + CHR$(51) + CHR$(51) + CHR$(51) + CHR$(238) + CHR$(238) + CHR$(238)
+temp$ = temp$ + CHR$(170) + CHR$(34) + CHR$(0) + CHR$(221) + CHR$(85) + CHR$(0)
+temp$ = temp$ + CHR$(238) + CHR$(187) + CHR$(0) + CHR$(0) + CHR$(136) + CHR$(0)
+temp$ = temp$ + CHR$(102) + CHR$(187) + CHR$(0) + CHR$(102) + CHR$(136) + CHR$(102)
+temp$ = temp$ + CHR$(85) + CHR$(187) + CHR$(204) + CHR$(51) + CHR$(102) + CHR$(119)
+temp$ = temp$ + CHR$(0) + CHR$(119) + CHR$(187) + CHR$(136) + CHR$(34) + CHR$(0)
+temp$ = temp$ + CHR$(238) + CHR$(136) + CHR$(136) + CHR$(187) + CHR$(85) + CHR$(85)
+temp$ = temp$ + CHR$(238) + CHR$(119) + CHR$(34) + CHR$(221) + CHR$(136) + CHR$(68)
+temp$ = temp$ + CHR$(68) + CHR$(170) + CHR$(119) + CHR$(17) + CHR$(119) + CHR$(85)
+temp$ = temp$ + CHR$(153) + CHR$(0) + CHR$(255) + CHR$(102) + CHR$(0) + CHR$(204)
+temp$ = temp$ + CHR$(187) + CHR$(119) + CHR$(0) + CHR$(153) + CHR$(85) + CHR$(0)
+temp$ = temp$ + SPACE$(177)
+temp$ = temp$ + CHR$(18) + CHR$(22) + CHR$(12) + CHR$(13) + CHR$(11)
+temp$ = temp$ + CHR$(4) + CHR$(7) + CHR$(0) + CHR$(2) + CHR$(3)
+temp$ = temp$ + CHR$(13) + CHR$(17) + CHR$(6) + CHR$(1) + CHR$(9)
+StdColors$ = temp$
 END FUNCTION
 '~~~~~
 '=====================================================================

@@ -12,12 +12,12 @@
 <p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
 <hr />
 <h2>DeleteBufRawData <em>(sub)</em></h2>
-<p>This subroutine will delete (cut out) the requested amount of subsequent bytes,
-ie. it will erase data from the specified buffer starting at the current buffer
-position and continuing until the requested amount of bytes was erased or until
-the buffer end, whichever case is first.</p>
-<p>The call will also recalculate all markers to maintain its respective
-positions. Any markers formerly set on the deleted data will be invalidated.
+<p>This subroutine will delete the requested amount of subsequent bytes, ie.
+it will erase data from the specified buffer starting at the current buffer
+position and continuing until the requested amount of bytes was erased or
+until the buffer end, whichever case is first.</p>
+<p>The call will also recalculate all bookmarks to maintain its respective
+positions. Any bookmarks formerly set on the deleted data will be invalidated.
 The current buffer position remains unchanged after the call, as the following
 data (if any) will move up to fill the gap. Hence, sequential deleting is
 easily possible with subsequent calls.</p>
@@ -32,7 +32,7 @@ easily possible with subsequent calls.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>DeleteBufRawData buf$(), size&amp;
+<pre><code>DeleteBufRawData handle%, size&amp;
 </code></pre>
 
 </blockquote>
@@ -47,16 +47,16 @@ easily possible with subsequent calls.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, from which you
-wanna erase data.</li>
+<li>This is the handle of any valid buffer, from which you wanna erase data.</li>
 </ul>
 <h4>size&amp; <em>(LONG)</em></h4>
 <ul>
 <li>The amount of bytes to erase from the buffer.</li>
-<li>Note there's an intended side effect on this argument. If the erase reaches
-the buffer end, then size&amp; is adjusted to the remaining amount of bytes.</li>
+<li>Note there's an intended side effect on this argument. If erasing would
+go past the buffer end, then size&amp; is adjusted to the remaining amount of
+bytes in the buffer.</li>
 </ul>
 </blockquote>
 <hr />
@@ -77,8 +77,8 @@ position in advance:
 <ul>
 <li><a href="SeekBuf.html">SeekBuf()</a> with an appropriate displacement and seek mode.</li>
 <li><a href="GotoBufMark.html">GotoBufMark()</a> to restore to an earlier marked position.</li>
-<li><a href="FindBufFR.html">FindBufFwd()</a> or <a href="FindBufFR.html">FindBufRev()</a> to move to the next or previous occurrence of
-the designated find data (starting from the current position).</li>
+<li><a href="FindBufFR.html">FindBufFwd()</a> or <a href="FindBufFR.html">FindBufRev()</a> to move to the next or previous occurrence
+of any criteria.</li>
 </ul>
 </li>
 </ul>

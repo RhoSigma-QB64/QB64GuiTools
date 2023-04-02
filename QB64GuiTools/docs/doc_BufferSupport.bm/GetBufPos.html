@@ -12,7 +12,7 @@
 <p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
 <hr />
 <h2>GetBufPos <em>(function)</em></h2>
-<p>This function will return the current buffer (cursor) position in the
+<p>This function will return the current buffer position in the
 specified buffer. This position is used as starting point for most buffer
 operations, which in any way read, write, copy or search data. You should
 immediately use the retrieved position, as it will change with almost all
@@ -28,7 +28,7 @@ buffer operations.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>curPos&amp; = GetBufPos&amp; (buf$())
+<pre><code>curPos&amp; = GetBufPos&amp; (handle%)
 </code></pre>
 
 </blockquote>
@@ -43,10 +43,10 @@ buffer operations.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, from which you
-wanna retrieve the current position.</li>
+<li>This is the handle of any valid buffer, from which you wanna retrieve
+the current position.</li>
 </ul>
 </blockquote>
 <hr />

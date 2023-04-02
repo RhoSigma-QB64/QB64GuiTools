@@ -1130,8 +1130,7 @@ END FUNCTION
 ' which use this function to get its inputs.
 ' This function is based on my old function made for Germany/Austria only,
 ' but now also implements support for other languages (keyboard layouts)
-' based on the research work done by forum member moises1953, read the
-' whole story here: https://www.qb64.org/forum/index.php?topic=1385.0
+' based on the research work done by forum member moises1953.
 '----------
 ' SYNTAX:
 '   keypress$ = InkeyHit$ (kbl%)
@@ -1146,7 +1145,7 @@ END FUNCTION
 '----------
 ' RESULT:
 '   --- keypress$ ---
-'    Equivalent to the INKEY$ result (see Wiki-Page at www.qb64.org).
+'    Equivalent to the INKEY$ result (see Wiki).
 '----------
 ' ACCENTS:
 '   Note that the accents keys on most keyboards are so called
@@ -1455,7 +1454,7 @@ found% = 0
 IF SeekChunk&(iff%, 1, CHcsetID$) > 0 THEN
     WHILE NOT EOF(iff%)
         GET iff%, , cset(0)
-        IF RStrip$(stripFIX%, cset(0).csetCLASS) = classID$ THEN
+        IF RStrip$(stmFIXED%, cset(0).csetCLASS) = classID$ THEN
             found% = -1
             EXIT WHILE
         END IF
@@ -1504,7 +1503,7 @@ IF found% THEN
         otag$ = GetTags$(tagsID$, htag$ + "," + ftag$)
         IF NOT cset(0).csetHOVR THEN RemTag tagsID$, htag$
         IF NOT cset(0).csetFOVR THEN RemTag tagsID$, ftag$
-        image$ = RStrip$(stripFIX%, cset(0).csetIMAGE)
+        image$ = RStrip$(stmFIXED%, cset(0).csetIMAGE)
         IF image$ = "" THEN
             IF NOT ValidateTags%(tagsID$, ftag$, 0) THEN RemTag tagsID$, atag$
         ELSE
@@ -1537,7 +1536,7 @@ IF SeekChunk&(iff%, 1, CHwposID$) > 0 THEN
     WHILE NOT EOF(iff%)
         ptr& = SEEK(iff%)
         GET iff%, , winp(0)
-        IF RStrip$(stripFIX%, winp(0).wposNAME) = LEFT$(appExeName$, 30) THEN
+        IF RStrip$(stmFIXED%, winp(0).wposNAME) = LEFT$(appExeName$, 30) THEN
             found% = -1
             EXIT WHILE
         END IF

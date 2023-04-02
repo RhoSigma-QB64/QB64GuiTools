@@ -71,7 +71,7 @@ SELECT CASE methodID$
                    "IMAGEFILE,IMAGEHANDLE,AREA," +_
                    "TOOLTIP,SHORTCUT,DISABLED,PASSIVE," '+ user tags
         'NOTE: Given TEXT its length may exceed the given MAXIMUM, which
-        '      will temporarily raise the maximum value upto text length.
+        '      will temporarily raise the maximum value up to text length.
         GOSUB meInit
         'Result Tags: ERROR/WARNING or OBJECT
     CASE "Set"
@@ -79,7 +79,7 @@ SELECT CASE methodID$
         tagsOpt$ = "IMAGEOBJECT,SYMBOLOBJECT," +_
                    "TEXT,TEXTPLACE,TEXTMOVEX,TEXTMOVEY,DISABLED," '+ user tags
         'NOTE: Given TEXT its length may exceed the initialized MAXIMUM, which
-        '      will temporarily raise the maximum value upto text length.
+        '      will temporarily raise the maximum value up to text length.
         GOSUB meSet
         'Result Tags: ERROR/WARNING or empty
     CASE "Get"

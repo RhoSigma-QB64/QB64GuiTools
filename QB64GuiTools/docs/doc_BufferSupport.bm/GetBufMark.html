@@ -12,10 +12,10 @@
 <p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
 <hr />
 <h2>GetBufMark <em>(function)</em></h2>
-<p>This function will return the current position of the marker with the given
-ID. The returned position remains valid until you write or delete data in
-the respective buffer, which will automatically recalculate all markers to
-keep track of its positions.</p>
+<p>This function will return the current byte position of the bookmark with
+the given ID in the specified buffer. The returned position remains valid
+until you write or delete data in the respective buffer, which could cause
+any bookmarks to move to different positions.</p>
 <hr />
 <blockquote>
 <blockquote>
@@ -27,7 +27,7 @@ keep track of its positions.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>mPos&amp; = GetBufMark&amp; (buf$(), markID%)
+<pre><code>markPos&amp; = GetBufMark&amp; (handle%, markID%)
 </code></pre>
 
 </blockquote>
@@ -42,14 +42,15 @@ keep track of its positions.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, from which you
-wanna query the marker position.</li>
+<li>This is the handle of any valid buffer, from which you wanna query
+the bookmark position.</li>
 </ul>
 <h4>markID% <em>(INTEGER)</em></h4>
 <ul>
-<li>Any ID number in the range 1 to 100, which identifies the desired marker.</li>
+<li>The ID number of the desired bookmark. You got the ID from the
+respective <a href="SetBufMark.html">SetBufMark()</a> call.</li>
 </ul>
 </blockquote>
 <hr />
@@ -63,11 +64,11 @@ wanna query the marker position.</li>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>mPos&amp; <em>(LONG)</em></h4>
+<h4>markPos&amp; <em>(LONG)</em></h4>
 <ul>
-<li>On success (positive value) this is the retrieved marker position.</li>
-<li>On failure (negative value) it is any of the error numbers defined in
-the <strong>BufferSupport.bi</strong> file (see also <a href="BufferSupport-Common.html">Common-Info</a>).</li>
+<li>On success (positive value) this is the retrieved bookmark position,
+on failure (negative value) it is any of the error numbers defined in
+the <strong>simplebuffer.bi</strong> file (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
 </ul>
 </blockquote>
 <hr />

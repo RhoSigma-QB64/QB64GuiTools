@@ -15,7 +15,7 @@
 <p>Search a substring in the given source string starting from the end
 (right side) of the source string. The behavior is equal to the new
 _INSTRREV function introduced in QB64 v1.3, but I recommend using
-<a href="RInstr.html">RInstr()</a> instead, if you want your program to be usable with the
+<font color="#3232e0">RInstr()</font> instead, if you want your program to be usable with the
 older QB64 versions too.</p>
 <hr />
 <blockquote>
@@ -45,16 +45,28 @@ older QB64 versions too.</p>
 </blockquote>
 <h4>start&amp; <em>(LONG)</em></h4>
 <ul>
-<li>Optional the start position (&gt;0) for the search counted from the left
-side, or zero to search the entire source string.</li>
+<li>
+The start position (&gt;0) for the search counted from the left side.
+<ul>
+<li>Invalid values (&lt;= zero, or &gt; LEN(source$)) will regularly start the
+search from the end (right side) of the source string, hence passing zero
+is ok, if you don't need a specific start position.</li>
+</ul>
+</li>
 </ul>
 <h4>source$ <em>(STRING)</em></h4>
 <ul>
-<li>The source string to search for any matches of find$.</li>
+<li>The source string to be searched for an exact match (inclusive the
+written case) of the given substring (find$).</li>
 </ul>
 <h4>find$ <em>(STRING)</em></h4>
 <ul>
-<li>The substring to look for in the source string.</li>
+<li>
+The substring to look for in the given source string.
+<ul>
+<li>Once again, written case matters for the search (Foo &lt;&gt; foo).</li>
+</ul>
+</li>
 </ul>
 </blockquote>
 <hr />
@@ -70,7 +82,15 @@ side, or zero to search the entire source string.</li>
 </blockquote>
 <h4>position&amp; <em>(LONG)</em></h4>
 <ul>
-<li>The position of the first match found or zero if no match is found.</li>
+<li>
+The position in the source string where the substring (find$) was
+found, or zero if the search found no matches.
+<ul>
+<li>Also returns 0 if the source string was empty or shorter than the
+searched substring (find$).</li>
+<li>Returns LEN(source$) if the substring (find$) was empty.</li>
+</ul>
+</li>
 </ul>
 </blockquote>
 <hr />

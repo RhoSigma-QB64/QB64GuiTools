@@ -26,16 +26,38 @@
 '   background or PagerClass wall images) and does internally scale or
 '   tile them to the given image or fill area width/height if required.
 '   Also Floyd-Steinberg remapping for the actual screen palette is done.
-'   You may also use this class to place any standalone images within
-'   the GUI (eg. Logos), or to preload any images, which are later
-'   assigned to other objects like buttons. Once INIT'ed, you may assign
+'    You may also use this class to place any standalone images within
+'   the GUI (eg. Logos), or to preload any images, which you can later
+'   assign to other objects like buttons. Once INIT'ed, you may assign
 '   a preloaded image to any number of other objects, ie. there is no
 '   limitation to a one by one assignment, which comes in handy if eg.
-'   many buttons shall get the same image. Note that you cannot KILL an
-'   image object as long it is still assigned, hence the parent objects
-'   must be killed first or must be unassigned or reassigned with another
-'   image using the parent's SET method. To unassign an image simply set
-'   the tag IMAGEOBJECT to any negative number for the SET call.
+'   many buttons shall get the same image.
+'    Note that you cannot KILL an image object as long as it is still
+'   assigned to any other object(s), ie. those parent objects must be
+'   either killed first or at least the image must be unassigned from
+'   those parent objects before you can KILL the image object itself.
+'   To unassign an image, simply call the SET method of the parent
+'   object in question with the tag IMAGEOBJECT = -1.
+'    When using the IMAGEFILE tag to specify an image file name, then
+'   you may omit the path, if the image file is located within the
+'   ImageClass's internal search tree, ie. the following locations are
+'   searched incl. all its sub-folders:
+'    1.) the GuiTools images folder in your qb64 folder (QB64GuiTools\images)
+'        - centralize your images here while you develop your applications
+'    2.) the current user's temp folder (appTempDir$)
+'        - this is preferred for embedded files write back
+'    3.) your distributed application folder (appHomePath$)
+'        - where your EXE is after installing your app package
+'   Note that the first found file is used. If you have multiple images
+'   with equal names in different sub-folders, then you must at least
+'   specify a relative path with enough significant folder names to be
+'   able to uniquely identify the desired image file. Eg. assume you have
+'       images\castle\texture.jpg
+'       images\cave\texture.jpg
+'       images\dungeon\texture.jpg
+'   If you now only specify 'texture.jpg' in the IMAGEFILE tag, then you
+'   would always get the 'castle\texture.jpg'. To get eg. the cave texture
+'   you must at least specify 'cave\texture.jpg' for unique identification.
 '
 'METHODS:
 ' Each method supports a number of tags to specify the object's properties
@@ -62,7 +84,7 @@ SELECT CASE methodID$
         '      IMAGEFILE is ignored in general, but is still checked/used
         '      as fallback if IMAGEHANDLE is invalid. Init failure or a
         '      later kill method call will free any given IMAGEHANDLE.
-        '      For preload images, which are assigned to other objects,
+        '      For preload images, which get assigned to other objects,
         '      the LEFT and TOP positions must be relative to the parent
         '      object's left/top position.
         tagsOpt$ = "GUIVIEW,PAGEROBJECT,WIDTH,HEIGHT,AREA,KEEPASPECT,CLEARCOLOR," +_
@@ -145,36 +167,19 @@ ELSE
         IF ihan& >= -1 THEN
             '--- try loading from given path & set default tooltip ---
             ifil$ = GetTagData$(tagsID$, "IMAGEFILE", "")
-            ihan& = _LOADIMAGE(ifil$, 32): ifil$ = FilePart$(ifil$)
+            ihan& = _LOADIMAGE(ifil$, 32)
+            imus$ = PathPart$(ifil$): ifil$ = FilePart$(ifil$)
             IF NOT ValidateTags%(tagsID$, "TOOLTIP", 0) THEN SetTag tagsID$, "TOOLTIP", ifil$
             '--- on failure try to load from some predefined locations ---
-            IF ihan& >= -1 THEN
-                '--- directly in temp folder (preferred for embedded files write back) ---
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appTempDir$ + ifil$, 32)
-                '--- directly in app folder (single images provided along with EXE) ---
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appHomePath$ + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appHomePath$ + "patterns\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appHomePath$ + "icons\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appHomePath$ + "icons\flags\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appHomePath$ + "icons\misc\" + ifil$, 32)
-                '--- sub-folder in app folder (images folder provided along with EXE) ---
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appHomePath$ + "images\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appHomePath$ + "images\patterns\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appHomePath$ + "images\icons\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appHomePath$ + "images\icons\flags\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(appHomePath$ + "images\icons\misc\" + ifil$, 32)
-                '--- GuiTools development folder in qb64 folder (if EXEs saved in qb64 folder) ---
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE("QB64GuiTools\images\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE("QB64GuiTools\images\patterns\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE("QB64GuiTools\images\icons\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE("QB64GuiTools\images\icons\flags\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE("QB64GuiTools\images\icons\misc\" + ifil$, 32)
-                '--- relative to GuiTools development src_Xxx folder (if EXEs saved in source folder) ---
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE("..\images\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE("..\images\patterns\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE("..\images\icons\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE("..\images\icons\flags\" + ifil$, 32)
-                IF ihan& >= -1 THEN ihan& = _LOADIMAGE("..\images\icons\misc\" + ifil$, 32)
+            IF ihan& >= -1 AND ifil$ <> "" THEN
+                '--- the GuiTools images folder in the qb64 folder (if EXEs saved in qb64 folder) ---
+                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(SearchFile$("QB64GuiTools\images\", imus$, ifil$), 32)
+                '--- the GuiTools images folder in your qb64 folder (if EXEs saved in source folder) ---
+                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(SearchFile$("..\images\", imus$, ifil$), 32)
+                '--- the current user's temp folder (preferred for embedded files write back) ---
+                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(SearchFile$(appTempDir$, imus$, ifil$), 32)
+                '--- the distributed app folder (where the EXE is after installing the app package) ---
+                IF ihan& >= -1 THEN ihan& = _LOADIMAGE(SearchFile$(appHomePath$, imus$, ifil$), 32)
             END IF
         END IF
         IF ihan& >= -1 THEN

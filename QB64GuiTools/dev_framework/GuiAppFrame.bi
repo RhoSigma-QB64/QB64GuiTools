@@ -49,16 +49,15 @@ CONST pmFILL% = 3
 
 '--- strip modes for LStrip$() and RStrip$() ---
 '--- see docs\doc_GuiAppframe.bm\LRStrip.html ---
-CONST stripZERO% = 1
-CONST stripTAB% = 2
-CONST stripSPACE% = 3
-CONST stripQUOTE% = 4
-CONST stripFIX% = 5
-CONST stripWHITE% = 6
-CONST stripALL% = 7
+CONST stmZERO% = 1
+CONST stmCTRL% = 2
+CONST stmBLANK% = 3
+CONST stmWHITE% = 4
+CONST stmQUOTE% = 5
 '--- special modes ---
-CONST stripTEXT% = 8
-CONST stripVALUE% = 9
+CONST stmFIXED% = 6
+CONST stmTEXT% = 7
+CONST stmVALUE% = 8
 
 '--- operation modes for FileSelect$() ---
 '--- see docs\doc_GuiAppframe.bm\FileSelect.html ---
@@ -188,7 +187,7 @@ DECLARE LIBRARY "QB64GuiTools\dev_framework\GuiAppFrame" 'Do not add .h here !!
     SUB UntitledToTop ()
     'Bring the still untitled window to the top of the Z-Order.
     FUNCTION FindColor& (BYVAL r&, BYVAL g&, BYVAL b&, BYVAL i&, BYVAL mi&, BYVAL ma&)
-    'This is a replacement for the _RGB function. It works for upto 8-bit
+    'This is a replacement for the _RGB function. It works for up to 8-bit
     '(256 colors) images only and needs a valid image. It can limit the
     'number of pens to search and uses a better color matching algorithm.
     FUNCTION CreateSMObject%& (smName$, BYVAL smSize&) 'add CHR$(0) to name
@@ -215,26 +214,32 @@ END DECLARE
 dummy% = _EXIT 'take over exit handling
 
 '--- create/init some internally required arrays and variables ---
-'--- colorspace ---
-'Support array to hold once found nearest color matches of the Floyd-
-'Steinberg remapper for quicker access. This is made global, as color
-'matching depends on the screen palette only, not on the processed images.
-'This way every further image to process does profit from matches already
-'found by earlier remapped images. Note that this array must be cleared,
-'if the screen palette changes during runtime. This is normally done by
-'calling the "NEWPAL" method of the "ImageC" class.
-REDIM SHARED fsNearCol%(&HFFFFFF)
-'--- stack ---
+'--- stack setup ---
 REDIM SHARED appStackArr$(0)
 appStackArr$(0) = "*** RhoSigma-Stack-Bottom ***"
-'--- views ---
+'--- error handler ---
+appErrCnt% = 0: appErrMax% = 5
+REDIM appErrorArr%(1 TO appErrMax%, 1)
+UserErrHandler
+'--- flow control ---
+DIM SHARED appGLVComp% 'compiled with QB64-GL yes(-1), no(0) = QB64-SDL
+appGLVComp% = -1
+DIM SHARED appKBLIdent% 'detected keyboard layout identifier
+appKBLIdent% = 0
+'--- main view handles ---
+DIM SHARED appScreen& 'main screen handle (see SetupScreen())
+DIM SHARED appIcon& 'default icon handle
+DIM SHARED appFont& 'default font handle
+'--- additional views ---
 REDIM SHARED guiViews$(0)
 DIM SHARED guiAGVIndex& 'active GuiView index
 guiAGVIndex& = 0
-DIM SHARED appScreen& 'image handle of the main screen (see SetupScreen())
-DIM SHARED appIcon& 'image handle of program's default window icon
-DIM SHARED appFont& 'font handle used in all GuiViews (if any)
-'--- objects ---
+DIM SHARED guiWinX%, guiWinY% 'current window (GuiView) position
+'--- colorspace (ImageClass) ---
+'This array must be cleared, if the screen palette changes during runtime.
+'It's normally done by calling the "NEWPAL" method of the "ImageC" class.
+REDIM SHARED fsNearCol%(&HFFFFFF)
+'--- objects control ---
 CONST objData% = 0, objType% = 1, objFlags% = 2, objConn% = 3 '1st dimension IDs
 REDIM SHARED guiObjects$(3, 0)
 SetTag guiObjects$(0, 0), "MOUSEX", "0"
@@ -248,25 +253,16 @@ DIM SHARED guiCOINestCnt% 'child object init nesting counter
 guiCOINestCnt% = 0
 DIM SHARED guiASCObject& 'active StringC object
 guiASCObject& = 0
+'--- tooltips ---
 DIM SHARED guiATTProps$ 'active ToolTip properties
 guiATTProps$ = ""
-DIM SHARED guiWinX%, guiWinY% 'current window position
-'--- flow control ---
-DIM SHARED appGLVComp% 'compiled with QB64-GL yes(-1), no(0) = QB64-SDL
-appGLVComp% = -1
-DIM SHARED appKBLIdent% 'detected keyboard layout identifier
-appKBLIdent% = 0
-'--- errors ---
-appErrCnt% = 0: appErrMax% = 5
-REDIM appErrorArr%(1 TO appErrMax%, 1)
-UserErrHandler
 
 '--- check/parse shell command line ---
 temp$ = COMMAND$
 IF INSTR(temp$, "IUGNEPO") = 0 AND INSTR(temp$, "XOBEGASSEM") = 0 AND INSTR(temp$, "TCELESELIF") = 0 AND INSTR(temp$, "WEIVEDIUG") = 0 THEN
     'NOTE: GuiTools internal command names are spelled in reverse order to
     '      avoid faulty detection in regular command lines given by the user.
-    temp$ = "NOTHING" 'for any unrecognized command line
+    temp$ = "REGULAR" 'regular user given command line
 END IF
 REDIM cmdArgs$(0)
 dummy% = ParseLine&(temp$, MKI$(&H0920), "'", cmdArgs$(), 5)
@@ -278,6 +274,7 @@ appFullExe$ = LEFT$(temp$, i%): appHomeDrive$ = LEFT$(appFullExe$, 3)
 appHomePath$ = PathPart$(appFullExe$): appExeName$ = FilePart$(appFullExe$)
 OPEN "B", #1, appFullExe$: temp$ = SPACE$(LOF(1)): GET #1, , temp$: CLOSE #1
 IF INSTR(temp$, UCASE$("sdl.") + "dll") > 0 AND _
+   INSTR(temp$, UCASE$("opengl32.") + "dll") = 0 AND _
    INSTR(temp$, UCASE$("opengl32.dll")) = 0 THEN appGLVComp% = 0
 IF appGLVComp% THEN
     kbli% = GetKeyboardLayout&&(0) \ 65536
@@ -489,7 +486,7 @@ IF SeekChunk&(crgtFile%, 1, CHtlogID$) > 0 THEN
         GET crgtFile%, , crgtTLOG(0)
         IF appProgID$ = "" OR crgtTLOG(0).tlogACCESSOR = appProgID$ THEN
             InternalErrHandler
-            KILL appTempDir$ + RStrip$(stripFIX%, crgtTLOG(0).tlogNAME)
+            KILL appTempDir$ + RStrip$(stmFIXED%, crgtTLOG(0).tlogNAME)
             UserErrHandler
             crgtTLOG(0).tlogSTDC.chunkID = CHfreeID$
             crgtTLOG(0).tlogNAME = ""

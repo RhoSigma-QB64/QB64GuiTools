@@ -12,11 +12,10 @@
 <p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
 <hr />
 <h2>RemoveBufMark <em>(function)</em></h2>
-<p>This function will remove (free) the marker with the given ID, so the ID
-becomes available for reuse. Use this function on no longer needed markers.</p>
-<p>If you otherwise just want to update the position of any existing marker,
-then you don't need to call this function, instead just call <a href="SetBufMark.html">SetBufMark()</a>
-on the existing marker again to set the new position.</p>
+<p>This function will remove (unset) the bookmark with the given ID number,
+it's the counterpart to the <a href="SetBufMark.html">SetBufMark()</a> function. The given ID is returned
+to the buffer system for reuse. Use this function to remove no longer needed
+bookmarks.</p>
 <hr />
 <blockquote>
 <blockquote>
@@ -28,7 +27,7 @@ on the existing marker again to set the new position.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>err% = RemoveBufMark% (buf$(), markID%)
+<pre><code>err% = RemoveBufMark% (handle%, markID%)
 </code></pre>
 
 </blockquote>
@@ -43,15 +42,15 @@ on the existing marker again to set the new position.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, from which you
-wanna remove the marker.</li>
+<li>This is the handle of any valid buffer, from which you wanna remove
+the bookmark.</li>
 </ul>
 <h4>markID% <em>(INTEGER)</em></h4>
 <ul>
-<li>Any ID number in the range 1 to 100, which identifies the marker to remove.</li>
-<li>Accidental removal of already free (unused) markers won't hurt.</li>
+<li>The ID number of the bookmark to remove. You got the ID from the
+respective <a href="SetBufMark.html">SetBufMark()</a> call.</li>
 </ul>
 </blockquote>
 <hr />
@@ -69,8 +68,6 @@ wanna remove the marker.</li>
 <ul>
 <li>This is usually zero (0) on success, or error SBE_BadIDNumber, if the
 given ID number was out of the valid range (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
-<li>No other errors may happen, so if you make sure your used IDs are valid,
-then you may waive to explicit error checking.</li>
 </ul>
 </blockquote>
 <hr />

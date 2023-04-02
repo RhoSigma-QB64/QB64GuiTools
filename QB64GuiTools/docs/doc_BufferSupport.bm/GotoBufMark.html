@@ -12,13 +12,12 @@
 <p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
 <hr />
 <h2>GotoBufMark <em>(function)</em></h2>
-<p>This function will set the current buffer (cursor) position to the position
-tracked in the marker with the given ID. This function is in that the exact
-counterpart of <a href="SetBufMark.html">SetBufMark()</a>.</p>
-<p>If you not wanna go to the exact position of the marker, but just want to use
-it as base for a jump with a certain displacement, then you may use <a href="SeekBuf.html">SeekBuf()</a>
-instead, specifying your desired displacement and give the marker ID as the
-mode parameter.</p>
+<p>This will set the current buffer position to the position marked by the
+bookmark with the given ID.</p>
+<p>If you not wanna go to the exact position of the bookmark, but just want
+to use it as origin for a jump with a certain displacement, then you may use
+<a href="SeekBuf.html">SeekBuf()</a> instead, specifying your desired displacement and give the bookmark
+ID as the mode parameter.</p>
 <hr />
 <blockquote>
 <blockquote>
@@ -30,7 +29,7 @@ mode parameter.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>err% = GotoBufMark% (buf$(), markID%)
+<pre><code>err% = GotoBufMark% (handle%, markID%)
 </code></pre>
 
 </blockquote>
@@ -45,14 +44,15 @@ mode parameter.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, in which you
-wanna jump to the marker position.</li>
+<li>This is the handle of any valid buffer, in which you wanna jump to
+the marked position.</li>
 </ul>
 <h4>markID% <em>(INTEGER)</em></h4>
 <ul>
-<li>Any ID number in the range 1 to 100, which identifies the desired marker.</li>
+<li>The ID number of the desired bookmark. You got the ID from the
+respective <a href="SetBufMark.html">SetBufMark()</a> call.</li>
 </ul>
 </blockquote>
 <hr />
@@ -69,8 +69,8 @@ wanna jump to the marker position.</li>
 <h4>err% <em>(INTEGER)</em></h4>
 <ul>
 <li>This is usually zero (0) on success, or any of the error numbers defined
-in the <strong>BufferSupport.bi</strong> file (see also <a href="BufferSupport-Common.html">Common-Info</a>),
-the old buffer position remains unchanged in the latter case.</li>
+in the <strong>simplebuffer.bi</strong> file (see <a href="BufferSupport-Common.html">Common-Info</a>),
+the old buffer position remains unchanged in the error case.</li>
 </ul>
 </blockquote>
 <hr />

@@ -12,14 +12,13 @@
 <p><em><a href="_BufferSupport_Contents.html">back to Table of Contents</a></em></p>
 <hr />
 <h2>BufToFile <em>(sub)</em></h2>
-<p>This subroutine will save the regular data of the given buffer as is into
-the specified file. Any set markers and find data are not part of the regular
-data, hence they don't get saved to the file. An existing file with the
-same name will be overwritten.</p>
-<p>The buffer itself remains completely unchanged and in same state regarding
-the current buffer position, markers, find data and active line endings
-logic, hence you could easily setup an auto-save via a timer and after save
-go on working with the buffer.</p>
+<p>This subroutine will save the current contents of the designated buffer into
+the specified file. An existing file with the same name will be overwritten.</p>
+<p>The buffer itself remains unaffected regarding the current buffer position,
+set bookmarks, search criteria and active line endings mode. Only its state
+is set to &quot;unchanged&quot; after saving the file, hence you could easily setup an
+auto-save via a timer routine and after save continue working with the buffer
+as usual.</p>
 <hr />
 <blockquote>
 <blockquote>
@@ -31,7 +30,7 @@ go on working with the buffer.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>BufToFile buf$(), fileSpec$
+<pre><code>BufToFile handle%, fileSpec$
 </code></pre>
 
 </blockquote>
@@ -46,16 +45,15 @@ go on working with the buffer.</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<h4>buf$() <em>(STRING array)</em></h4>
+<h4>handle% <em>(INTEGER)</em></h4>
 <ul>
-<li>This is the array of any existing and initialized buffer, which shall
-be written into the file. The buffer may still be empty, which would write
-an empty file then.</li>
+<li>This is the handle of any valid buffer, which you wanna save into a file.</li>
 </ul>
 <h4>fileSpec$ <em>(STRING)</em></h4>
 <ul>
-<li>The name of the file to save the buffer into. You may also add a path,
-if required. Make sure any specified path exists to avoid errors.</li>
+<li>The name of the file for saving. You may also add a path, if required.</li>
+<li>Make sure any specified path exists to avoid file saving errors, those
+are not caught by this function (see <a href="BufferSupport-Common.html">Common-Info</a>).</li>
 </ul>
 </blockquote>
 <hr />
@@ -70,10 +68,10 @@ if required. Make sure any specified path exists to avoid errors.</li>
 </blockquote>
 </blockquote>
 <ul>
-<li>If you save a pure text file and want the line endings suitable for a
-specific OS, then you may want to call the appropriate conversion subroutine
-<a href="ConvBufToAnyEol.html">ConvBufToNativeEol()</a>, <a href="ConvBufToAnyEol.html">ConvBufToWinEol()</a> or <a href="ConvBufToAnyEol.html">ConvBufToLnxMacEol()</a> right
-before calling this function.</li>
+<li>If you save a plain text buffer and want the line endings of the saved
+file to be suitable for a specific OS, then you may call the appropriate
+conversion subroutine <a href="ConvBufToAnyEol.html">ConvBufToNativeEol()</a>, <a href="ConvBufToAnyEol.html">ConvBufToWinEol()</a> or <a href="ConvBufToAnyEol.html">ConvBufToLnxMacEol()</a>
+right before calling this function.</li>
 </ul>
 </blockquote>
 <hr />
