@@ -178,7 +178,7 @@ SELECT CASE appLastErr%
     '    uehResType% = uehEXIT%
     CASE ELSE
         uehText$ = "Unhandled Runtime Error" + STR$(appErrorArr%(appErrCnt%, 0))
-        uehText$ = uehText$ + " occured|in source file line" + STR$(appErrorArr%(appErrCnt%, 1))
+        uehText$ = uehText$ + " occurred|in source file line" + STR$(appErrorArr%(appErrCnt%, 1))
         uehText$ = uehText$ + " !!|~Program will cleanup and terminate|via internal emergency exit."
         dummy$ = MessageBox$("Error16px.png", appExeName$, uehText$,_
                              "{IMG Error16px.png 39}Ok, got it...")
@@ -212,7 +212,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 1024, 768, 0
-appCR$ = "The GuiTools Framework v0.12, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.13, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------
@@ -1379,8 +1379,8 @@ WHILE NOT done%
     'affect the currently displayed imagery. The implementation of this
     'entire process did took most of the development time, but I'm sure
     'it was worth it, as this almost automatic GUI operation is a key
-    'feature of a good GUI system. As programmer i don't want to do the
-    'whole work of drawing the GUI, updating objects etc., i don't want
+    'feature of a good GUI system. As programmer I don't want to do the
+    'whole work of drawing the GUI, updating objects etc., I don't want
     'to constantly monitor mouse positions and mouse button states to
     'find out, if any of my objects got focus or was clicked. I just want
     'to init eg. a Button and then get notified, if it got clicked. So
@@ -1451,7 +1451,7 @@ WEND
 '--- Who did it? ---
 IF BoolTagTrue%(abou$, "CHECKED") THEN
     dummy$ = MessageBox$("", "About",_
-                         "The GuiTools Framework v0.12|" +_
+                         "The GuiTools Framework v0.13|" +_
                          "Done by RhoSigma, Roland Heyder|~" +_
                          "Thanx for your interest in my work.",_
                          "{SYM RhoSigma * 10 * 2}It's been a pleasure!")
@@ -1597,7 +1597,7 @@ SUB SetupScreen (wid%, hei%, mid%)
 '--- create the screen ---
 appScreen& = _NEWIMAGE(wid%, hei%, 256)
 IF appScreen& >= -1 THEN ERROR 1000 'can't create main screen
-IF appSSSEarly% THEN _SCREENSHOW
+IF appGLVComp% THEN _SCREENSHOW
 SCREEN appScreen&
 '--- setup screen palette ---
 '$INCLUDE: 'QB64GuiTools\dev_framework\GuiAppPalette.bm'
@@ -1626,13 +1626,8 @@ IF mid% THEN
 ELSE
     LastPosUpdate 0 'load last known win pos
 END IF
-_DELAY 0.025
-_SCREENSHOW
-'sometimes the window opens behind others, this trick makes
-'sure it comes to front immediately (works in 99% of all cases)
-IF appSSSEarly% THEN _DELAY 0.05: ELSE _DELAY 0.02
-_SCREENCLICK _SCREENX + 30, _SCREENY + 10
-IF appSSSEarly% THEN UntitledToTop
+_DELAY 0.025: _SCREENSHOW
+IF appGLVComp% THEN _DELAY 0.05: UntitledToTop
 END SUB
 
 '-------------------

@@ -31,7 +31,7 @@
             fz# = VAL(GetTagData$(GenC$("GET", StringPerTooth$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
             n& = VAL(GetTagData$(GenC$("GET", StringSpeed$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
             fn# = z% * fz#: vf& = fn# * n&
-            fn$ = LTRIM$(Format$(numFmt$, STR$(fn#), 1))
+            fn$ = LTRIM$(IndexFormat$(numFmt$, STR$(fn#), "|"))
             r$ = GenC$("SET", StringPerRev$ + NewTag$("TEXT", fn$))
             r$ = GenC$("SET", StringFeed$ + NewTag$("TEXT", LTRIM$(STR$(vf&))))
         END IF
@@ -41,7 +41,7 @@
             fz# = VAL(GetTagData$(GenC$("GET", StringPerTooth$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
             n& = VAL(GetTagData$(GenC$("GET", StringSpeed$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
             fn# = z% * fz#: vf& = fn# * n&
-            fn$ = LTRIM$(Format$(numFmt$, STR$(fn#), 1))
+            fn$ = LTRIM$(IndexFormat$(numFmt$, STR$(fn#), "|"))
             r$ = GenC$("SET", StringPerRev$ + NewTag$("TEXT", fn$))
             r$ = GenC$("SET", StringFeed$ + NewTag$("TEXT", LTRIM$(STR$(vf&))))
         END IF
@@ -52,7 +52,7 @@
             n& = VAL(GetTagData$(GenC$("GET", StringSpeed$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
             IF z% <> 0 THEN
                 fz# = fn# / z%: vf& = fn# * n&
-                fz$ = LTRIM$(Format$(numFmt$, STR$(fz#), 1))
+                fz$ = LTRIM$(IndexFormat$(numFmt$, STR$(fz#), "|"))
                 r$ = GenC$("SET", StringPerTooth$ + NewTag$("TEXT", fz$))
                 r$ = GenC$("SET", StringFeed$ + NewTag$("TEXT", LTRIM$(STR$(vf&))))
             END IF
@@ -76,9 +76,9 @@
             vf& = VAL(GetTagData$(GenC$("GET", StringFeed$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
             IF n& <> 0 AND z% <> 0 THEN
                 vc# = (3.141592653589793 * d# * n&) / extFac%: fn# = vf& / n&: fz# = fn# / z%
-                vc$ = LTRIM$(Format$(numFmt$, STR$(vc#), 1))
-                fn$ = LTRIM$(Format$(numFmt$, STR$(fn#), 1))
-                fz$ = LTRIM$(Format$(numFmt$, STR$(fz#), 1))
+                vc$ = LTRIM$(IndexFormat$(numFmt$, STR$(vc#), "|"))
+                fn$ = LTRIM$(IndexFormat$(numFmt$, STR$(fn#), "|"))
+                fz$ = LTRIM$(IndexFormat$(numFmt$, STR$(fz#), "|"))
                 r$ = GenC$("SET", StringCutSpeed$ + NewTag$("TEXT", vc$))
                 r$ = GenC$("SET", StringPerRev$ + NewTag$("TEXT", fn$))
                 r$ = GenC$("SET", StringPerTooth$ + NewTag$("TEXT", fz$))
@@ -91,8 +91,8 @@
             vf& = VAL(GetTagData$(GenC$("GET", StringFeed$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
             IF n& <> 0 AND z% <> 0 THEN
                 fn# = vf& / n&: fz# = fn# / z%
-                fn$ = LTRIM$(Format$(numFmt$, STR$(fn#), 1))
-                fz$ = LTRIM$(Format$(numFmt$, STR$(fz#), 1))
+                fn$ = LTRIM$(IndexFormat$(numFmt$, STR$(fn#), "|"))
+                fz$ = LTRIM$(IndexFormat$(numFmt$, STR$(fz#), "|"))
                 r$ = GenC$("SET", StringPerRev$ + NewTag$("TEXT", fn$))
                 r$ = GenC$("SET", StringPerTooth$ + NewTag$("TEXT", fz$))
             END IF

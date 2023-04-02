@@ -21,24 +21,47 @@
 TODO:
 -----
 - add a new GUI class to allow any GuiViews to be placed as part of other
-  forms (like an <iframe> in HTML), in alternative for multiple windows
+  forms (like an <iframe> in HTML) in alternative for multiple windows
 - continue work on the GuiTools Framwork documentation
   - if you have questions about anything what's not yet documented in any
     source file or the PDF, then please don't hesitate to ask for help in
     the forums or via e-mail (support@rhosigma-cw.net)
 - add menus (pulldown and/or popup?)
   - placed on a hovering layer with autoclean when selection is done
-  - put on low priority as I've no need for it, using toolbars instead
+  - low priority as I've no urgent need for it, using toolbars instead
 
 HISTORY:
 --------
+>> 04/03/2021 v0.13 [silent release]
+   - dropped old SHARED variable appDrives$, use new function CurrDrives$()
+     instead, which returns accessible drives at calling time, hence also
+     recognizing drives connected after application start/init
+   - the SHARED variable appScreen& is no longer allowed for public access
+     to protect the integrity of the GuiViews API, the only supported way
+     for direct rendering into any GuiViews is from within the GUIREFRESH
+     event handler using SUB SourceDestGuiView() first to designate the view
+   - bugfix in GuiViews cleanup and minor changes in display logic, also
+     added SUB DeleteGuiView() as counterpart to CreateGuiView()
+   - replaced the old Format[n]$ functions with my new IndexFormat$() and
+     accordingly adjusted all calls to it (new function is also available
+     in the Forum's "Sample Gallery" board for standalone use)
+   - replaced old INKEY$ workaround (for german keyboard layout) with an
+     adapted version of forum member moises1953's enhanced InkeyHit$()
+     routine (permission was granted), which has support for most western
+     european (CP1252 based) languages
+   - fixed Cut-/PasteBufBlock() functions in BufferSupport.bm, blocks
+     were shifted by one byte due to the use of the wrong seek mode
+   - several fixes in PackSupport.bm to avoid deadlock conditions when
+     using the "hidden" progress indicator feature
+
 >> 06/12/2020 v0.12
    - implemented GuiViews, GuiTools its new multiple forms support, no
      stuff like CHAINing from one to another form, or hiding one form and
      make another visible, but real multiple windows applications, each
-     form in its own independent window, but all controlled within the
-     same program using the same GUI object base, hence even realtime
-     cross-form object interconnections are possible (see src_MultiWinDemo)
+     form in its own independent window on the desktop, but all controlled
+     from within the same program using the same GUI object base, hence
+     even realtime cross-form/cross-window object interconnections are
+     possible without a hassle (see src_MultiWinDemo)
    - restored former StringC class behavior, hence you'll receive the
      GADGETUP events on random unselection again, if you need it eg. for
      field verification, but it's much smarter now (will only fire the event,

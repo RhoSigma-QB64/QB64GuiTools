@@ -189,7 +189,7 @@ SELECT CASE appLastErr%
     '    uehResType% = uehEXIT%
     CASE ELSE
         uehText$ = "Unhandled Runtime Error" + STR$(appErrorArr%(appErrCnt%, 0))
-        uehText$ = uehText$ + " occured|in source file line" + STR$(appErrorArr%(appErrCnt%, 1))
+        uehText$ = uehText$ + " occurred|in source file line" + STR$(appErrorArr%(appErrCnt%, 1))
         uehText$ = uehText$ + " !!|~Program will cleanup and terminate|via internal emergency exit."
         dummy$ = MessageBox$("Error16px.png", appExeName$, uehText$,_
                              "{IMG Error16px.png 39}Ok, got it...")
@@ -429,9 +429,15 @@ Cancel$ = ButtonC$("INIT",_
 '-----
 done% = 0 'our main loop continuation boolean
 '-----
-DIM SHARED lzwProgress$ 'progress indicator object for LzWPack$()
+DIM SHARED lzwProgress$ 'progress indicator object for LzwPack$()
 
 '~~~ My Main Loop
+'---------------------------------
+'--- Now let's operate the GUI ---
+'---------------------------------
+'--- This is simply done by placing a GetGUIMsg$() call within our main
+'--- loop and then take actions according to the received messages.
+'-----
 _MOUSESHOW
 WHILE NOT done%
     _LIMIT 50
@@ -778,7 +784,11 @@ PRINT #2, "'                      to access the file."
 PRINT #2, "'====================================================================="
 PRINT #2, "FUNCTION Write"; tarName$; "Array$ (file$, clean%)"
 PRINT #2, "'--- declare C/C++ function ---"
-PRINT #2, "DECLARE LIBRARY "; CHR$(34); hdrPath$; FileNamePart$(hdr$); CHR$(34); " 'Do not add .h here !!"
+tmp$ = hdrPath$ + FileNamePart$(hdr$)
+IF _FILEEXISTS("qb64.exe") THEN
+    IF LEFT$(tmp$, LEN(CurrDIR$)) = CurrDIR$ THEN tmp$ = MID$(tmp$, LEN(CurrDIR$) + 2)
+END IF
+PRINT #2, "DECLARE LIBRARY "; CHR$(34); tmp$; CHR$(34); " 'Do not add .h here !!"
 PRINT #2, "    FUNCTION Write"; hdrName$; "Data$ (FileName$, BYVAL AutoClean%)"
 PRINT #2, "END DECLARE"
 PRINT #2, "'--- separate filename body & extension ---"
@@ -819,7 +829,7 @@ CLOSE #2
 ConvertFile% = -1
 IF packed% THEN
     KILL tmpLzw$
-    tmp$ = Format$("The original data were packed with a ratio of ##.##%,|", STR$(100 - (100 / LEN(filedata$) * LEN(rawdata$))), 1) +_
+    tmp$ = IndexFormat$("The original data were packed with a ratio of 0{##.##}%,|", STR$(100 - (100 / LEN(filedata$) * LEN(rawdata$))), "|") +_
            "Original:" + STR$(LEN(filedata$)) + " Bytes, Packed:" + STR$(LEN(rawdata$)) + " Bytes.|~"
 ELSEIF use% THEN
     ConvertFile% = 0
@@ -830,7 +840,7 @@ ELSE
     tmp$ = "As requested, the data were converted without packing.|~"
 END IF
 ok$ = MessageBox$("Info16px.png", "Information !!", tmp$ +_
-          Format$("Have a look into the created file (&)|", tar$, 0) +_
+     IndexFormat$("Have a look into the created file (0{&})|", tar$, CHR$(0)) +_
                   "to learn how to write the Array back into a file.",_
                   "{SYM Checkmark * * * *}")
 END FUNCTION
@@ -868,7 +878,7 @@ SUB SetupScreen (wid%, hei%, mid%)
 '--- create the screen ---
 appScreen& = _NEWIMAGE(wid%, hei%, 256)
 IF appScreen& >= -1 THEN ERROR 1000 'can't create main screen
-IF appSSSEarly% THEN _SCREENSHOW
+IF appGLVComp% THEN _SCREENSHOW
 SCREEN appScreen&
 '--- setup screen palette ---
 '$INCLUDE: 'QB64GuiTools\dev_framework\GuiAppPalette.bm'
@@ -897,13 +907,8 @@ IF mid% THEN
 ELSE
     LastPosUpdate 0 'load last known win pos
 END IF
-_DELAY 0.025
-_SCREENSHOW
-'sometimes the window opens behind others, this trick makes
-'sure it comes to front immediately (works in 99% of all cases)
-IF appSSSEarly% THEN _DELAY 0.05: ELSE _DELAY 0.02
-_SCREENCLICK _SCREENX + 30, _SCREENY + 10
-IF appSSSEarly% THEN UntitledToTop
+_DELAY 0.025: _SCREENSHOW
+IF appGLVComp% THEN _DELAY 0.05: UntitledToTop
 END SUB
 
 '-------------------

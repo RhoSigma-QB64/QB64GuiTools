@@ -175,7 +175,7 @@ SELECT CASE appLastErr%
     '    uehResType% = uehEXIT%
     CASE ELSE
         uehText$ = "Unhandled Runtime Error" + STR$(appErrorArr%(appErrCnt%, 0))
-        uehText$ = uehText$ + " occured|in source file line" + STR$(appErrorArr%(appErrCnt%, 1))
+        uehText$ = uehText$ + " occurred|in source file line" + STR$(appErrorArr%(appErrCnt%, 1))
         uehText$ = uehText$ + " !!|~Program will cleanup and terminate|via internal emergency exit."
         dummy$ = MessageBox$("Error16px.png", appExeName$, uehText$,_
                              "{IMG Error16px.png 39}Ok, got it...")
@@ -209,7 +209,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 460, 345, 0
-appCR$ = "The GuiTools Framework v0.12, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.13, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------
@@ -411,6 +411,12 @@ IcTextV1V2$ = ModelC$("INIT",_
 done% = 0 'our main loop continuation boolean
 
 '~~~ My Main Loop
+'---------------------------------
+'--- Now let's operate the GUI ---
+'---------------------------------
+'--- This is simply done by placing a GetGUIMsg$() call within our main
+'--- loop and then take actions according to the received messages.
+'-----
 _MOUSESHOW
 WHILE NOT done%
     _LIMIT 50
@@ -541,7 +547,7 @@ SUB SetupScreen (wid%, hei%, mid%)
 '--- create the screen ---
 appScreen& = _NEWIMAGE(wid%, hei%, 256)
 IF appScreen& >= -1 THEN ERROR 1000 'can't create main screen
-IF appSSSEarly% THEN _SCREENSHOW
+IF appGLVComp% THEN _SCREENSHOW
 SCREEN appScreen&
 '--- setup screen palette ---
 '$INCLUDE: 'QB64GuiTools\dev_framework\GuiAppPalette.bm'
@@ -570,13 +576,8 @@ IF mid% THEN
 ELSE
     LastPosUpdate 0 'load last known win pos
 END IF
-_DELAY 0.025
-_SCREENSHOW
-'sometimes the window opens behind others, this trick makes
-'sure it comes to front immediately (works in 99% of all cases)
-IF appSSSEarly% THEN _DELAY 0.05: ELSE _DELAY 0.02
-_SCREENCLICK _SCREENX + 30, _SCREENY + 10
-IF appSSSEarly% THEN UntitledToTop
+_DELAY 0.025: _SCREENSHOW
+IF appGLVComp% THEN _DELAY 0.05: UntitledToTop
 END SUB
 
 '-------------------

@@ -13,7 +13,7 @@
 // | == Some low level support functions for the GuiTools Framework.   |
 // |                                                                   |
 // | == To activate the regex support you just need to uncomment the   |
-// | == "#define GTREGEX" line (50) below. But before doing so, please |
+// | == "#define GTREGEX" line (53) below. But before doing so, please |
 // | == carefully read the notes given right below this file header.   |
 // |                                                                   |
 // +-------------------------------------------------------------------+
@@ -278,8 +278,8 @@ int16 RegexIsActive(void) {
 void UntitledToTop (void) {
     HWND win = FindWindowA(NULL, "Untitled");
     if (win) {
-        BringWindowToTop(win);
-        SetForegroundWindow(win);
+        BringWindowToTop(win); Sleep(50);
+        SetForegroundWindow(win); Sleep(50);
     }
 }
 
@@ -421,6 +421,7 @@ void CloseSMObject(ptrszint smObj) {
 // GuiTools specific (internal shared memory communication)
 // The Put/GetSMString() routines are used to transfer messages
 // between the main program and the currently active GuiView window.
+// Note that shared memory access must be protected with LockMutex().
 //--------------------------------------------------------------------
 void PutSMString(ptrszint smObj, const char *qbStr) {
     if (smObj && qbStr) {
@@ -448,6 +449,7 @@ const char *GetSMString(ptrszint smObj) {
 // The ImageToSM() and SMToImage() routines are used to transfer the
 // palette and pixel data of 8-bit (256 colors) images between the main
 // program and the currently active GuiView window.
+// Note that shared memory access must be protected with LockMutex().
 //--------------------------------------------------------------------
 void ImageToSM(ptrszint smObj, int32 i) {
     if (smObj && i < -1) {

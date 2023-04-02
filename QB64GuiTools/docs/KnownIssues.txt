@@ -28,7 +28,9 @@
      keys or key combinations, or even no input at all
   -> mostly international characters are affected and/or characters which
      require the use of the "AltGr" key available on some keyboards
-  -> there's a partly workaround used in Germany/Austria for INKEY$ only
+  -> there's an automatically switched and pretty well workaround used for
+     western european languages and respective keyboards for INKEY$ only,
+     called InkeyHit$ (see dev_framework\classes\GuiClasses.bm)
 
 - QB64-GL has issues with $SCREENHIDE/_SCREENMOVE
   -> most of it are fixed now, but to avoid race conditions I've added

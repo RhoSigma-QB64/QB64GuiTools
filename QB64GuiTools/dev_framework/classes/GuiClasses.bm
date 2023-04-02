@@ -60,21 +60,21 @@ mi% = _MOUSEINPUT: mwl% = _MOUSEWHEEL
 WHILE _MOUSEINPUT: mwl% = mwl% + _MOUSEWHEEL: WEND
 IF GetGUIMsg$ = "" THEN
     GetGUIMsg$ = GetTags$(guiObjects$(0, 0), "MOUSEX,MOUSEY,MOUSELB,MOUSERB,MOUSEMB,GUIVIEW")
-    IF appGMRInkey% THEN ik$ = INKEY$: ELSE ik$ = KB1031toCP437Inkey$
-    IF appSSSEarly% AND mi% <> 0 THEN
+    IF appKBLIdent% = 0 THEN ik$ = INKEY$: ELSE ik$ = InkeyHit$(appKBLIdent%)
+    IF appGLVComp% AND mi% <> 0 THEN
         IF _MOUSEX = gloMx% AND _MOUSEY = gloMy% THEN mi% = 0
     END IF
     IF mi% <> 0 OR ik$ <> "" THEN RemTag GetGUIMsg$, "GUIVIEW"
     vix& = VAL(GetTagData$(GetGUIMsg$, "GUIVIEW", "0"))
     IF vix& <> 0 THEN SetTag guiObjects$(0, 0), "SMINP", "true"
 ELSE
-    IF appSSSEarly% AND mi% <> 0 THEN
+    IF appGLVComp% AND mi% <> 0 THEN
         gloMx% = _MOUSEX: gloMy% = _MOUSEY
     END IF
     vix& = VAL(GetTagData$(GetGUIMsg$, "GUIVIEW", "0"))
     IF BoolTagTrue%(GetGUIMsg$, "USERBREAK") THEN
         RemoveMutex VAL(GetTagData$(guiViews$(vix&), "ISOPEN", "0"))
-        RemTag guiViews$(vix&), "ISOPEN"
+        _DELAY 0.1: RemTag guiViews$(vix&), "ISOPEN"
         GetGUIMsg$ = "": EXIT FUNCTION
     END IF
     mi% = BoolTagTrue%(GetGUIMsg$, "SMINP"): RemTag GetGUIMsg$, "SMINP"
@@ -188,7 +188,7 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
                         RemTag GetGUIMsg$, "MOUSELBUP"
                         SetTag GetGUIMsg$, "GADGETUP", obj$
                     END IF
-                    'if object was triggered by keyboard shortcut or did regulary
+                    'if object was triggered by keyboard shortcut or did regularly
                     'eat the inputs, then filter the respective KEYPRESS/KEY tags
                     IF BoolTagTrue%(res$, "SHORTCUT") THEN RemTags GetGUIMsg$, "KEYPRESS,KEY,SHIFT,CTRL,ALT,MODKEYS"
                     'same for eaten mouse wheel events
@@ -450,7 +450,8 @@ END FUNCTION
 'Note that the hover layer remains active, until all objects created on it
 'are KILL'ed again. Objects in the hover layer will operate as usual, while
 'objects in the regular GUI layer will not respond as long as the hovering
-'layer is active. The return to the regular GUI layer will happen auto-
+'layer is active, this also includes the regular GUI layers of any other
+'GuiViews (if any). The return to the regular GUI layer will happen auto-
 'matically while handling GUIREFRESH events as soon as no remaining objects
 'are detected on the hovering layer anymore.
 '---------------------------------------------------------------------
@@ -581,56 +582,29 @@ guiViews$(CreateGuiView&) =_
 END FUNCTION
 
 '---------------------------------------------------------------------
-'Will return the GUIVIEW tag for the given GuiView index, as needed for
-'gui object init method calls. If the view does not exist, then an empty
-'tag will be returned (ie. the initialized object goes to main screen).
-'---------------------------------------------------------------------
-'vix&    = the GuiView index returned by FUNCTION CreateGuiView() above
-'Return: = the ready GUIVIEW tag, empty for GuiView 0 (main program window)
-'---------------------------------------------------------------------
-FUNCTION ViewTag$ (vix&)
-ViewTag$ = ""
-IF vix& < LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN EXIT FUNCTION
-IF guiViews$(vix&) = "" THEN EXIT FUNCTION
-ViewTag$ = NewTag$("GUIVIEW", LTRIM$(STR$(vix&)))
-END FUNCTION
-
-'---------------------------------------------------------------------
-'This routine will set the _SOURCE and _DEST handles to point to the image
-'of the given GuiView index. Use it before rendering into a specific view
-'as needed. If the given view is zero or does not exist, then the main
-'program window (ie. appScreen&) will become the source and destination.
-'---------------------------------------------------------------------
-'vix&    = the GuiView index returned by FUNCTION CreateGuiView() above
-'---------------------------------------------------------------------
-SUB SourceDestGuiView (vix&)
-IF vix& < LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN
-    vhan& = appScreen&: guiAGVIndex& = 0
-ELSE
-    vhan& = VAL(GetTagData$(guiViews$(vix&), "IHANDLE", LTRIM$(STR$(appScreen&))))
-    IF vhan& = appScreen& THEN guiAGVIndex& = 0: ELSE guiAGVIndex& = vix&
-END IF
-_SOURCE vhan&: _DEST vhan&
-END SUB
-
-'---------------------------------------------------------------------
-'Will return a boolean flag, whether the given GuiView window is currently
-'open or not. As the user may close any GuiView windows at any time, you
-'may use this function to decide, if you have to call SUB OpenGuiView().
-'If the given view is zero (ie. the main program screen), then the result
-'is always true. Non-existing views return false, just as existing but
-'closed views. Ie. this function assumes, that you at least know which
-'views you've created and not calling it with invalid indicies.
+'This routine is the counterpart to CreateGuiView(). It will first close
+'the given GuiView (if open), then deleting all objects designated to it
+'and finally freeing the resources of the view itself.
+'Routine will do nothing, if the given GuiView index does not exist.
 '---------------------------------------------------------------------
 'vix& = the GuiView index returned by FUNCTION CreateGuiView() above
 '---------------------------------------------------------------------
-FUNCTION GuiViewIsOpen% (vix&)
-GuiViewIsOpen% = -1: IF vix& = 0 THEN EXIT FUNCTION
-GuiViewIsOpen% = 0
-IF vix& < LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN EXIT FUNCTION
-IF guiViews$(vix&) = "" THEN EXIT FUNCTION
-GuiViewIsOpen% = BoolTagTrue%(guiViews$(vix&), "ISOPEN")
-END FUNCTION
+SUB DeleteGuiView (vix&)
+IF vix& <= LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN EXIT SUB
+IF guiViews$(vix&) = "" THEN EXIT SUB
+RemoveMutex VAL(GetTagData$(guiViews$(vix&), "ISOPEN", "0"))
+FOR oix& = 1 TO UBOUND(guiObjects$, 2)
+    IF MID$(guiObjects$(objFlags%, oix&), 2, 1) = "-" THEN
+        IF VAL(GetTagData$(guiObjects$(objData%, oix&), "GUIVIEW", "0")) = vix& THEN
+            resu$ = GenC$("KILL", NewTag$("OBJECT", LTRIM$(STR$(oix&))))
+        END IF
+    END IF
+NEXT oix&
+imag& = VAL(GetTagData$(guiViews$(vix&), "IHANDLE", "-1"))
+IF imag& < -1 THEN _FREEIMAGE imag&
+RemoveSMObject VAL(GetTagData$(guiViews$(vix&), "SMOBJ", "0"))
+guiViews$(vix&) = ""
+END SUB
 
 '---------------------------------------------------------------------
 'This routine will open the given GuiView window. Note that the user may
@@ -648,7 +622,7 @@ END FUNCTION
 SUB OpenGuiView (winIcon$, winTitle$, vix&)
 IF winTitle$ <> "*** RhoSigma-OpenGuiView-HandlerCall ***" THEN
     '--- OpenGuiView Setup Block ---
-    IF vix& < LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN EXIT SUB
+    IF vix& <= LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN EXIT SUB
     IF guiViews$(vix&) = "" THEN EXIT SUB
     IF BoolTagTrue%(guiViews$(vix&), "ISOPEN") THEN EXIT SUB
 
@@ -686,8 +660,7 @@ ELSE
     '--- operate view ---
     msm%& = OpenSMObject%&("RhoSigma-GuiApp-MainInpSM-" + progID$ + CHR$(0), 8192)
     vsm%& = OpenSMObject%&("RhoSigma-GuiApp-ViewImgSM-" + viewID$ + CHR$(0), wid% * hei% + 1024)
-    _MOUSESHOW: done% = 0
-    stim# = TIMER(0.001)
+    done% = 0: stim# = TIMER(0.001)
     DO
         _LIMIT 150
         IF NOT CheckMutex%("Global\RhoSigma-GuiApp-GuiViewIsOpen-" + viewID$ + CHR$(0)) THEN
@@ -734,11 +707,11 @@ IF ggMsg$ <> "" THEN RETURN
 ggMsg$ = GetTags$(guiObjects$(0, 0), "MOUSEX,MOUSEY,MOUSELB,MOUSERB,MOUSEMB")
 ggSpc% = 0
 '--- collect next key press (if any) ---
-IF appGMRInkey% THEN ik$ = INKEY$: ELSE ik$ = KB1031toCP437Inkey$
+IF appKBLIdent% = 0 THEN ik$ = INKEY$: ELSE ik$ = InkeyHit$(appKBLIdent%)
 '--- check for mouse input ---
 mi% = _MOUSEINPUT: mwl% = _MOUSEWHEEL
 WHILE _MOUSEINPUT: mwl% = mwl% + _MOUSEWHEEL: WEND
-IF appSSSEarly% AND mi% <> 0 THEN
+IF appGLVComp% AND mi% <> 0 THEN
     IF _MOUSEBUTTON(1) = lmb% AND _MOUSEBUTTON(2) = rmb% AND _MOUSEBUTTON(3) = mmb% AND mwl% = 0 THEN
         IF _MOUSEX = mx% AND _MOUSEY = my% THEN mi% = 0
     END IF
@@ -838,10 +811,62 @@ END SUB
 'vix& = the GuiView index returned by FUNCTION CreateGuiView() above
 '---------------------------------------------------------------------
 SUB CloseGuiView (vix&)
-IF vix& < LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN EXIT SUB
+IF vix& <= LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN EXIT SUB
 IF guiViews$(vix&) = "" THEN EXIT SUB
 RemoveMutex VAL(GetTagData$(guiViews$(vix&), "ISOPEN", "0"))
-RemTag guiViews$(vix&), "ISOPEN"
+_DELAY 0.1: RemTag guiViews$(vix&), "ISOPEN"
+END SUB
+
+'---------------------------------------------------------------------
+'Will return a boolean flag, whether the given GuiView window is currently
+'open or not. As the user may close any GuiView windows at any time, you
+'may use this function to decide, if you have to call SUB OpenGuiView().
+'If the given view is zero (ie. the main program screen), then the result
+'is always true. Non-existing views return false, just as existing but
+'closed views. Ie. this function assumes, that you at least know which
+'views you've created and not calling it with invalid indices.
+'---------------------------------------------------------------------
+'vix& = the GuiView index returned by FUNCTION CreateGuiView() above
+'---------------------------------------------------------------------
+FUNCTION GuiViewIsOpen% (vix&)
+GuiViewIsOpen% = -1: IF vix& = 0 THEN EXIT FUNCTION
+GuiViewIsOpen% = 0
+IF vix& <= LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN EXIT FUNCTION
+IF guiViews$(vix&) = "" THEN EXIT FUNCTION
+GuiViewIsOpen% = BoolTagTrue%(guiViews$(vix&), "ISOPEN")
+END FUNCTION
+
+'---------------------------------------------------------------------
+'Will return the GUIVIEW tag for the given GuiView index, as needed for
+'gui object init method calls. If the view does not exist, then an empty
+'tag will be returned (ie. the initialized object goes to main screen).
+'---------------------------------------------------------------------
+'vix&    = the GuiView index returned by FUNCTION CreateGuiView() above
+'Return: = the ready GUIVIEW tag, empty for GuiView 0 (main program window)
+'---------------------------------------------------------------------
+FUNCTION ViewTag$ (vix&)
+ViewTag$ = ""
+IF vix& <= LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN EXIT FUNCTION
+IF guiViews$(vix&) = "" THEN EXIT FUNCTION
+ViewTag$ = NewTag$("GUIVIEW", LTRIM$(STR$(vix&)))
+END FUNCTION
+
+'---------------------------------------------------------------------
+'This routine will set the _SOURCE and _DEST handles to point to the image
+'of the given GuiView index. Use it before rendering into a specific view
+'as needed. If the given view is zero or does not exist, then the main
+'program window (ie. appScreen&) will become the source and destination.
+'---------------------------------------------------------------------
+'vix&    = the GuiView index returned by FUNCTION CreateGuiView() above
+'---------------------------------------------------------------------
+SUB SourceDestGuiView (vix&)
+IF vix& < LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN
+    vhan& = appScreen&: guiAGVIndex& = 0
+ELSE
+    vhan& = VAL(GetTagData$(guiViews$(vix&), "IHANDLE", LTRIM$(STR$(appScreen&))))
+    IF vhan& = appScreen& THEN guiAGVIndex& = 0: ELSE guiAGVIndex& = vix&
+END IF
+_SOURCE vhan&: _DEST vhan&
 END SUB
 
 '--- INTERNAL --------------------------------------------------------
@@ -1085,32 +1110,44 @@ FUNCTION ObjectTag$ (tagString$, tagName$)
 ObjectTag$ = NewTag$("OBJECT", GetTagData$(tagString$, tagName$, "0"))
 END FUNCTION
 
-'--- INTERNAL -------------
-'--- KB1031toCP437Inkey ---
-'--------------------------
-' This alternative INKEY$ function is made for use in Germany/Austria
-' and any QB64-GL versions (>= 1.000). It will directly map the inputs
-' from a german keyboard to the chars available in Cp437, hence you
-' don't need to setup a custom unicode font and _MAPUNICODE table, you
-' can stay with QB64's built-in fonts and standard codepage 437.
+'--- INTERNAL --------------------------------------------------------
+'--- InkeyHit ---
+'----------------
+' This alternative INKEY$ function is made for use with western european
+' languages (Cp1252 based) and any QB64-GL versions (>= 1.000). It will
+' directly map the inputs to the chars available in Cp437, hence you don't
+' need to setup a custom unicode font and _MAPUNICODE table, you can stay
+' with QB64's built-in fonts and standard codepage 437.
 ' By this means it solves the INKEY$ issues introduced with the transition
 ' from using SDL to using OpenGL regarding special/international chars.
 ' However, it does not fix the regular INPUT, LINE INPUT and INPUT$ when
 ' used for keyboard input, here you should create your own functions,
 ' which use this function to get its inputs.
+' This function is based on my old function made for Germany/Austria only,
+' but now also implements support for other languages (keyboard layouts)
+' based on the research work done by forum member moises1953, read the
+' whole story here: https://www.qb64.org/forum/index.php?topic=1385.0
 '----------
 ' SYNTAX:
-'   keypress$ = KB1031toCP437Inkey$
+'   keypress$ = InkeyHit$ (kbl%)
+'----------
+' INPUTS:
+'   --- kbl% ---
+'    The keyboard layout/language ID (eg. 1031 for de-DE), which is in
+'    effect on your system. Make sure your language is listed in the CONSTs
+'    at the beginning of the function. If you use this function with any
+'    unsupported language, then some keys might not work as expected
+'    (eg. accents, umlauts or AltGr key triggered chars).
 '----------
 ' RESULT:
 '   --- keypress$ ---
 '    Equivalent to the INKEY$ result (see Wiki-Page at www.qb64.org).
 '----------
 ' ACCENTS:
-'   Note that the accents keys on german keyboards are so called
+'   Note that the accents keys on most keyboards are so called
 '   preselection keys, different from modifier keys (Shift/Ctrl/Alt)
 '   you don't need to hold them while typing accented chars. You just
-'   press it once followed by pressing the char key once to get the
+'   press it once followed by pressing the letter key once to get the
 '   respective accented char (eg. ` + e = Š). To get the accent char
 '   itself you either press the space bar after the accent preselection
 '   or you press the accent preselection key twice.
@@ -1127,139 +1164,272 @@ END FUNCTION
 '   CHR$(0) + CHR$(76)         [5 NumberPad]        "L" (NumLock off in QB64)
 '    rarely used, almost useless for most applications,
 '    => returns nothing
-'   CHR$(0) + CHR$(114-119)    [Ctrl] + keypad
-'    unusual key order, does not cover all keys on keypad,
-'    => returns the regular code instead (Ctrl modifier ignored)
 '   CHR$(0) + CHR$(120-129)    [Alt] + number
 '    ignored in favor for alternative Alt + ASCII code input method,
 '    => returns nothing, but collects numbers to built an ASCII code,
 '       the respective char is returned when releasing the Alt-Key
-'   CHR$(0) + CHR$(130 or 131) [Alt] + _/- or +/=   "é" or "â"
+'   CHR$(0) + CHR$(130 or 131) [Alt] + _/- or +/=   "‚" or "ƒ"
 '    rarely used, KB layout dependent,
 '    => returns the regular char instead (Alt modifier ignored)
 '---------------------------------------------------------------------
-FUNCTION KB1031toCP437Inkey$
-STATIC number$, preKey&
-'--- clear result, get next key press/release ---
-KB1031toCP437Inkey$ = ""
+FUNCTION InkeyHit$ (kbl%)
+'--- keyboard layouts supported by this routine ---
+CONST kbDaDk% = 1030, kbDeDe% = 1031, kbEsEs% = 1034, kbFrFr% = 1036
+CONST kbNlNl% = 1043, kbNbNo% = 1044, kbSvSe% = 1053
+CONST kbDeCh% = 2055, kbEsMx% = 2058, kbFrBe% = 2060, kbPtPt% = 2070
+'--- accent preselection key types ---
+CONST pkAcute% = 1, pkGrave% = 2, pkUmlau% = 3, pkCircu% = 4
+
+'--- variables init ---
+STATIC lastKey&, preKey&, ascNum$
+InkeyHit$ = "": charCode& = 0
+
+'--- flush regular input buffer & get next key hit ---
 DO: LOOP UNTIL INKEY$ = ""
-hit& = _KEYHIT
-'--- ignore releases (except number/preselection keys) ---
-IF hit& < 0 THEN
-    IF (hit& > -48 OR hit& < -57) AND hit& <> -220 AND hit& <> -221 GOTO noInput
-END IF
-'--- get modifiers ---
-shift% = _KEYDOWN(100303) OR _KEYDOWN(100304)
-ctrl% = _KEYDOWN(100305) OR _KEYDOWN(100306)
-altgr% = _KEYDOWN(100307) AND _KEYDOWN(100306)
-alt% = (_KEYDOWN(100307) OR _KEYDOWN(100308)) AND NOT altgr%
-'--- check preselection keys (accents) ---
-IF hit& = -220 OR hit& = -221 THEN
-    IF preKey& <> 0 THEN 'double preselection key press
-        IF preKey& = -220 AND hit& = -220 AND NOT shift% THEN hit& = 94
-        IF preKey& = -221 AND hit& = -221 AND NOT shift% THEN hit& = 0 'Aigu not available on Cp437
-        IF preKey& = 221 AND hit& = -221 AND shift% THEN hit& = 96
-        IF hit& < 0 THEN 'update after false values (eg. š release = -220)
-            preKey& = hit&
-            IF shift% THEN preKey& = -preKey&
-            GOTO noInput
+hitVal& = _KEYHIT
+IF hitVal& <> 0 THEN
+    '--- get modifiers ---
+    modShift% = _KEYDOWN(100303) OR _KEYDOWN(100304)
+    modCtrl% = _KEYDOWN(100305) OR _KEYDOWN(100306)
+    modAltGr% = _KEYDOWN(100307) AND _KEYDOWN(100306)
+    modAlt% = (_KEYDOWN(100307) OR _KEYDOWN(100308)) AND NOT modAltGr%
+    '--- special conditions ---
+    modNone% = NOT modShift% AND NOT modCtrl% AND NOT modAlt% AND NOT modAltGr%
+    modShiftOnly% = modShift% AND NOT modCtrl% AND NOT modAlt% AND NOT modAltGr%
+    modCtrlOnly% = modCtrl% AND NOT modShift% AND NOT modAlt% AND NOT modAltGr%
+    modAltOnly% = modAlt% AND NOT modShift% AND NOT modCtrl% 'not AltGr implied in Alt
+    modCtrlNoAlt% = modCtrl% AND NOT modAlt% AND NOT modAltGr% 'shift allowed
+
+    '--- start evaluation ---
+    IF hitVal& > 0 THEN
+        IF hitVal& <= 255 THEN lastKey& = hitVal& 'for later release detection
+        '--- lookup preselected accent (if any) ---
+        IF hitVal& >= 32 AND hitVal& <= 127 THEN
+            SELECT CASE preKey&
+                CASE pkAcute%
+                    RESTORE InkeyHit_Acute
+                    DO: READ inChar%, outChar%: LOOP UNTIL inChar% = hitVal& OR inChar% = 0
+                    charCode& = outChar%
+                CASE pkGrave%
+                    RESTORE InkeyHit_Grave
+                    DO: READ inChar%, outChar%: LOOP UNTIL inChar% = hitVal& OR inChar% = 0
+                    charCode& = outChar%
+                CASE pkUmlau%
+                    RESTORE InkeyHit_Umlau
+                    DO: READ inChar%, outChar%: LOOP UNTIL inChar% = hitVal& OR inChar% = 0
+                    charCode& = outChar%
+                CASE pkCircu%
+                    RESTORE InkeyHit_Circu
+                    DO: READ inChar%, outChar%: LOOP UNTIL inChar% = hitVal& OR inChar% = 0
+                    charCode& = outChar%
+            END SELECT
         END IF
-        preKey& = 0
-        GOTO setInkey
-    ELSE 'first preselection key press
-        preKey& = hit&
-        IF shift% THEN preKey& = -preKey&
-        GOTO noInput
+        'Regardless of the lookup result, any non-modifier key press
+        'has to properly cancel any pending preselection.
+        IF hitVal& <= 65535 THEN preKey& = 0
+
+        '--- if no accent was found or preselected, then move on ---
+        IF charCode& = 0 THEN
+            'take the regular key code as default
+            charCode& = hitVal&
+            'check shift/ctrl/alt conditions and special behavior
+            SELECT CASE hitVal&
+                CASE 9 'tab & reverse tab
+                    IF modShiftOnly% THEN charCode& = 15 * 256
+                CASE 48 TO 57 'numeric keys 0-9
+                    IF NOT modNone% THEN charCode& = 0
+                CASE 65 TO 90 'CTRL CAPS A-Z: 1-26
+                    IF modCtrlNoAlt% THEN charCode& = hitVal& - 64
+                CASE 97 TO 122 'CTRL a-z: 1-26
+                    IF modCtrlNoAlt% THEN charCode& = hitVal& - 96
+                CASE 128 TO 255 'Ext. ASCII (Cp1252 to Cp437 mapping, if available)
+                    RESTORE InkeyHit_Regul
+                    DO: READ inChar%, outChar%: LOOP UNTIL inChar% = hitVal& OR inChar% = 0
+                    charCode& = outChar%
+                CASE 256 TO 65535 'double char chr$(0) +
+                    IF (hitVal& AND 255) = 0 THEN
+                        hitVal& = hitVal& \ 256
+                        SELECT CASE hitVal& 'Alt overrides Ctrl overrides Shift
+                            CASE 59 TO 68 'F1-F10
+                                IF modShift% THEN charCode& = (hitVal& + 25) * 256
+                                IF modCtrl% THEN charCode& = (hitVal& + 35) * 256
+                                IF modAlt% THEN charCode& = (hitVal& + 45) * 256
+                            CASE 133, 134 'F11-F12
+                                IF modShift% THEN charCode& = (hitVal& + 2) * 256
+                                IF modCtrl% THEN charCode& = (hitVal& + 4) * 256
+                                IF modAlt% THEN charCode& = (hitVal& + 6) * 256
+                            CASE 71 'Home
+                                IF modCtrl% THEN charCode& = 119 * 256
+                                IF modAlt% THEN charCode& = 151 * 256
+                            CASE 72 'ArrowUp
+                                IF modCtrl% THEN charCode& = 141 * 256
+                                IF modAlt% THEN charCode& = 152 * 256
+                            CASE 73 'PageUp
+                                IF modCtrl% THEN charCode& = 132 * 256
+                                IF modAlt% THEN charCode& = 153 * 256
+                            CASE 75 'ArrowLeft
+                                IF modCtrl% THEN charCode& = 115 * 256
+                                IF modAlt% THEN charCode& = 155 * 256
+                            CASE 77 'ArrowRight
+                                IF modCtrl% THEN charCode& = 116 * 256
+                                IF modAlt% THEN charCode& = 157 * 256
+                            CASE 79 'End
+                                IF modCtrl% THEN charCode& = 117 * 256
+                                IF modAlt% THEN charCode& = 159 * 256
+                            CASE 80 'ArrowDown
+                                IF modCtrl% THEN charCode& = 145 * 256
+                                IF modAlt% THEN charCode& = 160 * 256
+                            CASE 81 'PageDown
+                                IF modCtrl% THEN charCode& = 118 * 256
+                                IF modAlt% THEN charCode& = 161 * 256
+                            CASE 82 'Insert
+                                IF modCtrl% THEN charCode& = 146 * 256
+                                IF modAlt% THEN charCode& = 162 * 256
+                            CASE 83 'Delete
+                                IF modCtrl% THEN charCode& = 147 * 256
+                                IF modAlt% THEN charCode& = 163 * 256
+                        END SELECT
+                    END IF
+            END SELECT
+        END IF
+    ELSE
+        oPreKey& = preKey& 'save current preselection state
+        SELECT CASE hitVal&
+            CASE -57 TO -48 'collect numbers (Alt + char code input)
+                IF modAltOnly% THEN ascNum$ = ascNum$ + CHR$(-hitVal&): _
+                ELSE IF hitVal& = -50 AND modAltGr% AND kbl% = kbFrFr% THEN charCode& = 126 '~
+            CASE -100308 'Alt released: build char from last 3 digits
+                IF ascNum$ <> "" THEN
+                    charCode& = VAL(RIGHT$(ascNum$, 3))
+                    IF charCode& < 32 OR charCode& > 255 THEN charCode& = 0
+                    lastKey& = 0: preKey& = 0: ascNum$ = "" 'cancel all
+                END IF
+            CASE -lastKey& 'cancel the last key
+                lastKey& = 0
+                'This case is just here to trap the releases of regular keys.
+                'It is required to avoid the generation of false positives
+                'for the following accent preselection cases, if the regular
+                'key release would generate the same value as any accent key.
+            CASE -186
+                SELECT CASE kbl%
+                    CASE kbPtPt% 'acute & grave
+                        IF modNone% THEN preKey& = pkAcute%
+                        IF modShiftOnly% THEN preKey& = pkGrave%
+                    CASE kbEsEs% 'grave & circumflex
+                        IF modNone% THEN preKey& = pkGrave%
+                        IF modShiftOnly% THEN preKey& = pkCircu%
+                    CASE kbDaDk%, kbSvSe%, kbNbNo% 'umlaut & circumflex
+                        IF modNone% THEN preKey& = pkUmlau%
+                        IF modShiftOnly% THEN preKey& = pkCircu%
+                    CASE kbEsMx% 'acute & umlaut
+                        IF modNone% THEN preKey& = pkAcute%
+                        IF modShiftOnly% THEN preKey& = pkUmlau%
+                END SELECT
+            CASE -187
+                SELECT CASE kbl%
+                    CASE kbPtPt% 'umlaut
+                        IF modNone% THEN preKey& = pkUmlau%
+                END SELECT
+            CASE -191
+                SELECT CASE kbl%
+                    CASE kbPtPt% 'circumflex
+                        IF modNone% THEN preKey& = pkCircu%
+                    CASE kbEsMx% 'grave
+                        IF modNone% THEN preKey& = pkGrave%
+                END SELECT
+            CASE -192
+                SELECT CASE kbl%
+                    CASE kbNlNl% 'acute & grave
+                        IF modNone% THEN preKey& = pkAcute%
+                        IF modShiftOnly% THEN preKey& = pkGrave%
+                    CASE kbDeCh% 'umlaut
+                        IF modNone% THEN preKey& = pkUmlau%
+                    CASE kbFrFr%, kbFrBe% 'acute
+                        IF modNone% THEN preKey& = pkAcute%
+                END SELECT
+            CASE -219
+                SELECT CASE kbl%
+                    CASE kbDeCh% 'acute
+                        IF modNone% THEN preKey& = pkAcute%
+                    CASE kbDaDk%, kbSvSe%, kbNbNo% 'acute & grave
+                        IF modNone% THEN preKey& = pkAcute%
+                        IF modShiftOnly% THEN preKey& = pkGrave%
+                END SELECT
+            CASE -220
+                SELECT CASE kbl%
+                    CASE kbFrBe% 'grave
+                        IF modNone% THEN preKey& = pkGrave%
+                    CASE kbDeDe% 'circumflex
+                        IF modNone% THEN preKey& = pkCircu%
+                END SELECT
+            CASE -221
+                SELECT CASE kbl%
+                    CASE kbFrFr%, kbFrBe% 'circumflex & umlaut
+                        IF modNone% THEN preKey& = pkCircu%
+                        IF modShiftOnly% THEN preKey& = pkUmlau%
+                    CASE kbNlNl% 'umlaut & circumflex
+                        IF modNone% THEN preKey& = pkUmlau%
+                        IF modShiftOnly% THEN preKey& = pkCircu%
+                    CASE kbDeCh% 'circumflex & grave
+                        IF modNone% THEN preKey& = pkCircu%
+                        IF modShiftOnly% THEN preKey& = pkGrave%
+                    CASE kbDeDe% 'acute & grave
+                        IF modNone% THEN preKey& = pkAcute%
+                        IF modShiftOnly% THEN preKey& = pkGrave%
+                END SELECT
+            CASE -222
+                SELECT CASE kbl%
+                    CASE kbEsEs% 'acute & umlaut
+                        IF modNone% THEN preKey& = pkAcute%
+                        IF modShiftOnly% THEN preKey& = pkUmlau%
+                    CASE kbEsMx% 'circumflex
+                        IF modNone% THEN preKey& = pkCircu%
+                END SELECT
+            CASE -226
+                SELECT CASE kbl%
+                    CASE kbPtPt% '\
+                        IF modNone% THEN charCode& = 92
+                END SELECT
+            CASE ELSE
+                oPreKey& = 0 'no case did match, cancel saved state
+        END SELECT
+        '--- check double-preselection key press (if any) ---
+        IF oPreKey& > 0 AND oPreKey& = preKey& THEN
+            SELECT CASE preKey&
+                CASE pkAcute%: charCode& = 39
+                CASE pkGrave%: charCode& = 96
+                CASE pkUmlau%: charCode& = 34
+                CASE pkCircu%: charCode& = 94
+            END SELECT
+        END IF
     END IF
-ELSEIF preKey& <> 0 AND hit& > 0 AND hit& <= 255 THEN 'any key after preselection key press
-    SELECT CASE preKey&
-        CASE -220: RESTORE KB1031toCP437_Circonflex
-        CASE -221: RESTORE KB1031toCP437_Aigu
-        CASE 221: RESTORE KB1031toCP437_Grave
-        CASE ELSE: RESTORE KB1031toCP437_None
-    END SELECT
-    READ cnt% 'start accent lookup
-    FOR i% = 1 TO cnt%
-        READ keyCode&, charCode&
-        IF hit& = keyCode& THEN
-            hit& = charCode&
-            EXIT FOR
-        END IF
-    NEXT i%
-    preKey& = 0
-    IF hit& = charCode& GOTO setInkey 'accent found, go directly to evaluation
-END IF
-'--- use Alt + number keys to enter Cp437 char codes ---
-IF NOT shift% AND NOT ctrl% AND alt% AND (hit& >= 48 AND hit& <= 57) THEN
-    '[Alt] + Number (CHR$(0) + CHR$({120-129}) ignored in favor
-    'for the alternative Alt + ASCII code input method
-    GOTO noInput
-ELSEIF NOT shift% AND NOT ctrl% AND alt% AND (hit& >= -57 AND hit& <= -48) THEN
-    number$ = number$ + CHR$(-hit&)
-ELSEIF number$ <> "" AND NOT alt% THEN
-    charCode& = VAL(RIGHT$(number$, 3))
-    IF charCode& >= 32 AND charCode& <= 255 THEN hit& = charCode&
-    number$ = "": preKey& = 0
-    GOTO setInkey
-END IF
-'--- control sequences and special behavior ---
-IF hit& <= 255 THEN
-    IF shift% AND hit& = 9 THEN hit& = 15 * 256 'reverse TAB
-    IF ctrl% AND (hit& >= 65 AND hit& <= 90) THEN hit& = hit& - 64
-    IF ctrl% AND (hit& >= 97 AND hit& <= 122) THEN hit& = hit& - 96
-    IF hit& = 167 THEN hit& = 21 'paragraph (hence also available via Ctrl-u)
-ELSEIF hit& >= 256 AND hit& <= 65535 AND ((hit& AND 255) = 0) THEN
-    charCode& = hit& \ 256
-    IF charCode& >= 59 AND charCode& <= 68 THEN 'F1-F10
-        'priority ordering (Alt -> Ctrl -> Shift)
-        IF alt% THEN hit& = (charCode& + 45) * 256: GOTO setInkey
-        IF ctrl% THEN hit& = (charCode& + 35) * 256: GOTO setInkey
-        IF shift% THEN hit& = (charCode& + 25) * 256: GOTO setInkey
-    ELSEIF charCode& = 133 OR charCode& = 134 THEN 'F11-F12
-        'priority ordering (Alt -> Ctrl -> Shift)
-        IF alt% THEN hit& = (charCode& + 6) * 256: GOTO setInkey
-        IF ctrl% THEN hit& = (charCode& + 4) * 256: GOTO setInkey
-        IF shift% THEN hit& = (charCode& + 2) * 256: GOTO setInkey
-    END IF
-END IF
-'--- bring the system codepage mapped inputs back to Cp437, if available ---
-IF hit& >= 128 AND hit& <= 255 THEN
-    RESTORE KB1031toCP437_Cp437
-    FOR i% = 128 TO 255
-        READ charCode&
-        IF hit& = charCode& THEN
-            hit& = i%
-            EXIT FOR
-        END IF
-    NEXT i%
-    IF hit& <> i% THEN hit& = 0 'no Cp437 entry found
 END IF
 '--- finally encode the usual INKEY$ result ---
-setInkey:
-IF hit& > 0 THEN
-    IF hit& <= 255 THEN KB1031toCP437Inkey$ = CHR$(hit&)
-    IF hit& >= 256 AND hit& <= 65535 AND ((hit& AND 255) = 0) THEN KB1031toCP437Inkey$ = CHR$(0) + CHR$(hit& \ 256)
+IF charCode& > 0 AND charCode& <= 65535 THEN
+    IF charCode& <= 255 THEN InkeyHit$ = CHR$(charCode&)
+    IF charCode& >= 256 AND charCode& <= 65535 AND (charCode& AND 255) = 0 THEN InkeyHit$ = CHR$(0) + CHR$(charCode& \ 256)
+    lastKey& = 0: preKey& = 0
 END IF
-noInput:
 EXIT FUNCTION
 '-----------------------------
-KB1031toCP437_Circonflex:
-DATA 6,32,94,97,131,101,136,105,140,111,147,117,150
-KB1031toCP437_Aigu:
-DATA 7,32,0,69,144,97,160,101,130,105,161,111,162,117,163
-KB1031toCP437_Grave:
-DATA 6,32,96,97,133,101,138,105,141,111,149,117,151
-KB1031toCP437_None:
-DATA 0
-KB1031toCP437_Cp437:
-DATA 199,252,233,226,228,224,229,231,234,235,232,239,238,236,196,197
-DATA 201,230,198,244,246,242,251,249,255,214,220,162,163,165,8359,402
-DATA 225,237,243,250,241,209,170,186,191,8976,172,189,188,161,171,187
-DATA 9617,9618,9619,9474,9508,9569,9570,9558,9557,9571,9553,9559,9565,9564,9563,9488
-DATA 9492,9524,9516,9500,9472,9532,9566,9567,9562,9556,9577,9574,9568,9552,9580,9575
-DATA 9576,9572,9573,9561,9560,9554,9555,9579,9578,9496,9484,9608,9604,9612,9616,9600
-DATA 945,223,915,960,931,963,181,964,934,920,937,948,8734,966,949,8745
-DATA 8801,177,8805,8804,8992,8993,247,8776,176,8729,183,8730,8319,178,9632,32
+'Char lookup tables:
+'=> pairs of Input ASC (Cp1252), Output ASC (Cp437)
+'=> lists must be double 0-terminated
+InkeyHit_Regul:
+DATA 128,238,161,173,162,155,163,156,164,15,165,157,166,124,167,21,170,166,171,174
+DATA 172,170,176,248,177,241,178,253,179,252,181,230,182,20,183,250,186,167,187,175
+DATA 188,172,189,171,191,168,196,142,197,143,198,146,199,128,201,144,209,165,214,153
+DATA 220,154,223,225,224,133,225,160,226,131,228,132,229,134,230,145,231,135,232,138
+DATA 233,130,234,136,235,137,236,141,237,161,238,140,239,139,241,164,242,149,243,162
+DATA 244,147,246,148,247,246,248,232,249,151,250,163,251,150,252,129,255,152,0,0
+InkeyHit_Acute:
+DATA 32,39,97,160,101,130,105,161,111,162,117,163,69,144,0,0
+InkeyHit_Grave:
+DATA 32,96,97,133,101,138,105,141,111,149,117,151,0,0
+InkeyHit_Umlau:
+DATA 97,132,101,137,105,139,111,148,117,129,65,142,79,153,85,154,121,152,0,0
+InkeyHit_Circu:
+DATA 32,94,97,131,101,136,105,140,111,147,117,150,65,143,0,0
 END FUNCTION
 
 '--- INTERNAL --------------------------------------------------------
@@ -1379,7 +1549,12 @@ IF found% THEN
     END IF
 ELSE
     IF NOT sm% THEN
-        guiWinX% = 25: guiWinY% = 25
+        disp% = 0: ext$ = LCASE$(FileExtension$(appExeName$))
+        IF ext$ <> ".exe" THEN
+            disp% = VAL(MID$(ext$, 2))
+            WHILE disp% > 10: disp% = disp% - 10: WEND
+        END IF
+        guiWinX% = 25 + (disp% * 25): guiWinY% = 25 + (disp% * 25)
         _SCREENMOVE guiWinX%, guiWinY%
     ELSE
         winp(0).wposSTDC.chunkID = CHwposID$
@@ -1916,7 +2091,7 @@ ELSE
         gray& = MakeGrayscale&(grad&, 0, 0, widt% - 1, heig% - 1, -1): _FREEIMAGE grad&
         filt& = ApplyFilter&(gray&, "gauss8", 0, 0, 0, 0, widt% + 10, heig% + 10, -1): _FREEIMAGE gray&
         shad& = RemapImageFS&(filt&, _DEST): _FREEIMAGE filt&
-        '--- do corner corrections, because i insisted on rounded corners ---
+        '--- do corner corrections, because I insisted on rounded corners ---
         sx% = left%: sy% = topp%: dx% = 0: dy% = 0
         _PUTIMAGE (dx%, dy%), _SOURCE, shad&, (sx%, sy%)-(sx% + 7, sy%)
         _PUTIMAGE (dx%, dy%), _SOURCE, shad&, (sx%, sy%)-(sx% + 3, sy% + 3)

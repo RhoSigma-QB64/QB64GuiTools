@@ -60,13 +60,18 @@ prefix% = ASC(SourceData$, SourcePos&)
 SourcePos& = SourcePos& + 1
 
 '--- main compression loop ---
-UpdateGuiViews: _DISPLAY: stim# = TIMER(0.001)
+pObj% = VAL(GetTagData$(lzwProgress$, "OBJECT", "0"))
+IF pObj% < 1 THEN pObj% = 0: lzwProgress$ = ""
+pGui% = (appScreen& < -1) AND (pObj% > 0)
+IF pGui% THEN UpdateGuiViews: _DISPLAY: stim# = TIMER(0.001)
 DO
     DO
         IF TargetPos& > TargetLen& THEN 'min. ratio overflow?
             ERASE PrefArr%, SuffArr%, CodeArr%, UsedArr&
-            res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", "100"))
-            lzwProgress$ = "": UpdateGuiViews: _AUTODISPLAY
+            IF pGui% THEN
+                res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", "100"))
+                lzwProgress$ = "": UpdateGuiViews: _AUTODISPLAY
+            END IF
             EXIT FUNCTION
         ELSEIF SourcePos& > SourceLen& THEN 'all done?
             pcCode% = prefix%: GOSUB PutCode 'put final byte to output
@@ -75,8 +80,10 @@ DO
             ERASE PrefArr%, SuffArr%, CodeArr%, UsedArr&
             LzwPack$ = LEFT$(TargetBuf$, TargetPos& - 1)
             LzwPack$ = LzwPack$ + "QB64LZW1" + MKL$(SourceLen&) + MKL$(GetCRC32&(SourceData$))
-            res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", "100"))
-            lzwProgress$ = "": UpdateGuiViews: _AUTODISPLAY
+            IF pGui% THEN
+                res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", "100"))
+                lzwProgress$ = "": UpdateGuiViews: _AUTODISPLAY
+            END IF
             EXIT FUNCTION
         ELSE
             suffix% = ASC(SourceData$, SourcePos&)
@@ -91,13 +98,13 @@ DO
                 UsedArr&(prefix%) = UsedArr&(prefix%) + 1
             END IF
         END IF
-        etim# = TIMER(0.001) - stim#
-        IF etim# < 0 THEN etim# = etim# + 86400 'midnight fix
-        IF etim# >= 0.04 THEN
-            IF ValidateTags%(lzwProgress$, "OBJECT", 0) THEN
+        IF pGui% THEN
+            etim# = TIMER(0.001) - stim#
+            IF etim# < 0 THEN etim# = etim# + 86400 'midnight fix
+            IF etim# >= 0.04 THEN
                 res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", LTRIM$(STR$(CINT(100 / SourceLen& * SourcePos&)))))
+                UpdateGuiViews: _DISPLAY: stim# = TIMER(0.001)
             END IF
-            UpdateGuiViews: _DISPLAY: stim# = TIMER(0.001)
         END IF
     LOOP WHILE found%
 
@@ -354,7 +361,10 @@ finChar% = code%
 pbByte% = finChar%: GOSUB PutByte
 
 '--- main decompression loop ---
-UpdateGuiViews: _DISPLAY: stim# = TIMER(0.001)
+pObj% = VAL(GetTagData$(lzwProgress$, "OBJECT", "0"))
+IF pObj% < 1 THEN pObj% = 0: lzwProgress$ = ""
+pGui% = (appScreen& < -1) AND (pObj% > 0)
+IF pGui% THEN UpdateGuiViews: _DISPLAY: stim# = TIMER(0.001)
 DO
     '--- get next code from input ---
     GOSUB GetCode: code% = gcCode%
@@ -364,8 +374,10 @@ DO
             LzwUnpack$ = LEFT$(TargetBuf$, TargetPos& - 1)
             ERASE PrefArr%, SuffArr%, UsedArr&, stack%
             IF CVL(MID$(LzwSig$, 13, 4)) <> GetCRC32&(LzwUnpack$) THEN LzwUnpack$ = "" 'data corrupted
-            res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", "100"))
-            lzwProgress$ = "": UpdateGuiViews: _AUTODISPLAY
+            IF pGui% THEN
+                res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", "100"))
+                lzwProgress$ = "": UpdateGuiViews: _AUTODISPLAY
+            END IF
             EXIT FUNCTION
         CASE 257 'code "increase code size"
             codeSize% = codeSize% + 1
@@ -395,8 +407,10 @@ DO
                 '--- because this can't be right! ---
                 IF code% > nextCode% THEN
                     ERASE PrefArr%, SuffArr%, UsedArr&, stack%
-                    res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", "100"))
-                    lzwProgress$ = "": UpdateGuiViews: _AUTODISPLAY
+                    IF pGui% THEN
+                        res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", "100"))
+                        lzwProgress$ = "": UpdateGuiViews: _AUTODISPLAY
+                    END IF
                     EXIT FUNCTION
                 END IF
                 '--- trick decompressor to use last code ---
@@ -433,13 +447,13 @@ DO
             END IF
             oldCode% = inCode%
     END SELECT
-    etim# = TIMER(0.001) - stim#
-    IF etim# < 0 THEN etim# = etim# + 86400 'midnight fix
-    IF etim# >= 0.04 THEN
-        IF ValidateTags%(lzwProgress$, "OBJECT", 0) THEN
+    IF pGui% THEN
+        etim# = TIMER(0.001) - stim#
+        IF etim# < 0 THEN etim# = etim# + 86400 'midnight fix
+        IF etim# >= 0.04 THEN
             res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", LTRIM$(STR$(CINT(100 / LzwLen& * LzwPos&)))))
+            UpdateGuiViews: _DISPLAY: stim# = TIMER(0.001)
         END IF
-        UpdateGuiViews: _DISPLAY: stim# = TIMER(0.001)
     END IF
 LOOP
 '--- we should never reach this point, $CHECKING must be switched ---

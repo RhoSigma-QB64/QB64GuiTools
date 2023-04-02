@@ -12,13 +12,17 @@ Ie: You get a ready to use program template/skeleton at hand, in which
     you just add your GUI design and the handling code for your objects
     in its contextual designated places, while leaving everything else
     in the program just as it is.
+    Of course, the handling code can also contain instructions to add new
+    objects to the existing GUI, delete and/or modify existing objects or
+    even setup whole new forms on the fly, as the GuiTools Framework its
+    GUIs are organized in a completly dynamic manner internally.
 
 ----------------------------------------------------------------------
 
 If you wanna try to do your own application, then the folder src_GuiApp
 is your starting point. This is a ready to use program skeleton, which
 you shouldn't mess up. Ie. your first task should be to make a copy of
-that folder with its entire content and rename that copy as you like,
+that folder with its entire contents and rename that copy as you like,
 eg. src_MyApp. Then also reaname the file GuiApp.bas inside to MyApp.bas.
 
 First thing I want to bring to your attention is the fact, that everything
@@ -57,10 +61,16 @@ Right after the error handler you find the label
 As you may guess, this is your main program. It has mainly two sub-sections:
 
 3. The heading "My GUI Setup"
-   Here is the place to initialize your GUI objects like buttons, frames,
-   sliders and so on. Right in front of this heading you have an area with
-   the comment "Early required Globals", which you should use in conjunction
-   with the GUI setup as needed.
+   Here is the place where you setup the initial GUI objects, ie. the
+   objects available in your GUI right after program startup. Right in
+   front of this heading is an area commented as "Early required Globals",
+   which you should use in conjunction with the GUI setup as needed.
+   If there's a need in your program to dynamically add/remove/modify any
+   objects or even create whole new forms on the fly, then this can also
+   be done everywhere else within your program flow, by name in the event
+   handlers or in your own GOSUBs, SUBs and FUNCTIONs (see below). The
+   objects defined here just represent your startup GUI, which may be
+   all you need for simple applications with a static GUI only.
 
 4. The heading "My Main Loop"
    This is the main loop of the application. You usually don't need to
@@ -92,3 +102,18 @@ After the main loop you find two more sections:
    These SUBs are used in your main program (UserMain:) to setup the
    program window in the beginning and close it before the RETURN.
 
+After all this you find lots of $INCLUDE statements which will load the
+framework library with dozens of useful SUBs and FUNCTIONs which you can
+freely use in your code as required. You find desciptions of the available
+functions in the "docs" directory separated into sub-folders by context.
+You should at least have a look into "doc_GuiAppFrame.bm" for a list of
+globally SHARED variables, maybe there is something ready to use, which
+you don't need to code yourself (eg. temp or local user folders).
+
+If you need to embed any files (eg. images) into your program, then you
+can use one of the provided GuiTools applications MakeDATA or MakeCARR
+to convert the files into DATA lines or an data array on C/C++ level.
+The converted data files should go into the "inline" sub-folder and should
+be $INCLUDEd right here just like the already provided inline images.
+The writeback and cleanup of the embedded files should be done within the
+Init/Exit Handlers (see section 1.)

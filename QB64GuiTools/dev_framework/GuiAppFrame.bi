@@ -33,13 +33,9 @@ DIM SHARED appFullExe$ 'full path/name of this program's executable file (eg. "C
 DIM SHARED appExeName$ 'name only of this program's executable file (eg. "GuiApp.exe")
 
 DIM SHARED appPCName$ 'this computer's name from environment set (eg. "My Computer")
-DIM SHARED appDrives$ 'the drives available on this computer in one string (eg. "CDEGHI")
 DIM SHARED appLocalDir$ 'the local appdata folder from environment set (eg. "C:\Users\RhoSigma\AppData\Local\")
 DIM SHARED appTempDir$ 'the temporary folder from environment set (eg. "C:\Users\RhoSigma\AppData\Local\temp\")
-
 DIM SHARED appLastErr% 'the last occurred runtime error number (if any)
-DIM SHARED appScreen& 'the image handle of the main screen (see SetupScreen()/CloseScreen())
-'use SourceDestGuiView() to activate any GuiViews for rendering, SourceDestGuiView(0) = appScreen&
 
 '---------------------------
 '--- Public CONST values ---
@@ -155,8 +151,8 @@ DECLARE LIBRARY
     FUNCTION GetModuleFileNameA& (BYVAL module&, buffer$, BYVAL bufSize&)
     'Used during program init to setup the SHARED variables
     'appHomeDrive$, appHomePath$, appFullExe$ and appExeName$.
-    FUNCTION GetLogicalDriveStringsA& (BYVAL bufSize&, buffer$)
-    'Used during program init to setup the SHARED variable appDrives$.
+    FUNCTION GetLogicalDrives& ()
+    'Used in the dev_framework\GuiAppFrame.bm function CurrDrives$().
     FUNCTION GetCurrentDirectoryA& (BYVAL bufSize&, buffer$)
     'Used in the dev_framework\GuiAppFrame.bm function CurrDIR$().
     FUNCTION GetKeyboardLayout&& (BYVAL thread&)
@@ -233,8 +229,9 @@ appStackArr$(0) = "*** RhoSigma-Stack-Bottom ***"
 REDIM SHARED guiViews$(0)
 DIM SHARED guiAGVIndex& 'active GuiView index
 guiAGVIndex& = 0
-DIM SHARED appIcon& 'image handle of program icon
-DIM SHARED appFont& 'font handle used on all GuiViews (if any)
+DIM SHARED appScreen& 'image handle of the main screen (see SetupScreen())
+DIM SHARED appIcon& 'image handle of program's default window icon
+DIM SHARED appFont& 'font handle used in all GuiViews (if any)
 '--- objects ---
 CONST objData% = 0, objType% = 1, objFlags% = 2, objConn% = 3 '1st dimension IDs
 REDIM SHARED guiObjects$(3, 0)
@@ -253,10 +250,10 @@ DIM SHARED guiATTProps$ 'active ToolTip properties
 guiATTProps$ = ""
 DIM SHARED guiWinX%, guiWinY% 'current window position
 '--- flow control ---
-DIM SHARED appSSSEarly% 'SetupScreen() show early yes(-1)/no(0)
-appSSSEarly% = 0
-DIM SHARED appGMRInkey% 'GetGUIMsg$() regular INKEY$ yes(-1)/no(0)
-appGMRInkey% = -1
+DIM SHARED appGLVComp% 'compiled with QB64-GL yes(-1), no(0) = QB64-SDL
+appGLVComp% = 0
+DIM SHARED appKBLIdent% 'detected keyboard layout identifier
+appKBLIdent% = 0
 '--- errors ---
 appErrCnt% = 0: appErrMax% = 5
 REDIM appErrorArr%(1 TO appErrMax%, 1)
@@ -278,13 +275,16 @@ dummy% = ParseLine&(temp$, cmdArgs$(), 5)
 
 '--- init some computer/program related variables ---
 appPCName$ = ENVIRON$("COMPUTERNAME")
-GOSUB GetHomeDriveVars
+temp$ = SPACE$(264): i% = GetModuleFileNameA&(0, temp$, 264)
+appFullExe$ = LEFT$(temp$, i%): appHomeDrive$ = LEFT$(appFullExe$, 3)
+appHomePath$ = PathPart$(appFullExe$): appExeName$ = FilePart$(appFullExe$)
 OPEN "B", #1, appFullExe$: temp$ = SPACE$(LOF(1)): GET #1, , temp$: CLOSE #1
 IF INSTR(temp$, UCASE$("opengl32.")) > 0 THEN
-    appSSSEarly% = -1
-    IF (GetKeyboardLayout&&(0) \ 65536) = &H0407 THEN appGMRInkey% = 0
+    appGLVComp% = -1: kbli% = GetKeyboardLayout&&(0) \ 65536
+    temp$ = "," + LTRIM$(STR$(kbli%)) + ","
+    i% = INSTR(",1030,1031,1033,1034,1036,1040,1043,1044,1053,2055,2057,2058,2060,2070,4108,6153,", temp$)
+    IF i% > 0 THEN appKBLIdent% = kbli%
 END IF
-temp$ = ""
 
 '--- init global GuiApps management ---
 GOSUB CreateGlobalTemps
@@ -358,7 +358,7 @@ FOR i& = 1 TO UBOUND(guiViews$)
     temp& = VAL(GetTagData$(guiViews$(i&), "IHANDLE", "-1"))
     IF temp& < -1 THEN _FREEIMAGE temp&
     RemoveSMObject VAL(GetTagData$(guiViews$(i&), "SMOBJ", "0"))
-    RemoveMutex VAL(GetTagData$(guiViews$(vix&), "ISOPEN", "0"))
+    RemoveMutex VAL(GetTagData$(guiViews$(i&), "ISOPEN", "0"))
 NEXT i&
 RemoveSMObject appSMObj%&
 
@@ -377,28 +377,6 @@ ERASE appStackArr$
 SYSTEM
 '**********************************************************************
 '**********************************************************************
-
-'----------------------------------------------
-'--- Get EXE's home vars & available drives ---
-'----------------------------------------------
-GetHomeDriveVars:
-'--- full .exe path/name ---
-ghdvTmp$ = SPACE$(264)
-ghdvLen% = GetModuleFileNameA&(0, ghdvTmp$, LEN(ghdvTmp$))
-appFullExe$ = LEFT$(ghdvTmp$, ghdvLen%)
-'--- home drive ---
-appHomeDrive$ = LEFT$(appFullExe$, 3)
-'--- home path & .exe (name only) ---
-appHomePath$ = PathPart$(appFullExe$)
-appExeName$ = FilePart$(appFullExe$)
-'--- available drives ---
-ghdvTmp$ = SPACE$(112)
-ghdvLen% = GetLogicalDriveStringsA&(LEN(ghdvTmp$), ghdvTmp$)
-appDrives$ = ""
-FOR ghdvPos% = 1 TO ghdvLen% STEP 4
-    appDrives$ = appDrives$ + MID$(ghdvTmp$, ghdvPos%, 1)
-NEXT ghdvPos%
-RETURN
 
 '--------------------------------------------------------------------
 '--- Create/Remove the global .tmp files. These are shared by all ---

@@ -122,7 +122,7 @@ IF (NOT ValidateTags%(tagsID$, "IMAGEFILE,LEFT,TOP", 0)) AND _
     SetTag ImageC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     IF BoolTagTrue%(tagsID$, "BACKFILL") AND (NOT BoolTagTrue%(tagsID$, "PREVIEW")) THEN RemTag tagsID$, "PAGEROBJECT"
-    IF NOT CheckInheritViewFromPager%(tagsID$) THEN
+    IF NOT CheckInheritViewFromPager%(ImageC$, classID$, tagsID$) THEN
         ihan& = VAL(GetTagData$(tagsID$, "IMAGEHANDLE", "0"))
         IF ihan& < -1 THEN _FREEIMAGE ihan&
     ELSE
@@ -374,7 +374,7 @@ END IF
 RETURN
 END FUNCTION
 '----------------------------------
-FUNCTION CheckInheritViewFromPager% (tagsID$)
+FUNCTION CheckInheritViewFromPager% (classRes$, classID$, tagsID$)
 IF (NOT ChildInit%) AND (NOT BoolTagTrue%(tagsID$, "BACKFILL")) THEN
     IF guiALBIndex& > 1 THEN 'inherit GuiView of active hover layer (if any)
         view$ = GetTagData$(guiObjects$(objData%, guiALBIndex&), "GUIVIEW", "0")
@@ -386,9 +386,11 @@ temp$ = GetTagData$(tagsID$, "PAGEROBJECT", "n/a")
 IF temp$ <> "n/a" THEN
     page& = VAL(temp$)
     IF page& < 1 OR page& > UBOUND(guiObjects$, 2) THEN
+        SetTag classRes$, "ERROR", classID$ + "::Init -> given PAGEROBJECT = undefined object"
         flag% = -1
     ELSE
         IF guiObjects$(objType%, page&) <> "PagerC" THEN
+            SetTag classRes$, "ERROR", classID$ + "::Init -> given PAGEROBJECT = wrong object type"
             flag% = -1
         ELSE
             IF (NOT ChildInit%) AND page& >= guiALBIndex& THEN 'inherit GuiView, if pager is on current layer

@@ -167,9 +167,9 @@ ELSE
         clis$ = ListC$("INIT", "")
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("LST0", clis$)
         file$ = GetTagData$(tagsID$, "WALLIMAGE", "n/a")
-        hand$ = GetTagData$(tagsID$, "WALLHANDLE", "n/a")
+        hand$ = GetTagData$(tagsID$, "WALLHANDLE", "-1")
         area$ = GetTagData$(tagsID$, "WALLAREA", "false")
-        IF file$ <> "n/a" OR hand$ <> "n/a" THEN
+        IF file$ <> "n/a" OR hand$ <> "-1" THEN
             wimg$ = ImageC$("INIT", NewTag$("IMAGEFILE", file$) + NewTag$("IMAGEHANDLE", hand$) + NewTag$("AREA", area$) +_
                     NewTag$("LEFT", LTRIM$(STR$(wale%))) + NewTag$("TOP", LTRIM$(STR$(wato%))) +_
                     NewTag$("WIDTH", LTRIM$(STR$(wawi%))) + NewTag$("HEIGHT", LTRIM$(STR$(wahe%))))

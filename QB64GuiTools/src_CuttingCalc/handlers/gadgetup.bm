@@ -2,7 +2,7 @@
         'This is the most important event type for GUI operation, it is
         'delivered only, if an clickable GUI object went into focus, then
         'got selected and finally got unselected while it still (or again)
-        'had focus, ie. the object was regulary clicked once and now the
+        'had focus, ie. the object was regularly clicked once and now the
         'associated action should be executed. This event is also send,
         'if any Text/Number input field is unselected, hence its input is
         'completed. The function ThisObject%() does match the GADGETUP
@@ -38,19 +38,19 @@
             '--- do unit conversion ---
             IF systIdx% = 2 THEN
                 '--- conversion metric -> imperial ---
-                lenDiv# = 25.4: velDiv# = 0.3048: extFac% = 12: numFmt$ = "#####.####"
+                lenDiv# = 25.4: velDiv# = 0.3048: extFac% = 12: numFmt$ = "0{#####.####}"
             ELSE
                 '--- conversion imperial -> metric ---
-                lenDiv# = 1 / 25.4: velDiv# = 1 / 0.3048: extFac% = 1000: numFmt$ = "#####.###"
+                lenDiv# = 1 / 25.4: velDiv# = 1 / 0.3048: extFac% = 1000: numFmt$ = "0{#####.###}"
             END IF
             d# = d# / lenDiv#: fz# = fz# / lenDiv#: fn# = z% * fz#
             vc# = vc# / velDiv#
             n& = ((vc# * extFac%) / d#) / 3.141592653589793: vf& = fn# * n&
             '--- formatting new values ---
-            d$ = LTRIM$(Format$(numFmt$, STR$(d#), 1))
-            fz$ = LTRIM$(Format$(numFmt$, STR$(fz#), 1))
-            fn$ = LTRIM$(Format$(numFmt$, STR$(fn#), 1))
-            vc$ = LTRIM$(Format$(numFmt$, STR$(vc#), 1))
+            d$ = LTRIM$(IndexFormat$(numFmt$, STR$(d#), "|"))
+            fz$ = LTRIM$(IndexFormat$(numFmt$, STR$(fz#), "|"))
+            fn$ = LTRIM$(IndexFormat$(numFmt$, STR$(fn#), "|"))
+            vc$ = LTRIM$(IndexFormat$(numFmt$, STR$(vc#), "|"))
             z$ = LTRIM$(STR$(z%)): n$ = LTRIM$(STR$(n&)): vf$ = LTRIM$(STR$(vf&)) 'integers don't need formatting
             '--- rebuild the GUI ---
             GOSUB GUIInit
@@ -60,7 +60,7 @@
         '--- tool diameter ---
         IF ThisObject%(StringDiameter$, mess$, "GADGETUP") THEN
             d# = VAL(GetTagData$(GenC$("GET", StringDiameter$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
-            d$ = LTRIM$(Format$(numFmt$, STR$(d#), 1))
+            d$ = LTRIM$(IndexFormat$(numFmt$, STR$(d#), "|"))
             r$ = GenC$("SET", StringDiameter$ + NewTag$("TEXT", d$))
         END IF
         '--- number of teeth ---
@@ -71,19 +71,19 @@
         '--- feed per tooth ---
         IF ThisObject%(StringPerTooth$, mess$, "GADGETUP") THEN
             fz# = VAL(GetTagData$(GenC$("GET", StringPerTooth$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
-            fz$ = LTRIM$(Format$(numFmt$, STR$(fz#), 1))
+            fz$ = LTRIM$(IndexFormat$(numFmt$, STR$(fz#), "|"))
             r$ = GenC$("SET", StringPerTooth$ + NewTag$("TEXT", fz$))
         END IF
         '--- feed per revolution ---
         IF ThisObject%(StringPerRev$, mess$, "GADGETUP") THEN
             fn# = VAL(GetTagData$(GenC$("GET", StringPerRev$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
-            fn$ = LTRIM$(Format$(numFmt$, STR$(fn#), 1))
+            fn$ = LTRIM$(IndexFormat$(numFmt$, STR$(fn#), "|"))
             r$ = GenC$("SET", StringPerRev$ + NewTag$("TEXT", fn$))
         END IF
         '--- cutting speed ---
         IF ThisObject%(StringCutSpeed$, mess$, "GADGETUP") THEN
             vc# = VAL(GetTagData$(GenC$("GET", StringCutSpeed$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "0"))
-            vc$ = LTRIM$(Format$(numFmt$, STR$(vc#), 1))
+            vc$ = LTRIM$(IndexFormat$(numFmt$, STR$(vc#), "|"))
             r$ = GenC$("SET", StringCutSpeed$ + NewTag$("TEXT", vc$))
         END IF
         '--- spindle speed ---

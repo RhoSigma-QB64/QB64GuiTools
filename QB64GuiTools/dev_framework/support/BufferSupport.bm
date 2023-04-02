@@ -433,7 +433,7 @@ IF ePo& < sPo& THEN SWAP sPo&, ePo&
 '--- copy block to clip ---
 _CLIPBOARD$ = MID$(buf$(0), sPo&, ePo& - sPo&)
 '--- then delete block ---
-old& = SeekBuf&(buf$(), sPo&, SBM_BufStart)
+old& = SeekBuf&(buf$(), sPo&, SBM_PosRestore)
 DeleteBufRawData buf$(), ePo& - sPo&
 CutBufBlock% = 0
 END FUNCTION
@@ -449,7 +449,7 @@ IF bound& <> 0 THEN
     sPo& = bound&: ePo& = GetBufPos&(buf$())
     IF ePo& < sPo& THEN SWAP sPo&, ePo&
     '--- delete old block ---
-    old& = SeekBuf&(buf$(), sPo&, SBM_BufStart)
+    old& = SeekBuf&(buf$(), sPo&, SBM_PosRestore)
     DeleteBufRawData buf$(), ePo& - sPo&
 END IF
 '--- finally paste block from clip ---
@@ -461,12 +461,11 @@ END FUNCTION
 '---------------------------------------------------------------------
 FUNCTION SeekBuf& (buf$(), displace&, mode%)
 '--- prepare values ---
-disp& = displace&
 cur& = GetBufPos&(buf$()): eob& = GetBufLen&(buf$()) + 1
 brc$ = BufEolSeq$(buf$()): brl% = LEN(brc$)
 '--- select origin ---
 SELECT CASE mode%
-    CASE SBM_PosRestore: origin& = disp&: disp& = 0
+    CASE SBM_PosRestore: origin& = 0
     CASE SBM_BufStart: origin& = 1
     CASE SBM_BufCurrent: origin& = cur&
     CASE SBM_BufEnd: origin& = eob&
@@ -502,7 +501,7 @@ SELECT CASE mode%
         EXIT FUNCTION
 END SELECT
 '--- seek to new position ---
-newPos& = origin& + disp&
+newPos& = origin& + displace&
 IF newPos& < 1 OR newPos& > eob& THEN
     SeekBuf& = SBE_OutOfBounds
 ELSE

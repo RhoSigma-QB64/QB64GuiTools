@@ -150,7 +150,7 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
                                return ACTUAL to 0 (list empty). In all other cases
                                the value is not changed, as usually the remaining
                                records will move up to the actual list position.
-                               This behaviour allows for a complete list cleanup
+                               This behavior allows for a complete list cleanup
                                starting from any record in the list without the
                                need to handle any special cases.
                              - The SEARCH method will set ACTUAL to the found
@@ -163,7 +163,7 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
                                multiple times or another action shall be done on
                                the same record. Note that this tag is valid for
                                one READ method call only. The next call will
-                               regulary count on the ACTUAL value again according
+                               regularly count on the ACTUAL value again according
                                to the last active REVERSE state, unless HOLD is
                                specified again.
                              For SEARCH method call:
@@ -200,13 +200,13 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
 -----
 (LONG) MULOBJECT        pub: Index of the multiplier interconnected object.
 (TEXT) MULTAG           pub: Name of the multiplier's tag to ratio forward.
-(TEXT) MULFORMAT        pub: The USING format for the multiplier's output,
-                             should be number related specifiers only.
+(TEXT) MULFORMAT        pub: Optional the PRINT USING format symbols for
+                             the multiplier's output, numeric only.
 (DOUB) RATIO            pub: The ratio between the interconnected objects.
 (LONG) DIVOBJECT        pub: Index of the divisor interconnected object.
 (TEXT) DIVTAG           pub: Name of the divisor's tag to ratio forward.
-(TEXT) DIVFORMAT        pub: The USING format for the divisor's output,
-                             should be number related specifiers only.
+(TEXT) DIVFORMAT        pub: Optional the PRINT USING format symbols for
+                             the divisor's output, numeric only.
 (BOOL) INTONLY          pub: If true, then the ratio results will be CLNGed.
 -----
 --- HsbRgb model (forwarding through an intermediary HSB/RGB converter)
@@ -322,8 +322,11 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
                              in any color depth (1-32 bits). If given both
                              (file & handle), then IMAGEFILE is ignored in
                              general, but is still checked/used as fallback
-                             if IMAGEHANDLE is invalid. If you kill an ImageC,
-                             the given handle is freed automatically.
+                             if IMAGEHANDLE is invalid. If the init method call
+                             fails or you call the kill method on an ImageC
+                             object created with this tag, then the given handle
+                             is freed automatically, hence the handle becomes
+                             invalid for further image operations.
 (BOOL) AREA             pub: If true, then the WIDTH and HEIGHT tags determine
                              the area size to fill, otherwise they do specify
                              the desired image size. That means, with AREA set
@@ -491,7 +494,7 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
 (TEXT) WARNING          pub: A warning message, may be returned by any method call
                              and means the method could still finish by using
                              internal fallbacks, or by simply ignoring the faulty
-                             behaviour if it does not vitally affect the internal
+                             behavior if it does not vitally affect the internal
                              GUI operations. However, especially for the DRAW
                              method this may mean, that an object is not rendered
                              the way it was intended.

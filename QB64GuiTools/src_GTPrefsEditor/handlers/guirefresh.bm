@@ -11,7 +11,11 @@
         BeginGUIRefresh 'will stop _AUTODISPLAY, CLS and put BACKFILL image (if any)
         '-----
         'In between here you can render everything, which needs to be
-        'placed on the main screen, but before any object imagery is drawn.
+        'placed on the screen, but before any object imagery is drawn.
+        'Call SUB SourceDestGuiView() first to activate the desired view.
+        'If you need to change _SOURCE and _DEST yourself for any (temporary)
+        'image operations, then make sure to save and later restore the old
+        'values, or call SUB SourceDestGuiView() again to restore it.
         GOSUB UpdatePaletteTool
         res$ = GenC$("UPDATE", PalIcHsbRgb$)
         res$ = GenC$("UPDATE", PalIcSat$)
@@ -25,7 +29,11 @@
         EndGUIRefresh 'will redraw all visible objects, then _AUTODISPLAY again
         '-----
         'Here you can still render things, which must be drawn after all
-        'object imagery is done.
+        'object imagery is done. Call SUB SourceDestGuiView() first to
+        'activate the desired view. If you need to change _SOURCE and _DEST
+        'yourself for any (temporary) image operations, then make sure to
+        'save and later restore the old values, or call SUB SourceDestGuiView()
+        'again to restore it.
         '-----
     END IF
 

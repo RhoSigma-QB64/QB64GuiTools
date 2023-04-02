@@ -213,6 +213,7 @@ IF winTitle$ <> "*** RhoSigma-MessageBox-HandlerCall ***" THEN
     WHILE CheckMutex%("Global\RhoSigma-GuiApp-MessageBoxHandler-" + appProgID$ + CHR$(0))
         _LIMIT 20
     WEND
+    _DELAY 0.1
 
     rff% = SafeOpenFile%("I", appTempDir$ + file$)
     LINE INPUT #rff%, MessageBox$
@@ -255,7 +256,6 @@ ELSE
     BeginGUIRefresh
     IF guiViews$(0) = "" THEN FillRectRaster 0, 0, _WIDTH, _HEIGHT, guiShinePen%
     EndGUIRefresh
-    _MOUSESHOW
     DO
         _LIMIT 50
         IF NOT CheckMutex%("Global\RhoSigma-GuiApp-MBParent-" + buttonText$ + CHR$(0)) THEN ERROR 1000 'parent is gone, so we do
@@ -316,6 +316,7 @@ IF winTitle$ <> "*** RhoSigma-FileSelect-HandlerCall ***" THEN
     WHILE CheckMutex%("Global\RhoSigma-GuiApp-FileSelectHandler-" + appProgID$ + CHR$(0))
         _LIMIT 20
     WEND
+    _DELAY 0.1
 
     rff% = SafeOpenFile%("I", appTempDir$ + file$)
     LINE INPUT #rff%, FileSelect$
@@ -367,10 +368,6 @@ ELSE
     resu$ = ListC$("STORE", rlis$ + NewTag$("DATA", CHR$(255)))
     resu$ = ListC$("STORE", rlis$ + NewTag$("DATA", STRING$(2, CHR$(255)) + CHR$(4) + " hit any key to abort reading and show"))
     resu$ = ListC$("STORE", rlis$ + NewTag$("DATA", STRING$(4, CHR$(255)) + "what I have so far ..."))
-    dlis$ = ListC$("INIT", "")
-    FOR i% = 1 TO LEN(appDrives$)
-        resu$ = ListC$("STORE", dlis$ + NewTag$("DATA", MID$(appDrives$, i%, 1) + ":\" + SPACE$(35) + "<DRIVE>") + SymbolTag$(dlsy$))
-    NEXT i%
     allo$ = ""
     FOR i% = 32 TO 255
         SELECT CASE i%
@@ -425,7 +422,6 @@ ELSE
     GOSUB fsReadDir
     GOSUB fsChkButtonStates
     '--- operate GUI ---
-    _MOUSESHOW
     DO
         _LIMIT 50
         IF NOT CheckMutex%("Global\RhoSigma-GuiApp-FSParent-" + iniFile$ + CHR$(0)) THEN
@@ -592,7 +588,11 @@ ELSE
                 END IF
             END IF
             IF ThisObject%(drbu$, mess$, "GADGETUP") OR BoolTagTrue%(mess$, "MOUSEMBDOWN") THEN
-                resu$ = TextC$("SET", fstx$ + NewTag$("TEXT", "Drives:" + STR$(LEN(appDrives$))))
+                resu$ = ListC$("KILL", dlis$): dlis$ = ListC$("INIT", ""): temp$ = CurrDrives$
+                FOR i% = 1 TO LEN(temp$)
+                    resu$ = ListC$("STORE", dlis$ + NewTag$("DATA", MID$(temp$, i%, 1) + ":\" + SPACE$(35) + "<DRIVE>") + SymbolTag$(dlsy$))
+                NEXT i%
+                resu$ = TextC$("SET", fstx$ + NewTag$("TEXT", "Drives:" + STR$(LEN(temp$))))
                 resu$ = ListviewC$("SET", fslv$ + NewTag$("READONLY", "false") + NewTag$("ACTUAL", "0") + ListTag$(dlis$))
                 dlis% = -1
             END IF
@@ -665,8 +665,8 @@ tlis$ = ListC$("INIT", "") 'create new temp dir list
 resu$ = ListC$("KILL", flis$) 'kill old file list
 flis$ = ListC$("INIT", "") 'create new file list
 
-nd& = 0: nf& = 0: nu&& = 0
-text$ = Format3$("Dirs:& / Files:& / Usage:&", STR$(nd&), 0, STR$(nf&), 0, STR$(nu&&), 0)
+nd& = 0: nf& = 0: nu&& = 0: dfut$ = "Dirs:0{&} / Files:1{&} / Usage:2{&}"
+text$ = IndexFormat$(dfut$, STR$(nd&) + "|" + STR$(nf&) + "|" + STR$(nu&&), "|")
 resu$ = TextC$("SET", fstx$ + NewTag$("TEXT", text$))
 
 patt$ = GetTagData$(StringC$("GET", fsre$ + NewTag$("TAGNAMES", "TEXT")), "TEXT", "")
@@ -742,13 +742,13 @@ IF dhan%& <> 0 THEN
             END IF
             IF ((nd& + nf&) MOD div%) = 0 THEN
                 IF (nd& + nf&) = 100 THEN div% = 100
-                text$ = Format3$("Dirs:& / Files:& / Usage:&", STR$(nd&), 0, STR$(nf&), 0, STR$(nu&&), 0)
+                text$ = IndexFormat$(dfut$, STR$(nd&) + "|" + STR$(nf&) + "|" + STR$(nu&&), "|")
                 resu$ = TextC$("SET", fstx$ + NewTag$("TEXT", text$))
             END IF
         END IF
     LOOP UNTIL entr$ = "" OR INKEY$ <> ""
     EndDirRead dhan%&
-    text$ = Format3$("Dirs:& / Files:& / Usage:&", STR$(nd&), 0, STR$(nf&), 0, STR$(nu&&), 0)
+    text$ = IndexFormat$(dfut$, STR$(nd&) + "|" + STR$(nf&) + "|" + STR$(nu&&), "|")
     resu$ = TextC$("SET", fstx$ + NewTag$("TEXT", text$))
 END IF
 
@@ -915,67 +915,142 @@ END IF
 Bin$ = MID$(Bin$, highPos%)
 END FUNCTION
 
-'--- docs\doc_GuiAppframe.bm\Format.html
+'--- docs\doc_GuiAppframe.bm\IndexFormat.html
 '---------------------------------------------------------------------
-FUNCTION Format$ (fmt$, arg$, typ%)
+FUNCTION IndexFormat$ (fmt$, arg$, sep$)
+'--- init ---
+args$ = arg$ 'avoid side effects
 shan& = _SOURCE: dhan& = _DEST: than& = _NEWIMAGE(256, 1, 0)
 _SOURCE than&: _DEST than&
-IF typ% THEN
-    PRINT USING fmt$; VAL(arg$);
-ELSE
-    PRINT USING fmt$; arg$;
-END IF
-FOR i% = 1 TO POS(0) - 1
-    res$ = res$ + CHR$(SCREEN(1, i%))
-NEXT i%
+REDIM argArr$(0 TO 35) 'all args empty
+'--- parse arguments ---
+IF RIGHT$(args$, LEN(sep$)) <> sep$ THEN args$ = args$ + sep$
+FOR idx% = 0 TO 35
+    cpos& = INSTR(args$, sep$): IF cpos& = 0 THEN EXIT FOR
+    argArr$(idx%) = LEFT$(args$, cpos& - 1)
+    args$ = MID$(args$, cpos& + LEN(sep$))
+NEXT idx%
+'--- process format template ---
+res$ = "": lit% = 0: tok% = 0: ft$ = "": idx% = -1
+FOR cpos& = 1 TO LEN(fmt$)
+    cch$ = MID$(fmt$, cpos&, 1)
+    IF cch$ = "_" AND lit% = 0 THEN 'take next \{} as literal
+        IF NOT tok% THEN lit% = -1
+    ELSEIF cch$ = "\" AND lit% = 0 AND tok% = 0 THEN 'insert esc sequence
+        IF cpos& < LEN(fmt$) THEN
+            SELECT CASE UCASE$(MID$(fmt$, cpos& + 1, 1))
+                CASE "A": och$ = CHR$(7) ' audio bell
+                CASE "B": och$ = CHR$(8) ' backspace
+                CASE "T": och$ = CHR$(9) ' tabulator
+                CASE "N": och$ = CHR$(10) 'line feed
+                CASE "V": och$ = CHR$(11) 'vertical tabulator
+                CASE "F": och$ = CHR$(12) 'form feed
+                CASE "R": och$ = CHR$(13) 'carriage return
+                CASE "E": och$ = CHR$(27) 'escape
+                CASE "0", "1", "2", "3" '  octal ASCII (3 digits)
+                    och$ = CHR$(VAL("&O" + MID$(fmt$, cpos& + 1, 3)))
+                    cpos& = cpos& + 2
+                CASE "X" '                 hex ASCII (x + 2 digits)
+                    och$ = CHR$(VAL("&H" + MID$(fmt$, cpos& + 2, 2)))
+                    cpos& = cpos& + 2
+                CASE ELSE: och$ = "" '     ignore unknowns
+            END SELECT
+            res$ = res$ + och$
+            cpos& = cpos& + 1: opos& = cpos&
+        END IF
+    ELSEIF cch$ = "{" AND lit% = 0 THEN 'begin of formatting token
+        IF idx% = -1 THEN
+            och$ = UCASE$(MID$(fmt$, cpos& - 1, 1)): tok% = -1
+            IF ((cpos& - 1) = opos&) OR ((och$ < "0" OR och$ > "9") AND (och$ < "A" OR och$ > "Z")) THEN och$ = "-"
+            IF och$ = "-" THEN och$ = "0": ELSE res$ = LEFT$(res$, LEN(res$) - 1)
+            IF och$ >= "A" THEN idx% = ASC(och$) - 55: ELSE idx% = VAL(och$)
+        END IF
+    ELSEIF cch$ = "}" AND lit% = 0 THEN 'end of formatting token
+        IF idx% >= 0 THEN
+            GOSUB doArgFormat: res$ = res$ + tmp$
+            tok% = 0: ft$ = "": idx% = -1
+        END IF
+    ELSE 'accumulate chars/symbols in correct channel
+        IF lit% AND INSTR("\{}", cch$) = 0 THEN cch$ = "_" + cch$
+        IF tok% THEN ft$ = ft$ + cch$: ELSE res$ = res$ + cch$
+        lit% = 0
+    END IF
+NEXT cpos&
+'--- cleanup & set result ---
+ERASE argArr$
 _SOURCE shan&: _DEST dhan&: _FREEIMAGE than&
-Format$ = res$
-END FUNCTION
-'-----
-FUNCTION Format2$ (fmt$, arg$, typ%, arg2$, typ2%)
-shan& = _SOURCE: dhan& = _DEST: than& = _NEWIMAGE(256, 1, 0)
-_SOURCE than&: _DEST than&
-IF typ% AND typ2% THEN
-    PRINT USING fmt$; VAL(arg$); VAL(arg2$);
-ELSEIF typ% THEN
-    PRINT USING fmt$; VAL(arg$); arg2$;
-ELSEIF typ2% THEN
-    PRINT USING fmt$; arg$; VAL(arg2$);
-ELSE
-    PRINT USING fmt$; arg$; arg2$;
+IndexFormat$ = res$
+EXIT FUNCTION
+'-----------------------------
+doArgFormat:
+CLS: tmp$ = "": fp$ = "": ft$ = LTRIM$(RTRIM$(ft$))
+IF LEFT$(ft$, 1) = "?" THEN
+    tyl% = INSTR(2, ft$, ":")
+    IF tyl% > 0 THEN fp$ = LEFT$(MID$(ft$, 2, tyl% - 2), 2): ft$ = LTRIM$(MID$(ft$, tyl% + 1)) 'extract format prefs
 END IF
-FOR i% = 1 TO POS(0) - 1
-    res$ = res$ + CHR$(SCREEN(1, i%))
-NEXT i%
-_SOURCE shan&: _DEST dhan&: _FREEIMAGE than&
-Format2$ = res$
-END FUNCTION
-'-----
-FUNCTION Format3$ (fmt$, arg$, typ%, arg2$, typ2%, arg3$, typ3%)
-shan& = _SOURCE: dhan& = _DEST: than& = _NEWIMAGE(256, 1, 0)
-_SOURCE than&: _DEST than&
-IF typ% AND typ2% AND typ3% THEN
-    PRINT USING fmt$; VAL(arg$); VAL(arg2$); VAL(arg3$);
-ELSEIF typ% AND typ2% THEN
-    PRINT USING fmt$; VAL(arg$); VAL(arg2$); arg3$;
-ELSEIF typ% AND typ3% THEN
-    PRINT USING fmt$; VAL(arg$); arg2$; VAL(arg3$);
-ELSEIF typ2% AND typ3% THEN
-    PRINT USING fmt$; arg$; VAL(arg2$); VAL(arg3$);
-ELSEIF typ% THEN
-    PRINT USING fmt$; VAL(arg$); arg2$; arg3$;
-ELSEIF typ2% THEN
-    PRINT USING fmt$; arg$; VAL(arg2$); arg3$;
-ELSEIF typ3% THEN
-    PRINT USING fmt$; arg$; arg2$; VAL(arg3$);
-ELSE
-    PRINT USING fmt$; arg$; arg2$; arg3$;
-END IF
-FOR i% = 1 TO POS(0) - 1
-    res$ = res$ + CHR$(SCREEN(1, i%))
-NEXT i%
-_SOURCE shan&: _DEST dhan&: _FREEIMAGE than&
-Format3$ = res$
+IF ft$ = "" THEN RETURN 'empty token = empty formatted
+SELECT CASE UCASE$(LEFT$(ft$, 1))
+    CASE "!", "&", "\" 'regular string formatting
+        IF LEFT$(ft$, 1) = "\" THEN
+            tyl% = INSTR(2, ft$, "\"): IF tyl% = 0 THEN ft$ = "\" + ft$: tyl% = 2
+            IF LTRIM$(fp$) <> "" AND LEN(argArr$(idx%)) < tyl% THEN
+                SELECT CASE LEFT$(LTRIM$(fp$), 1)
+                    CASE "C", "c": tyl% = (tyl% - LEN(argArr$(idx%))) \ 2
+                    CASE "R", "r": tyl% = tyl% - LEN(argArr$(idx%))
+                    CASE ELSE: tyl% = 0 'L or Unknown is default (left)
+                END SELECT
+                argArr$(idx%) = SPACE$(tyl%) + argArr$(idx%)
+            END IF
+        END IF
+        PRINT USING ft$; argArr$(idx%);: fp$ = ""
+    CASE "B", "D", "H", "O", "R" 'extended number formatting (bin/dec/hex/oct/real)
+        typ$ = LEFT$(ft$, 1): tyl% = VAL(MID$(ft$, 2))
+        SELECT CASE typ$
+            CASE "B", "b": tmp$ = Bin$(VAL(argArr$(idx%)))
+            CASE "D", "d": tmp$ = LTRIM$(STR$(_ROUND(VAL(argArr$(idx%)))))
+            CASE "H", "h"
+                tmp$ = HEX$(VAL(argArr$(idx%)))
+                IF typ$ = "H" THEN tmp$ = UCASE$(tmp$): ELSE tmp$ = LCASE$(tmp$)
+            CASE "O", "o": tmp$ = OCT$(VAL(argArr$(idx%)))
+            CASE "R", "r": tmp$ = LTRIM$(STR$(VAL(argArr$(idx%)))): fp$ = ""
+        END SELECT
+        IF tyl% > 0 THEN 'adjust field length (if any)
+            IF LEN(tmp$) <= tyl% THEN
+                tmp$ = RIGHT$(STRING$(tyl%, "0") + tmp$, tyl%): idx% = INSTR(tmp$, "-")
+                IF idx% > 0 THEN
+                    typ$ = UCASE$(MID$(tmp$, idx% - 1, 1))
+                    IF typ$ <> "E" AND typ$ <> "D" THEN tmp$ = "-" + LEFT$(tmp$, idx% - 1) + MID$(tmp$, idx% + 1)
+                END IF
+            ELSE
+                tmp$ = "%" + tmp$
+            END IF
+        END IF
+        IF LTRIM$(fp$) <> "" THEN 'apply grouping (if any)
+            typ$ = "": tyl% = 0
+            FOR idx% = LEN(tmp$) TO 1 STEP -1
+                typ$ = MID$(tmp$, idx%, 1) + typ$: tyl% = tyl% + 1
+                IF tyl% = VAL(fp$) THEN typ$ = " " + typ$: tyl% = 0
+            NEXT idx%
+            tmp$ = LTRIM$(typ$): IF LEFT$(tmp$, 2) = "- " THEN tmp$ = "-" + MID$(tmp$, 3)
+        END IF
+        RETURN
+    CASE ELSE 'regular number formatting (or invalid nonsense)
+        IF INSTR(ft$, "**") = 0 AND INSTR(ft$, "$$") = 0 AND INSTR(ft$, "#") = 0 THEN
+            PRINT ft$; 'take nonsense as is
+        ELSE
+            PRINT USING ft$; VAL(argArr$(idx%));
+        END IF
+END SELECT
+tyl% = INSTR(fp$, ","): IF tyl% > 0 THEN MID$(fp$, tyl%, 1) = " "
+fp$ = LTRIM$(RTRIM$(fp$))
+FOR idx% = 1 TO POS(0) - 1
+    typ$ = CHR$(SCREEN(1, idx%)): ft$ = typ$
+    IF fp$ <> "" AND typ$ = "$" THEN ft$ = fp$
+    IF tyl% > 0 AND typ$ = "," THEN ft$ = "."
+    IF tyl% > 0 AND typ$ = "." THEN ft$ = ","
+    tmp$ = tmp$ + ft$
+NEXT idx%
+RETURN
 END FUNCTION
 
 '--- docs\doc_GuiAppframe.bm\LRStrip.html
@@ -1116,6 +1191,17 @@ plEnd:
 IF ocnt& - 1 < minUB& THEN ocnt& = minUB& + 1
 REDIM _PRESERVE outArray$(oalb& TO (ocnt& - 1))
 ParseLine& = ocnt& - 1
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\CurrDrives.html
+'---------------------------------------------------------------------
+FUNCTION CurrDrives$
+cdm& = GetLogicalDrives&
+CurrDrives$ = "": i& = (2 ^ 25): d% = ASC("Z")
+DO
+    IF (cdm& AND i&) THEN CurrDrives$ = CHR$(d%) + CurrDrives$
+    i& = i& \ 2: d% = d% - 1
+LOOP UNTIL i& = 0
 END FUNCTION
 
 '--- docs\doc_GuiAppframe.bm\CurrDIR.html
