@@ -33,7 +33,7 @@
 ' general documentation about the Framework see GuiToolsFramework.pdf.
 '---------------------------------------------------------------------
 FUNCTION ModelC$ (method$, tagString$)
-ModelC$ = ""
+ModelRes$ = ""
 classID$ = "ModelC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -70,13 +70,14 @@ SELECT CASE methodID$
         GOSUB meUpdate
         'Result Tags: ERROR/WARNING or empty
     CASE ELSE
-        SetTag ModelC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag ModelRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+ModelC$ = ModelRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag ModelC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag ModelRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     '--- check model specific tags ---
     SELECT CASE LCASE$(GetTagData$(tagsID$, "WHICH", "n/a"))
@@ -93,11 +94,11 @@ ELSE
             vali% = ValidateTags%(tagsID$, tagsHsbRgb$, 0)
             tagsReq$ = tagsReq$ + tagsHsbRgb$
         CASE ELSE
-            SetTag ModelC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown model"
+            SetTag ModelRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown model"
             RETURN
     END SELECT
     IF NOT vali% THEN
-        SetTag ModelC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+        SetTag ModelRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
     ELSE
         '--- general init ---
         this& = NewObject&
@@ -162,7 +163,7 @@ ELSE
             guiObjects$(objType%, this&) = ""
             guiObjects$(objFlags%, this&) = ""
             guiObjects$(objConn%, this&) = ""
-            SetTag ModelC$, "ERROR", classID$ + "::" + methodID$ + " -> at least one given object is undefined"
+            SetTag ModelRes$, "ERROR", classID$ + "::" + methodID$ + " -> at least one given object is undefined"
         ELSE
             '--- add required/optional tags ---
             opti% = ValidateTags%(tagsID$, tagsOpt$, -1)
@@ -171,7 +172,7 @@ ELSE
             RemTags tagsID$, guiInitTags$ + guiCallTags$ + guiEvntTags$ + guiPrivTags$
             guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
             '--- set result ---
-            SetTag ModelC$, "OBJECT", LTRIM$(STR$(this&))
+            SetTag ModelRes$, "OBJECT", LTRIM$(STR$(this&))
             disa$ = ExtractTag$(guiObjects$(objData%, this&), "DISABLED")
             resu$ = ObjectRefresh$(this&, "u", "") 'init with current values
             guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + disa$
@@ -181,7 +182,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, ModelC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ModelRes$, classID$, methodID$, tagsID$) THEN
     '--- check required/optional tag changes ---
     flag% = 0
     IF LCASE$(GetTagData$(guiObjects$(objData%, this&), "WHICH", "n/a")) = "incdec" THEN
@@ -217,15 +218,15 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, ModelC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ModelRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
-    IF temp$ <> "n/a" THEN ModelC$ = GetTags$(guiObjects$(objData%, this&), temp$)
+    IF temp$ <> "n/a" THEN ModelRes$ = GetTags$(guiObjects$(objData%, this&), temp$)
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, ModelC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ModelRes$, classID$, methodID$, tagsID$) THEN
     '--- 1st remove this interconnection from all affected objects ---
     SELECT CASE LCASE$(GetTagData$(guiObjects$(objData%, this&), "WHICH", "n/a"))
         CASE "incdec"
@@ -257,7 +258,7 @@ RETURN
 '----------------------------------
 meRemIC:
 REDIM oarr$(5)
-oaub% = ParseLine&(guiObjects$(objConn%, obje&), oarr$(), 0)
+oaub% = ParseLine&(guiObjects$(objConn%, obje&), " ", "", oarr$(), 0)
 IF oaub% >= 0 THEN
     guiObjects$(objConn%, obje&) = ""
     FOR i% = 0 TO oaub%
@@ -270,7 +271,7 @@ ERASE oarr$
 RETURN
 '---------------------------------------------------------------------
 meUpdate:
-IF ValidObject%(this&, thisTag$, ModelC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ModelRes$, classID$, methodID$, tagsID$) THEN
     '--- don't update, if currently disabled ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN RETURN
     '--- get global properties ---

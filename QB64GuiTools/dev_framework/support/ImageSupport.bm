@@ -12,7 +12,7 @@
 '|                                                                   |
 '| == This include file is part of the GuiTools Framework Project.   |
 '| == It provides some useful SUBs/FUNCTIONS for image processing.   |
-'| == Note that it is intended for 32-bit ARGB images only.          |
+'| == Note that it supports true color (32-bit ARGB) images only.    |
 '|                                                                   |
 '+-------------------------------------------------------------------+
 '| Done by RhoSigma, R.Heyder, provided AS IS, use at your own risk. |

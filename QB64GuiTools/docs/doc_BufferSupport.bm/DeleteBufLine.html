@@ -52,14 +52,8 @@ subsequent calls.</p>
 </blockquote>
 <h4>buf$() <em>(STRING array)</em></h4>
 <ul>
-<li>
-<p>This is the array of any existing and initialized buffer, from which you
-wanna erase data.</p>
-</li>
-<li>
-<p>Depending on the current buffer position, this will not necessarily erase
-the entire line as it is present in the buffer.</p>
-</li>
+<li>This is the array of any existing and initialized buffer, from which you
+wanna erase data.</li>
 </ul>
 </blockquote>
 <hr />
@@ -74,6 +68,8 @@ the entire line as it is present in the buffer.</p>
 </blockquote>
 </blockquote>
 <ul>
+<li>Depending on the current buffer position, this routine will not necessarily
+erase the entire line as it is present in the buffer.</li>
 <li>To make sure you erase a line entirely, you may want to move the current
 buffer position to the start of line before calling this subroutine, if this
 is not guaranteed automatically (eg. by deleting lines sequentially).</li>

@@ -33,7 +33,7 @@
 ' For a description of the tags refer to the docs\KnownTags.txt file.
 '---------------------------------------------------------------------
 FUNCTION ScrollerC$ (method$, tagString$)
-ScrollerC$ = ""
+ScrollerRes$ = ""
 classID$ = "ScrollerC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -75,20 +75,21 @@ SELECT CASE methodID$
         GOSUB meUpdate
         'Result Tags: ERROR/WARNING or SELECTED,RELEASED,SHORTCUT (may be empty)
     CASE ELSE
-        SetTag ScrollerC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag ScrollerRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+ScrollerC$ = ScrollerRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag ScrollerC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag ScrollerRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     '--- general init ---
     this& = NewObject&
     InitGeneralProperties this&, classID$, flagsID$, tagsID$
     IF NOT BoolTagTrue%(tagsID$, "SCCFLAG") THEN ApplyPrefs classID$, tagsID$
     '--- check pager conditions ---
-    IF InitAssignedPager%(this&, ScrollerC$, classID$, tagsID$) THEN
+    IF InitAssignedPager%(this&, ScrollerRes$, classID$, tagsID$) THEN
         '--- object specific init ---
         visi% = VAL(GetTagData$(tagsID$, "VISIBLENUM", "0")): tota& = VAL(GetTagData$(tagsID$, "TOTALNUM", LTRIM$(STR$(visi%))))
         hidd& = tota& - visi%: IF hidd& < 0 THEN hidd& = 0
@@ -119,11 +120,11 @@ ELSE
         SetTag tagsID$, "TOTALNUM", LTRIM$(STR$(tota&))
         SetTag tagsID$, "TOPNUM", LTRIM$(STR$(tonu&))
         '--- check for assigned Image/Symbol ---
-        InitAssignedImgSym "IMAGEOBJECT", ScrollerC$, classID$, tagsID$
-        InitAssignedImgSym "SYMBOLOBJECT", ScrollerC$, classID$, tagsID$
+        InitAssignedImgSym "IMAGEOBJECT", ScrollerRes$, classID$, tagsID$
+        InitAssignedImgSym "SYMBOLOBJECT", ScrollerRes$, classID$, tagsID$
         '--- frame/symbol init ---
         BeginChildInit
-        InitObjectBGImg this&, ScrollerC$, classID$, tagsID$
+        InitObjectBGImg this&, ScrollerRes$, classID$, tagsID$
         fram$ = FrameC$("INIT", GetTags$(tagsID$, "LEFT,TOP") + NewTag$("WIDTH", LTRIM$(STR$(widt%))) + NewTag$("HEIGHT", LTRIM$(STR$(heig%))) + NewTag$("FORM", "simple"))
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("FRM0", fram$)
         symb$ = SymbolC$("INIT", NewTag$("WHICH", "TapeStop") + NewTag$("LEFT", LTRIM$(STR$(knol%))) + NewTag$("TOP", LTRIM$(STR$(knot%))) + NewTag$("WIDTH", LTRIM$(STR$(know%))) + NewTag$("HEIGHT", LTRIM$(STR$(knoh%))))
@@ -163,18 +164,18 @@ ELSE
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
         ObjectsUnselect this&
         '--- set result and schedule gui refresh ---
-        SetTag ScrollerC$, "OBJECT", LTRIM$(STR$(this&))
+        SetTag ScrollerRes$, "OBJECT", LTRIM$(STR$(this&))
         SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
     END IF
 END IF
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ScrollerRes$, classID$, methodID$, tagsID$) THEN
     '--- check required/optional tag changes ---
     flag% = 0
-    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", ScrollerC$, classID$, tagsID$) THEN flag% = -1
-    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", ScrollerC$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", ScrollerRes$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", ScrollerRes$, classID$, tagsID$) THEN flag% = -1
     IF UpdateTags%(guiObjects$(objData%, this&), "VISIBLENUM,TOTALNUM", tagsID$) THEN flag% = -1
     temp$ = GetTagData$(tagsID$, "TOPNUM", "n/a")
     IF temp$ <> "n/a" OR flag% = -1 THEN
@@ -218,15 +219,15 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ScrollerRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
-    IF temp$ <> "n/a" THEN ScrollerC$ = GetTags$(guiObjects$(objData%, this&), temp$)
+    IF temp$ <> "n/a" THEN ScrollerRes$ = GetTags$(guiObjects$(objData%, this&), temp$)
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ScrollerRes$, classID$, methodID$, tagsID$) THEN
     '--- 1st remove interconnections to this object ---
     KillInterconnections this&
     '--- delete child objects ---
@@ -253,7 +254,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meDraw:
-IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ScrollerRes$, classID$, methodID$, tagsID$) THEN
     '--- select drawing colors ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "FOCUS") AND BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") THEN
         back% = guiFillPen% 'back pen
@@ -335,7 +336,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meUpdate:
-IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ScrollerRes$, classID$, methodID$, tagsID$) THEN
     '--- don't update, if currently disabled ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN RETURN
     '--- save old drawing relevant states ---
@@ -370,7 +371,7 @@ IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
         SetTag guiObjects$(objData%, this&), "EOBJ", LTRIM$(STR$(eobj&))
         SetTag guiObjects$(objData%, this&), "ETIM", LTRIM$(STR$(TIMER(0.001)))
         _DELAY 0.025 'give TIMER a chance to change before we proceed
-        SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+        SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
     END IF
     eobj& = VAL(GetTagData$(guiObjects$(objData%, this&), "EOBJ", "0"))
     IF eobj& > 0 THEN
@@ -380,29 +381,29 @@ IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
                         AND BoolTagTrue%(guiObjects$(objData%, eobj&), "SELECTED") THEN
             IF eobj& = dobj& THEN but1$ = "RELEASED": ELSE but2$ = "RELEASED"
         END IF
-        SetTag ScrollerC$, "IMMFLAG", "true"
+        SetTag ScrollerRes$, "IMMFLAG", "true"
     END IF
     IF INSTR(but1$, "RELEASED") > 0 THEN
         IF tonu& > 0 THEN
             tonu& = tonu& - 1
             SetTag guiObjects$(objData%, this&), "TOPNUM", LTRIM$(STR$(tonu&))
             resu$ = ScrollerC$("DRAW", thisTag$)
-            SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+            SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
         END IF
         IF but1$ <> "RELEASED" THEN
             RemTags guiObjects$(objData%, this&), "EOBJ,ETIM"
-            SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
+            SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
         END IF
     ELSEIF INSTR(but2$, "RELEASED") > 0 THEN
         IF tonu& < hidd& THEN
             tonu& = tonu& + 1
             SetTag guiObjects$(objData%, this&), "TOPNUM", LTRIM$(STR$(tonu&))
             resu$ = ScrollerC$("DRAW", thisTag$)
-            SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+            SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
         END IF
         IF but2$ <> "RELEASED" THEN
             RemTags guiObjects$(objData%, this&), "EOBJ,ETIM"
-            SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
+            SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
         END IF
     ELSEIF alig$ = "horizontal" THEN
         '--- check for mouse trigger in different container sections ---
@@ -415,14 +416,14 @@ IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
             SetTag guiObjects$(objData%, this&), "FOCUS", "true"
             IF BoolTagTrue%(tagsID$, "MOUSELBDOWN") THEN
                 SetTag guiObjects$(objData%, this&), "SELECTED", "true"
-                SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
                 RemTags guiObjects$(objData%, this&), "SELECTED,GRABDISP,OLDTOPNUM"
                 IF tonu& > 0 THEN
                     tonu& = tonu& - visi%: IF tonu& < 0 THEN tonu& = 0
                     SetTag guiObjects$(objData%, this&), "TOPNUM", LTRIM$(STR$(tonu&))
                 END IF
-                SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSEMOVE") THEN
                 GOSUB meMousemoveKnob
             ELSEIF BoolTagTrue%(tagsID$, "KEYPRESS") AND guiASCObject& = 0 THEN
@@ -447,10 +448,10 @@ IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
                 SetTag guiObjects$(objData%, this&), "SELECTED", "true"
                 SetTag guiObjects$(objData%, this&), "OLDTOPNUM", LTRIM$(STR$(tonu&))
                 SetTag guiObjects$(objData%, this&), "GRABDISP", LTRIM$(STR$(moux% - offs%))
-                SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
                 RemTags guiObjects$(objData%, this&), "SELECTED,GRABDISP,OLDTOPNUM"
-                SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSEMOVE") THEN
                 GOSUB meMousemoveKnob
             ELSEIF BoolTagTrue%(tagsID$, "KEYPRESS") AND guiASCObject& = 0 THEN
@@ -473,14 +474,14 @@ IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
             SetTag guiObjects$(objData%, this&), "FOCUS", "true"
             IF BoolTagTrue%(tagsID$, "MOUSELBDOWN") THEN
                 SetTag guiObjects$(objData%, this&), "SELECTED", "true"
-                SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
                 RemTags guiObjects$(objData%, this&), "SELECTED,GRABDISP,OLDTOPNUM"
                 IF tonu& < hidd& THEN
                     tonu& = tonu& + visi%: IF tonu& > hidd& THEN tonu& = hidd&
                     SetTag guiObjects$(objData%, this&), "TOPNUM", LTRIM$(STR$(tonu&))
                 END IF
-                SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSEMOVE") THEN
                 GOSUB meMousemoveKnob
             ELSEIF BoolTagTrue%(tagsID$, "KEYPRESS") AND guiASCObject& = 0 THEN
@@ -505,10 +506,10 @@ IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
                 IF BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
                     IF GetTagData$(guiObjects$(objData%, this&), "GRABDISP", "n/a") <> "n/a" AND _
                        moux% >= (left% - 50) AND moux% < (left% + widt% + 50) AND mouy% >= (topp% - 50) AND mouy% < (topp% + heig% + 50) THEN
-                        SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
+                        SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
                     ELSE
                         ObjectReset this&
-                        SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+                        SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
                     END IF
                     RemTags guiObjects$(objData%, this&), "SELECTED,GRABDISP,OLDTOPNUM"
                 ELSEIF BoolTagTrue%(tagsID$, "MOUSEMOVE") THEN
@@ -541,14 +542,14 @@ IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
             SetTag guiObjects$(objData%, this&), "FOCUS", "true"
             IF BoolTagTrue%(tagsID$, "MOUSELBDOWN") THEN
                 SetTag guiObjects$(objData%, this&), "SELECTED", "true"
-                SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
                 RemTags guiObjects$(objData%, this&), "SELECTED,GRABDISP,OLDTOPNUM"
                 IF tonu& > 0 THEN
                     tonu& = tonu& - visi%: IF tonu& < 0 THEN tonu& = 0
                     SetTag guiObjects$(objData%, this&), "TOPNUM", LTRIM$(STR$(tonu&))
                 END IF
-                SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSEMOVE") THEN
                 GOSUB meMousemoveKnob
             ELSEIF BoolTagTrue%(tagsID$, "KEYPRESS") AND guiASCObject& = 0 THEN
@@ -573,10 +574,10 @@ IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
                 SetTag guiObjects$(objData%, this&), "SELECTED", "true"
                 SetTag guiObjects$(objData%, this&), "OLDTOPNUM", LTRIM$(STR$(tonu&))
                 SetTag guiObjects$(objData%, this&), "GRABDISP", LTRIM$(STR$(mouy% - offs%))
-                SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
                 RemTags guiObjects$(objData%, this&), "SELECTED,GRABDISP,OLDTOPNUM"
-                SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSEMOVE") THEN
                 GOSUB meMousemoveKnob
             ELSEIF BoolTagTrue%(tagsID$, "KEYPRESS") AND guiASCObject& = 0 THEN
@@ -599,14 +600,14 @@ IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
             SetTag guiObjects$(objData%, this&), "FOCUS", "true"
             IF BoolTagTrue%(tagsID$, "MOUSELBDOWN") THEN
                 SetTag guiObjects$(objData%, this&), "SELECTED", "true"
-                SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
                 RemTags guiObjects$(objData%, this&), "SELECTED,GRABDISP,OLDTOPNUM"
                 IF tonu& < hidd& THEN
                     tonu& = tonu& + visi%: IF tonu& > hidd& THEN tonu& = hidd&
                     SetTag guiObjects$(objData%, this&), "TOPNUM", LTRIM$(STR$(tonu&))
                 END IF
-                SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSEMOVE") THEN
                 GOSUB meMousemoveKnob
             ELSEIF BoolTagTrue%(tagsID$, "KEYPRESS") AND guiASCObject& = 0 THEN
@@ -631,10 +632,10 @@ IF ValidObject%(this&, thisTag$, ScrollerC$, classID$, methodID$, tagsID$) THEN
                 IF BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
                     IF GetTagData$(guiObjects$(objData%, this&), "GRABDISP", "n/a") <> "n/a" AND _
                        moux% >= (left% - 50) AND moux% < (left% + widt% + 50) AND mouy% >= (topp% - 50) AND mouy% < (topp% + heig% + 50) THEN
-                        SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
+                        SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
                     ELSE
                         ObjectReset this&
-                        SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+                        SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
                     END IF
                     RemTags guiObjects$(objData%, this&), "SELECTED,GRABDISP,OLDTOPNUM"
                 ELSEIF BoolTagTrue%(tagsID$, "MOUSEMOVE") THEN
@@ -680,10 +681,10 @@ IF disp$ <> "n/a" THEN
     olnu& = tonu&: tonu& = hidd& / full% * (offn% - 4)
     IF tonu& <> olnu& THEN
         SetTag guiObjects$(objData%, this&), "TOPNUM", LTRIM$(STR$(tonu&))
-        SetTag ScrollerC$, "SELECTED", LTRIM$(STR$(this&))
+        SetTag ScrollerRes$, "SELECTED", LTRIM$(STR$(this&))
     END IF
     resu$ = ScrollerC$("DRAW", thisTag$)
-    SetTag ScrollerC$, "MOUSEMOVE", "true"
+    SetTag ScrollerRes$, "MOUSEMOVE", "true"
 END IF
 RETURN
 '----------------------------------
@@ -696,9 +697,9 @@ IF NOT BoolTagTrue%(tagsID$, "ALT") THEN
     IF tonu& < 0 THEN tonu& = 0: ELSE IF tonu& > hidd& THEN tonu& = hidd&
     SetTag guiObjects$(objData%, this&), "TOPNUM", LTRIM$(STR$(tonu&))
     resu$ = ScrollerC$("DRAW", thisTag$)
-    SetTag ScrollerC$, "RELEASED", LTRIM$(STR$(this&))
-    SetTag ScrollerC$, "SHORTCUT", "true"
-    SetTag ScrollerC$, "MOUSESCROLL", "true"
+    SetTag ScrollerRes$, "RELEASED", LTRIM$(STR$(this&))
+    SetTag ScrollerRes$, "SHORTCUT", "true"
+    SetTag ScrollerRes$, "MOUSESCROLL", "true"
 END IF
 RETURN
 END FUNCTION

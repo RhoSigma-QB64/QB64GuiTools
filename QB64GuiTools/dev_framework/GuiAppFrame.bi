@@ -40,12 +40,6 @@ DIM SHARED appLastErr% 'the last occurred runtime error number (if any)
 '---------------------------
 '--- Public CONST values ---
 '---------------------------
-'--- operation modes for FileSelect$() ---
-'--- see docs\doc_GuiAppframe.bm\FileSelect.html ---
-CONST fsmLOAD% = 1
-CONST fsmSAVE% = 2
-CONST fsmDIRS% = 3
-
 '--- print modes for SetPrintMode() ---
 '--- according to the results of the _PRINTMODE function ---
 '--- see docs\doc_GuiAppframe.bm\SetPrintMode.html ---
@@ -66,11 +60,19 @@ CONST stripALL% = 7
 CONST stripTEXT% = 8
 CONST stripVALUE% = 9
 
+'--- operation modes for FileSelect$() ---
+'--- see docs\doc_GuiAppframe.bm\FileSelect.html ---
+CONST fsmLOAD% = 1
+CONST fsmSAVE% = 2
+CONST fsmDIRS% = 3
+
 '-------------------------------
 '--- Public TYPE definitions ---
 '-------------------------------
-'--- The GuiTools Framework will maintain its global data in so called
-'--- IFF files. These are the basic building blocks of those files.
+'--- The GuiTools Framework does maintain its global data in so called
+'--- IFF files as of the EA IFF-85 standard introduced by Jerry Morrison
+'--- of Electronic Arts. These are the basic building blocks of those
+'--- files. See https://1fish2.github.io/IFF/ for the full specification.
 '-----
 TYPE Chunk 'general IFF chunk define
     chunkID AS STRING * 4 'the four character ID of this chunk
@@ -251,7 +253,7 @@ guiATTProps$ = ""
 DIM SHARED guiWinX%, guiWinY% 'current window position
 '--- flow control ---
 DIM SHARED appGLVComp% 'compiled with QB64-GL yes(-1), no(0) = QB64-SDL
-appGLVComp% = 0
+appGLVComp% = -1
 DIM SHARED appKBLIdent% 'detected keyboard layout identifier
 appKBLIdent% = 0
 '--- errors ---
@@ -265,13 +267,9 @@ IF INSTR(temp$, "IUGNEPO") = 0 AND INSTR(temp$, "XOBEGASSEM") = 0 AND INSTR(temp
     'NOTE: GuiTools internal command names are spelled in reverse order to
     '      avoid faulty detection in regular command lines given by the user.
     temp$ = "NOTHING" 'for any unrecognized command line
-ELSE
-    FOR i% = 1 TO LEN(temp$)
-        IF MID$(temp$, i%, 1) = "'" THEN MID$(temp$, i%, 1) = CHR$(34)
-    NEXT i%
 END IF
 REDIM cmdArgs$(0)
-dummy% = ParseLine&(temp$, cmdArgs$(), 5)
+dummy% = ParseLine&(temp$, MKI$(&H0920), "'", cmdArgs$(), 5)
 
 '--- init some computer/program related variables ---
 appPCName$ = ENVIRON$("COMPUTERNAME")
@@ -279,8 +277,10 @@ temp$ = SPACE$(264): i% = GetModuleFileNameA&(0, temp$, 264)
 appFullExe$ = LEFT$(temp$, i%): appHomeDrive$ = LEFT$(appFullExe$, 3)
 appHomePath$ = PathPart$(appFullExe$): appExeName$ = FilePart$(appFullExe$)
 OPEN "B", #1, appFullExe$: temp$ = SPACE$(LOF(1)): GET #1, , temp$: CLOSE #1
-IF INSTR(temp$, UCASE$("opengl32.")) > 0 THEN
-    appGLVComp% = -1: kbli% = GetKeyboardLayout&&(0) \ 65536
+IF INSTR(temp$, UCASE$("sdl.") + "dll") > 0 AND _
+   INSTR(temp$, UCASE$("opengl32.dll")) = 0 THEN appGLVComp% = 0
+IF appGLVComp% THEN
+    kbli% = GetKeyboardLayout&&(0) \ 65536
     temp$ = "," + LTRIM$(STR$(kbli%)) + ","
     i% = INSTR(",1030,1031,1033,1034,1036,1040,1043,1044,1053,2055,2057,2058,2060,2070,4108,6153,", temp$)
     IF i% > 0 THEN appKBLIdent% = kbli%
@@ -291,17 +291,17 @@ GOSUB CreateGlobalTemps
 'Starting from this point, GetUniqueID$(), TempLog() and all other
 'SUBs/FUNCTIONs which are calling any of the two routines can be used,
 'also appLocalDir$ and appTempDir$ are initialized for use.
+appProgID$ = GetUniqueID$
+'Now all "appXXXXX" variables from the DIM SHARED block above are
+'initialized with their respective values.
 defIcoImg$ = WriteGuiAppIconArray$(appTempDir$ + GetUniqueID$, -1)
 IF defIcoImg$ <> "" THEN
     TempLog defIcoImg$, "MODULE: Init CONTENTS: The GuiTools Framework's default window icon."
     defIcon& = _LOADIMAGE(defIcoImg$, 32): appIcon& = defIcon&
 END IF
 
-'--- finally init the private program ID ---
-appProgID$ = GetUniqueID$
+'--- init views & shared memory ---
 appSMObj%& = CreateSMObject%&("RhoSigma-GuiApp-MainInpSM-" + appProgID$ + CHR$(0), 8192)
-'Now all "appXXXXX" variables from the DIM SHARED block above are
-'initialized with their respective values.
 
 '--- ready to go ---
 GOSUB UserInitHandler
@@ -375,8 +375,8 @@ ERASE guiObjects$
 ERASE guiViews$
 ERASE appStackArr$
 SYSTEM
-'**********************************************************************
-'**********************************************************************
+'*********************************************************************
+'*********************************************************************
 
 '--------------------------------------------------------------------
 '--- Create/Remove the global .tmp files. These are shared by all ---
@@ -406,10 +406,6 @@ IF appLastErr% = 0 THEN appLocalDir$ = appLocalDir$ + "RhoSigma\"
 '--- get temporary folder ---
 appTempDir$ = ENVIRON$("TMP")
 IF appTempDir$ = "" THEN appTempDir$ = ENVIRON$("TEMP")
-IF appTempDir$ = "" THEN appTempDir$ = ENVIRON$("DOSTMP")
-IF appTempDir$ = "" THEN appTempDir$ = ENVIRON$("DOSTEMP")
-IF appTempDir$ = "" THEN appTempDir$ = ENVIRON$("WINTMP")
-IF appTempDir$ = "" THEN appTempDir$ = ENVIRON$("WINTEMP")
 IF appTempDir$ = "" THEN appTempDir$ = appHomePath$
 IF RIGHT$(appTempDir$, 1) <> "\" THEN appTempDir$ = appTempDir$ + "\"
 InternalErrHandler
@@ -432,11 +428,11 @@ RESTORE GuiApp_GlobalTemps
 READ crgtCnt%
 FOR crgtLoop% = 1 TO crgtCnt%
     READ crgtName$, crgtType$
-    IF LCASE$(RIGHT$(crgtName$, 4)) = ".tmp" THEN crgtPath$ = appTempDir$: ELSE crgtPath$ = appLocalDir$
+    IF LCASE$(FileExtension$(crgtName$)) = ".tmp" THEN crgtPath$ = appTempDir$: ELSE crgtPath$ = appLocalDir$
     crgtMtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-" + crgtName$ + CHR$(0))
     IF _FILEEXISTS(crgtPath$ + crgtName$) THEN
         crgtFile% = SafeOpenFile%("B", crgtPath$ + crgtName$)
-        crgtHdr& = SeekChunk&(crgtFile%, CHthdrID$)
+        crgtHdr& = SeekChunk&(crgtFile%, 1, CHthdrID$)
         GET crgtFile%, , crgtTHDR(0)
         IF NOT CheckMutex%("Global\RhoSigma-GuiApp-Framework-InUse" + CHR$(0)) THEN
             crgtTHDR(0).thdrACCESSORS = 1
@@ -485,9 +481,9 @@ REDIM crgtTHDR(0) AS ChunkTHDR
 REDIM crgtTLOG(0) AS ChunkTLOG
 crgtMtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-templog.tmp" + CHR$(0))
 crgtFile% = SafeOpenFile%("B", appTempDir$ + "templog.tmp")
-crgtHdr& = SeekChunk&(crgtFile%, CHthdrID$)
+crgtHdr& = SeekChunk&(crgtFile%, 1, CHthdrID$)
 GET crgtFile%, , crgtTHDR(0)
-IF SeekChunk&(crgtFile%, CHtlogID$) THEN
+IF SeekChunk&(crgtFile%, 1, CHtlogID$) > 0 THEN
     WHILE NOT EOF(crgtFile%)
         crgtLog& = SEEK(crgtFile%)
         GET crgtFile%, , crgtTLOG(0)
@@ -518,10 +514,10 @@ RESTORE GuiApp_GlobalTemps
 READ crgtCnt%
 FOR crgtLoop% = 1 TO crgtCnt%
     READ crgtName$, crgtType$
-    IF LCASE$(RIGHT$(crgtName$, 4)) = ".tmp" THEN crgtPath$ = appTempDir$: ELSE crgtPath$ = appLocalDir$
+    IF LCASE$(FileExtension$(crgtName$)) = ".tmp" THEN crgtPath$ = appTempDir$: ELSE crgtPath$ = appLocalDir$
     crgtMtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-" + crgtName$ + CHR$(0))
     crgtFile% = SafeOpenFile%("B", crgtPath$ + crgtName$)
-    crgtHdr& = SeekChunk&(crgtFile%, CHthdrID$)
+    crgtHdr& = SeekChunk&(crgtFile%, 1, CHthdrID$)
     GET crgtFile%, , crgtTHDR(0)
     crgtTHDR(0).thdrACCESSORS = crgtTHDR(0).thdrACCESSORS - 1
     PUT crgtFile%, crgtHdr&, crgtTHDR(0)

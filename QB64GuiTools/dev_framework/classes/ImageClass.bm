@@ -49,7 +49,7 @@
 ' general documentation about the Framework see GuiToolsFramework.pdf.
 '---------------------------------------------------------------------
 FUNCTION ImageC$ (method$, tagString$)
-ImageC$ = ""
+ImageRes$ = ""
 classID$ = "ImageC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -111,18 +111,19 @@ SELECT CASE methodID$
         GOSUB meUpdate
         'Result Tags: ERROR/WARNING or empty
     CASE ELSE
-        SetTag ImageC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag ImageRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+ImageC$ = ImageRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF (NOT ValidateTags%(tagsID$, "IMAGEFILE,LEFT,TOP", 0)) AND _
    (NOT ValidateTags%(tagsID$, "IMAGEHANDLE,LEFT,TOP", 0)) AND _
    (NOT ValidateTags%(tagsID$, "PREVIEW,LEFT,TOP", 0)) THEN
-    SetTag ImageC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag ImageRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     IF BoolTagTrue%(tagsID$, "BACKFILL") AND (NOT BoolTagTrue%(tagsID$, "PREVIEW")) THEN RemTag tagsID$, "PAGEROBJECT"
-    IF NOT CheckInheritViewFromPager%(ImageC$, classID$, tagsID$) THEN
+    IF NOT CheckInheritViewFromPager%(ImageRes$, classID$, tagsID$) THEN
         ihan& = VAL(GetTagData$(tagsID$, "IMAGEHANDLE", "0"))
         IF ihan& < -1 THEN _FREEIMAGE ihan&
     ELSE
@@ -177,7 +178,7 @@ ELSE
             END IF
         END IF
         IF ihan& >= -1 THEN
-            SetTag ImageC$, "ERROR", classID$ + "::" + methodID$ + " -> cannot load image file or handle"
+            SetTag ImageRes$, "ERROR", classID$ + "::" + methodID$ + " -> cannot load image file or handle"
         ELSE
             '--- adjust optional width/height overrides ---
             IF BoolTagTrue%(tagsID$, "AREA") THEN
@@ -218,7 +219,7 @@ ELSE
                 SetTag guiViews$(guiAGVIndex&), "BGIMG", LTRIM$(STR$(this&))
             END IF
             '--- check pager conditions ---
-            IF NOT InitAssignedPager%(this&, ImageC$, classID$, tagsID$) THEN
+            IF NOT InitAssignedPager%(this&, ImageRes$, classID$, tagsID$) THEN
                 _FREEIMAGE ihan&
             ELSE
                 IF MID$(guiObjects$(objFlags%, this&), 2, 1) = "p" THEN SetTag guiObjects$(objData%, this&), "STANDALONE", "true"
@@ -238,7 +239,7 @@ ELSE
                 RemTags tagsID$, guiInitTags$ + guiCallTags$ + guiEvntTags$ + guiPrivTags$
                 guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
                 '--- set result and schedule gui refresh ---
-                SetTag ImageC$, "OBJECT", LTRIM$(STR$(this&))
+                SetTag ImageRes$, "OBJECT", LTRIM$(STR$(this&))
                 IF BoolTagTrue%(guiObjects$(objData%, this&), "STANDALONE") THEN
                     IF BoolTagTrue%(guiObjects$(objData%, this&), "BACKFILL") THEN RemTag guiObjects$(objData%, this&), "TOOLTIP"
                     SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
@@ -252,7 +253,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, ImageC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ImageRes$, classID$, methodID$, tagsID$) THEN
     '--- check any user tag changes ---
     RemTags tagsID$, guiInitTags$ + guiCallTags$ + guiEvntTags$ + guiPrivTags$
     DO
@@ -266,19 +267,19 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, ImageC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ImageRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
-    IF temp$ <> "n/a" THEN ImageC$ = GetTags$(guiObjects$(objData%, this&), temp$)
+    IF temp$ <> "n/a" THEN ImageRes$ = GetTags$(guiObjects$(objData%, this&), temp$)
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, ImageC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ImageRes$, classID$, methodID$, tagsID$) THEN
     '--- check use count ---
     reco& = VAL(GetTagData$(guiObjects$(objData%, this&), "RECORDS", "0"))
     IF reco& > 0 THEN
-        SetTag ImageC$, "ERROR", classID$ + "::" + methodID$ + " -> object still in use"
+        SetTag ImageRes$, "ERROR", classID$ + "::" + methodID$ + " -> object still in use"
     ELSE
         '--- 1st remove interconnections to this object ---
         KillInterconnections this&
@@ -316,7 +317,7 @@ SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
 RETURN
 '---------------------------------------------------------------------
 meDraw:
-IF ValidObject%(this&, thisTag$, ImageC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ImageRes$, classID$, methodID$, tagsID$) THEN
     '--- don't draw, if unassigned and not standalone ---
     IF MID$(guiObjects$(objFlags%, this&), 2, 1) = "-" AND _
         NOT BoolTagTrue%(guiObjects$(objData%, this&), "STANDALONE") THEN RETURN
@@ -325,7 +326,7 @@ IF ValidObject%(this&, thisTag$, ImageC$, classID$, methodID$, tagsID$) THEN
     rhan& = VAL(GetTagData$(guiObjects$(objData%, this&), "RHANDLE", "0"))
     IF rhan& >= -1 THEN rhan& = RemapImageFS&(ihan&, _DEST)
     IF rhan& >= -1 THEN
-        SetTag ImageC$, "ERROR", classID$ + "::" + methodID$ + " -> cannot remap image"
+        SetTag ImageRes$, "ERROR", classID$ + "::" + methodID$ + " -> cannot remap image"
     ELSE
         SetTag guiObjects$(objData%, this&), "RHANDLE", LTRIM$(STR$(rhan&))
         ccol$ = GetTagData$(guiObjects$(objData%, this&), "CLEARCOLOR", "n/a")
@@ -353,7 +354,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meUpdate:
-IF ValidObject%(this&, thisTag$, ImageC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ImageRes$, classID$, methodID$, tagsID$) THEN
     '--- get mouse position and object dimensions ---
     moux% = VAL(GetTagData$(tagsID$, "MOUSEX", "-1"))
     mouy% = VAL(GetTagData$(tagsID$, "MOUSEY", "-1"))

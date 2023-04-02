@@ -47,39 +47,39 @@
 FUNCTION GetGUIMsg$
 IF _EXIT THEN SetTag guiObjects$(0, 0), "USERBREAK", "true"
 '--- handle pending exit requests and GUI refreshes immediately ---
-GetGUIMsg$ = ExtractTag$(guiObjects$(0, 0), "USERBREAK")
-IF GetGUIMsg$ <> "" THEN EXIT FUNCTION
-GetGUIMsg$ = ExtractTag$(guiObjects$(0, 0), "GUIREFRESH")
-IF GetGUIMsg$ <> "" THEN EXIT FUNCTION
+mess$ = ExtractTag$(guiObjects$(0, 0), "USERBREAK")
+IF mess$ <> "" GOTO ggmSetResultAndExit
+mess$ = ExtractTag$(guiObjects$(0, 0), "GUIREFRESH")
+IF mess$ <> "" GOTO ggmSetResultAndExit
 '--- init message with historic data & collect input ---
 SHARED appSMObj%&: STATIC gloMx%, gloMy%
 mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-InpSMAccess-" + appProgID$ + CHR$(0))
-GetGUIMsg$ = GetSMString$(appSMObj%&)
+mess$ = GetSMString$(appSMObj%&)
 UnlockMutex mtx%&
 mi% = _MOUSEINPUT: mwl% = _MOUSEWHEEL
 WHILE _MOUSEINPUT: mwl% = mwl% + _MOUSEWHEEL: WEND
-IF GetGUIMsg$ = "" THEN
-    GetGUIMsg$ = GetTags$(guiObjects$(0, 0), "MOUSEX,MOUSEY,MOUSELB,MOUSERB,MOUSEMB,GUIVIEW")
+IF mess$ = "" THEN
+    mess$ = GetTags$(guiObjects$(0, 0), "MOUSEX,MOUSEY,MOUSELB,MOUSERB,MOUSEMB,GUIVIEW")
     IF appKBLIdent% = 0 THEN ik$ = INKEY$: ELSE ik$ = InkeyHit$(appKBLIdent%)
     IF appGLVComp% AND mi% <> 0 THEN
         IF _MOUSEX = gloMx% AND _MOUSEY = gloMy% THEN mi% = 0
     END IF
-    IF mi% <> 0 OR ik$ <> "" THEN RemTag GetGUIMsg$, "GUIVIEW"
-    vix& = VAL(GetTagData$(GetGUIMsg$, "GUIVIEW", "0"))
+    IF mi% <> 0 OR ik$ <> "" THEN RemTag mess$, "GUIVIEW"
+    vix& = VAL(GetTagData$(mess$, "GUIVIEW", "0"))
     IF vix& <> 0 THEN SetTag guiObjects$(0, 0), "SMINP", "true"
 ELSE
     IF appGLVComp% AND mi% <> 0 THEN
         gloMx% = _MOUSEX: gloMy% = _MOUSEY
     END IF
-    vix& = VAL(GetTagData$(GetGUIMsg$, "GUIVIEW", "0"))
-    IF BoolTagTrue%(GetGUIMsg$, "USERBREAK") THEN
+    vix& = VAL(GetTagData$(mess$, "GUIVIEW", "0"))
+    IF BoolTagTrue%(mess$, "USERBREAK") THEN
         RemoveMutex VAL(GetTagData$(guiViews$(vix&), "ISOPEN", "0"))
         _DELAY 0.1: RemTag guiViews$(vix&), "ISOPEN"
-        GetGUIMsg$ = "": EXIT FUNCTION
+        mess$ = "": GOTO ggmSetResultAndExit
     END IF
-    mi% = BoolTagTrue%(GetGUIMsg$, "SMINP"): RemTag GetGUIMsg$, "SMINP"
-    ik$ = GetTagData$(GetGUIMsg$, "KEY", "")
-    mwl% = VAL(GetTagData$(GetGUIMsg$, "SCRVAL", "0"))
+    mi% = BoolTagTrue%(mess$, "SMINP"): RemTag mess$, "SMINP"
+    ik$ = GetTagData$(mess$, "KEY", "")
+    mwl% = VAL(GetTagData$(mess$, "SCRVAL", "0"))
     SetTag guiObjects$(0, 0), "SMINP", "true"
 END IF
 '--- check new input ---
@@ -89,24 +89,24 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
     IF BoolTagTrue%(guiObjects$(0, 0), "SMINP") GOTO update
     '--- set key press & check modifiers keys ---
     IF ik$ <> "" THEN
-        SetTag GetGUIMsg$, "KEYPRESS", "true"
-        SetTag GetGUIMsg$, "KEY", ik$ 'may be CHR$(0) + "..." for special keys
+        SetTag mess$, "KEYPRESS", "true"
+        SetTag mess$, "KEY", ik$ 'may be CHR$(0) + "..." for special keys
     END IF
     mk$ = ""
-    IF _KEYDOWN(100304) THEN SetTag GetGUIMsg$, "SHIFT", "true": mk$ = mk$ + "lshift,"
-    IF _KEYDOWN(100303) THEN SetTag GetGUIMsg$, "SHIFT", "true": mk$ = mk$ + "rshift,"
-    IF _KEYDOWN(100306) THEN SetTag GetGUIMsg$, "CTRL", "true": mk$ = mk$ + "lctrl,"
-    IF _KEYDOWN(100305) THEN SetTag GetGUIMsg$, "CTRL", "true": mk$ = mk$ + "rctrl,"
-    IF _KEYDOWN(100308) THEN SetTag GetGUIMsg$, "ALT", "true": mk$ = mk$ + "lalt,"
-    IF _KEYDOWN(100307) THEN SetTag GetGUIMsg$, "ALT", "true": mk$ = mk$ + "ralt,"
-    IF mk$ <> "" THEN SetTag GetGUIMsg$, "MODKEYS", mk$
+    IF _KEYDOWN(100304) THEN SetTag mess$, "SHIFT", "true": mk$ = mk$ + "lshift,"
+    IF _KEYDOWN(100303) THEN SetTag mess$, "SHIFT", "true": mk$ = mk$ + "rshift,"
+    IF _KEYDOWN(100306) THEN SetTag mess$, "CTRL", "true": mk$ = mk$ + "lctrl,"
+    IF _KEYDOWN(100305) THEN SetTag mess$, "CTRL", "true": mk$ = mk$ + "rctrl,"
+    IF _KEYDOWN(100308) THEN SetTag mess$, "ALT", "true": mk$ = mk$ + "lalt,"
+    IF _KEYDOWN(100307) THEN SetTag mess$, "ALT", "true": mk$ = mk$ + "ralt,"
+    IF mk$ <> "" THEN SetTag mess$, "MODKEYS", mk$
     '--- check for Alt-F4 exit requests ---
-    IF BoolTagTrue%(GetGUIMsg$, "ALT") THEN
-        IF NOT BoolTagTrue%(GetGUIMsg$, "CTRL") AND NOT BoolTagTrue%(GetGUIMsg$, "SHIFT") THEN
-            IF GetTagData$(GetGUIMsg$, "KEY", "n/a") = CHR$(0) + "k" THEN
-                GetGUIMsg$ = "" 'clear all events
-                SetTag GetGUIMsg$, "USERBREAK", "true"
-                EXIT FUNCTION
+    IF BoolTagTrue%(mess$, "ALT") THEN
+        IF NOT BoolTagTrue%(mess$, "CTRL") AND NOT BoolTagTrue%(mess$, "SHIFT") THEN
+            IF GetTagData$(mess$, "KEY", "n/a") = CHR$(0) + "k" THEN
+                mess$ = "" 'clear all events
+                SetTag mess$, "USERBREAK", "true"
+                GOTO ggmSetResultAndExit
             END IF
         END IF
     END IF
@@ -114,42 +114,42 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
     lmb% = _MOUSEBUTTON(1)
     rmb% = _MOUSEBUTTON(2)
     mmb% = _MOUSEBUTTON(3)
-    IF lmb% <> VAL(GetTagData$(GetGUIMsg$, "MOUSELB", "0")) THEN
-        SetTag GetGUIMsg$, "MOUSELB", LTRIM$(STR$(lmb%))
+    IF lmb% <> VAL(GetTagData$(mess$, "MOUSELB", "0")) THEN
+        SetTag mess$, "MOUSELB", LTRIM$(STR$(lmb%))
         IF lmb% THEN
-            SetTag GetGUIMsg$, "MOUSELBDOWN", "true"
+            SetTag mess$, "MOUSELBDOWN", "true"
         ELSE
-            SetTag GetGUIMsg$, "MOUSELBUP", "true"
+            SetTag mess$, "MOUSELBUP", "true"
         END IF
     END IF
-    IF rmb% <> VAL(GetTagData$(GetGUIMsg$, "MOUSERB", "0")) THEN
-        SetTag GetGUIMsg$, "MOUSERB", LTRIM$(STR$(rmb%))
+    IF rmb% <> VAL(GetTagData$(mess$, "MOUSERB", "0")) THEN
+        SetTag mess$, "MOUSERB", LTRIM$(STR$(rmb%))
         IF rmb% THEN
-            SetTag GetGUIMsg$, "MOUSERBDOWN", "true"
+            SetTag mess$, "MOUSERBDOWN", "true"
         ELSE
-            SetTag GetGUIMsg$, "MOUSERBUP", "true"
+            SetTag mess$, "MOUSERBUP", "true"
         END IF
     END IF
-    IF mmb% <> VAL(GetTagData$(GetGUIMsg$, "MOUSEMB", "0")) THEN
-        SetTag GetGUIMsg$, "MOUSEMB", LTRIM$(STR$(mmb%))
+    IF mmb% <> VAL(GetTagData$(mess$, "MOUSEMB", "0")) THEN
+        SetTag mess$, "MOUSEMB", LTRIM$(STR$(mmb%))
         IF mmb% THEN
-            SetTag GetGUIMsg$, "MOUSEMBDOWN", "true"
+            SetTag mess$, "MOUSEMBDOWN", "true"
         ELSE
-            SetTag GetGUIMsg$, "MOUSEMBUP", "true"
+            SetTag mess$, "MOUSEMBUP", "true"
         END IF
     END IF
     '--- check for scroll wheel movement ---
     IF mwl% <> 0 THEN
-        SetTag GetGUIMsg$, "MOUSESCROLL", "true"
-        SetTag GetGUIMsg$, "SCRVAL", LTRIM$(STR$(SGN(mwl%)))
+        SetTag mess$, "MOUSESCROLL", "true"
+        SetTag mess$, "SCRVAL", LTRIM$(STR$(SGN(mwl%)))
     END IF
     '--- check for mouse movement ---
     mx% = _MOUSEX: gloMx% = -1
     my% = _MOUSEY: gloMy% = -1
-    IF mx% <> VAL(GetTagData$(GetGUIMsg$, "MOUSEX", "0")) OR my% <> VAL(GetTagData$(GetGUIMsg$, "MOUSEY", "0")) THEN
-        SetTag GetGUIMsg$, "MOUSEMOVE", "true"
-        SetTag GetGUIMsg$, "MOUSEX", LTRIM$(STR$(mx%))
-        SetTag GetGUIMsg$, "MOUSEY", LTRIM$(STR$(my%))
+    IF mx% <> VAL(GetTagData$(mess$, "MOUSEX", "0")) OR my% <> VAL(GetTagData$(mess$, "MOUSEY", "0")) THEN
+        SetTag mess$, "MOUSEMOVE", "true"
+        SetTag mess$, "MOUSEX", LTRIM$(STR$(mx%))
+        SetTag mess$, "MOUSEY", LTRIM$(STR$(my%))
     END IF
     '--- update objects, check for selection/release ---
     update:
@@ -165,7 +165,7 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
         guiObjects$(objType%, lastFocus&) = "ScrollerC" OR _
         guiObjects$(objType%, lastFocus&) = "ColorwheelC")) THEN
         IF BoolTagTrue%(guiObjects$(objData%, guiASCObject&), "CHANGED") THEN _
-           SetTag GetGUIMsg$, "GADGETUP", LTRIM$(STR$(guiASCObject&))
+           SetTag mess$, "GADGETUP", LTRIM$(STR$(guiASCObject&))
         RemTags guiObjects$(objData%, guiASCObject&), "SELECTED,UNDO,CHANGED"
         res$ = ObjectRefresh$(guiASCObject&, "d", "")
         guiASCObject& = 0
@@ -175,29 +175,29 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
             IF RIGHT$(guiObjects$(objFlags%, oix&), 2) = "-u" THEN
                 IF VAL(GetTagData$(guiObjects$(objData%, oix&), "GUIVIEW", "0")) = vix& THEN
                     tag$ = NewTag$("OBJECT", LTRIM$(STR$(oix&)))
-                    res$ = GenC$("UPDATE", tag$ + GetGUIMsg$)
+                    res$ = GenC$("UPDATE", tag$ + mess$)
                     IF ValidateTags%(res$, "SELECTED", 0) THEN
                         obj$ = GetTagData$(res$, "SELECTED", "0")
                         RemTag guiObjects$(objData%, VAL(obj$)), "MITIM"
-                        RemTag GetGUIMsg$, "MOUSELBDOWN"
-                        SetTag GetGUIMsg$, "GADGETDOWN", obj$
+                        RemTag mess$, "MOUSELBDOWN"
+                        SetTag mess$, "GADGETDOWN", obj$
                     END IF
                     IF ValidateTags%(res$, "RELEASED", 0) THEN
                         obj$ = GetTagData$(res$, "RELEASED", "0")
                         RemTag guiObjects$(objData%, VAL(obj$)), "MITIM"
-                        RemTag GetGUIMsg$, "MOUSELBUP"
-                        SetTag GetGUIMsg$, "GADGETUP", obj$
+                        RemTag mess$, "MOUSELBUP"
+                        SetTag mess$, "GADGETUP", obj$
                     END IF
                     'if object was triggered by keyboard shortcut or did regularly
                     'eat the inputs, then filter the respective KEYPRESS/KEY tags
-                    IF BoolTagTrue%(res$, "SHORTCUT") THEN RemTags GetGUIMsg$, "KEYPRESS,KEY,SHIFT,CTRL,ALT,MODKEYS"
+                    IF BoolTagTrue%(res$, "SHORTCUT") THEN RemTags mess$, "KEYPRESS,KEY,SHIFT,CTRL,ALT,MODKEYS"
                     'same for eaten mouse wheel events
-                    IF BoolTagTrue%(res$, "MOUSESCROLL") THEN RemTags GetGUIMsg$, "MOUSESCROLL,SCRVAL"
+                    IF BoolTagTrue%(res$, "MOUSESCROLL") THEN RemTags mess$, "MOUSESCROLL,SCRVAL"
                     'and for eaten mouse move events
-                    IF BoolTagTrue%(res$, "MOUSEMOVE") THEN RemTag GetGUIMsg$, "MOUSEMOVE"
+                    IF BoolTagTrue%(res$, "MOUSEMOVE") THEN RemTag mess$, "MOUSEMOVE"
                     'if object does request immediate recheck, then note that for
                     'later transfer into historic data
-                    IF BoolTagTrue%(res$, "IMMFLAG") THEN SetTag GetGUIMsg$, "IMMFLAG", "true"
+                    IF BoolTagTrue%(res$, "IMMFLAG") THEN SetTag mess$, "IMMFLAG", "true"
                 END IF
             END IF
             etim# = TIMER(0.001) - stim#
@@ -206,16 +206,16 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
         NEXT oix&
         '--- route remaining key/wheel events to last focused object ---
         IF VAL(GetTagData$(guiObjects$(objData%, lastFocus&), "GUIVIEW", "0")) = vix& THEN
-            IF NOT BoolTagTrue%(GetGUIMsg$, "GADGETUP") AND _
-                  (BoolTagTrue%(GetGUIMsg$, "KEYPRESS") OR _
-                   BoolTagTrue%(GetGUIMsg$, "MOUSESCROLL")) THEN
-                res$ = ObjectRefresh$(lastFocus&, "u", GetGUIMsg$ + NewTag$("FOCUS", "true"))
+            IF NOT BoolTagTrue%(mess$, "GADGETUP") AND _
+                  (BoolTagTrue%(mess$, "KEYPRESS") OR _
+                   BoolTagTrue%(mess$, "MOUSESCROLL")) THEN
+                res$ = ObjectRefresh$(lastFocus&, "u", mess$ + NewTag$("FOCUS", "true"))
                 IF ValidateTags%(res$, "RELEASED", 0) THEN
-                    RemTag GetGUIMsg$, "MOUSELBUP"
-                    SetTag GetGUIMsg$, "GADGETUP", GetTagData$(res$, "RELEASED", "0")
+                    RemTag mess$, "MOUSELBUP"
+                    SetTag mess$, "GADGETUP", GetTagData$(res$, "RELEASED", "0")
                 END IF
-                IF BoolTagTrue%(res$, "SHORTCUT") THEN RemTags GetGUIMsg$, "KEYPRESS,KEY,SHIFT,CTRL,ALT,MODKEYS"
-                IF BoolTagTrue%(res$, "MOUSESCROLL") THEN RemTags GetGUIMsg$, "MOUSESCROLL,SCRVAL"
+                IF BoolTagTrue%(res$, "SHORTCUT") THEN RemTags mess$, "KEYPRESS,KEY,SHIFT,CTRL,ALT,MODKEYS"
+                IF BoolTagTrue%(res$, "MOUSESCROLL") THEN RemTags mess$, "MOUSESCROLL,SCRVAL"
             END IF
         END IF
     END IF
@@ -227,7 +227,7 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
         IF RIGHT$(guiObjects$(objFlags%, oix&), 1) = "u" THEN
             IF MID$(guiObjects$(objFlags%, oix&), 2, 1) = "-" OR MID$(guiObjects$(objFlags%, oix&), 2, 1) = "p" THEN
                 IF BoolTagTrue%(guiObjects$(objData%, oix&), "FOCUS") THEN
-                    SetTag GetGUIMsg$, "MOUSEOVER", LTRIM$(STR$(oix&))
+                    SetTag mess$, "MOUSEOVER", LTRIM$(STR$(oix&))
                     lastFocus& = oix&: nff% = -1
                     EXIT FOR
                 END IF
@@ -236,15 +236,15 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
     NEXT oix&
     IF nff% AND lastFocus& <> lastIn& THEN
         IF lastIn& > 0 THEN
-            SetTag GetGUIMsg$, "MOUSEOUT", LTRIM$(STR$(lastIn&))
+            SetTag mess$, "MOUSEOUT", LTRIM$(STR$(lastIn&))
             RemTag guiObjects$(objData%, lastIn&), "MITIM"
         END IF
-        lastIn& = lastFocus&: SetTag GetGUIMsg$, "MOUSEIN", LTRIM$(STR$(lastIn&))
+        lastIn& = lastFocus&: SetTag mess$, "MOUSEIN", LTRIM$(STR$(lastIn&))
         SetTag guiObjects$(objData%, lastIn&), "MITIM", LTRIM$(STR$(TIMER(0.001)))
         _DELAY 0.025 'give TIMER a chance to change before we proceed
     ELSEIF NOT nff% AND lastIn& > 0 THEN
         RemTag guiObjects$(objData%, lastIn&), "MITIM"
-        SetTag GetGUIMsg$, "MOUSEOUT", LTRIM$(STR$(lastIn&)): lastIn& = 0
+        SetTag mess$, "MOUSEOUT", LTRIM$(STR$(lastIn&)): lastIn& = 0
     END IF
 END IF
 IF lastFocus& = lastIn& AND guiATTProps$ = "" THEN
@@ -261,16 +261,18 @@ END IF
 FOR oix& = guiALBIndex& TO UBOUND(guiObjects$, 2)
     IF RIGHT$(guiObjects$(objFlags%, oix&), 2) = "iu" THEN
         tag$ = NewTag$("OBJECT", LTRIM$(STR$(oix&)))
-        res$ = GenC$("UPDATE", tag$ + GetGUIMsg$)
+        res$ = GenC$("UPDATE", tag$ + mess$)
     END IF
 NEXT oix&
 UpdateGuiViews: _AUTODISPLAY
 '--- save (new) historic data ---
-guiObjects$(0, 0) = GetTags$(GetGUIMsg$, "MOUSEX,MOUSEY,MOUSELB,MOUSERB,MOUSEMB,GUIVIEW,IMMFLAG")
-RemTags GetGUIMsg$, "GUIVIEW,IMMFLAG"
+guiObjects$(0, 0) = GetTags$(mess$, "MOUSEX,MOUSEY,MOUSELB,MOUSERB,MOUSEMB,GUIVIEW,IMMFLAG")
+RemTags mess$, "GUIVIEW,IMMFLAG"
 IF _SCREENX <> -32000 AND _SCREENY <> -32000 THEN 'minimized?
     guiWinX% = _SCREENX: guiWinY% = _SCREENY
 END IF
+ggmSetResultAndExit:
+GetGUIMsg$ = mess$
 END FUNCTION
 
 '---------------------------------------------------------------------
@@ -410,10 +412,10 @@ END SUB
 'alt%   = non-zero, if the alt modifier shall be required
 '---------------------------------------------------------------------
 FUNCTION MakeShortcut$ (char$, shift%, ctrl%, alt%)
-MakeShortcut$ = ""
+shor$ = ""
 IF LEN(char$) = 1 THEN
     IF ASC(char$) > 32 AND ASC(char$) < 127 THEN
-        MakeShortcut$ = LTRIM$(STR$(CVI(char$ + CHR$(0))))
+        shor$ = LTRIM$(STR$(CVI(char$ + CHR$(0))))
         shift% = 0
     END IF
 ELSE
@@ -421,16 +423,17 @@ ELSE
     FOR i% = 1 TO 25
         READ fu$, id&
         IF UCASE$(char$) = UCASE$(fu$) THEN
-            MakeShortcut$ = LTRIM$(STR$(id&))
+            shor$ = LTRIM$(STR$(id&))
             EXIT FOR
         END IF
     NEXT i%
 END IF
-IF MakeShortcut$ <> "" THEN
-    IF shift% <> 0 THEN MakeShortcut$ = MakeShortcut$ + "S"
-    IF ctrl% <> 0 THEN MakeShortcut$ = MakeShortcut$ + "C"
-    IF alt% <> 0 THEN MakeShortcut$ = MakeShortcut$ + "A"
+IF shor$ <> "" THEN
+    IF shift% <> 0 THEN shor$ = shor$ + "S"
+    IF ctrl% <> 0 THEN shor$ = shor$ + "C"
+    IF alt% <> 0 THEN shor$ = shor$ + "A"
 END IF
+MakeShortcut$ = shor$
 EXIT FUNCTION
 '----------------
 MakeShortcut_FKeys:
@@ -544,14 +547,14 @@ END SUB
 ' Return:     = the new GuiView its index number, zero on failure
 '---------------------------------------------------------------------
 FUNCTION CreateGuiView& (viewTitle$, viewWidth%, viewHeight%)
-CreateGuiView& = 0
+vix& = 0
 '--- create view ---
 imag& = _NEWIMAGE(viewWidth%, viewHeight%, 256)
-IF imag& >= -1 THEN EXIT FUNCTION
+IF imag& >= -1 GOTO cgvSetResultAndExit
 _COPYPALETTE appScreen&, imag&
 viewID$ = GetUniqueID$
 smo%& = CreateSMObject%&("RhoSigma-GuiApp-ViewImgSM-" + viewID$ + CHR$(0), viewWidth% * viewHeight% + 1024)
-IF smo%& = 0 THEN _FREEIMAGE imag&: EXIT FUNCTION
+IF smo%& = 0 THEN _FREEIMAGE imag&: GOTO cgvSetResultAndExit
 '--- get new view index ---
 lb& = LBOUND(guiViews$)
 ub& = UBOUND(guiViews$)
@@ -559,26 +562,28 @@ IF lb& <> 0 OR lb& = ub& THEN
     REDIM _PRESERVE guiViews$(10)
     lb& = 0: ub& = 10
 END IF
-FOR vix& = 1 TO ub& 'keep zero index free (main view is default)
-    IF guiViews$(vix&) = "" THEN
-        CreateGuiView& = vix&
+FOR i& = 1 TO ub& 'keep zero index free (main view is default)
+    IF guiViews$(i&) = "" THEN
+        vix& = i&
         EXIT FOR
     END IF
-NEXT vix&
-IF CreateGuiView& = 0 THEN
+NEXT i&
+IF vix& = 0 THEN
     REDIM _PRESERVE guiViews$(ub& + 10)
-    CreateGuiView& = ub& + 1
+    vix& = ub& + 1
 END IF
 '--- init view tags ---
-titl$ = appExeName$ + "." + LTRIM$(STR$(CreateGuiView&))
+titl$ = appExeName$ + "." + LTRIM$(STR$(vix&))
 IF viewTitle$ <> "" THEN titl$ = viewTitle$
-guiViews$(CreateGuiView&) =_
+guiViews$(vix&) =_
         NewTag$("TITLE", titl$) +_
         NewTag$("WIDTH", LTRIM$(STR$(viewWidth%))) +_
         NewTag$("HEIGHT", LTRIM$(STR$(viewHeight%))) +_
         NewTag$("VIEWID", viewID$) +_
         NewTag$("IHANDLE", LTRIM$(STR$(imag&))) +_
         NewTag$("SMOBJ", LTRIM$(STR$(smo%&)))
+cgvSetResultAndExit:
+CreateGuiView& = vix&
 END FUNCTION
 
 '---------------------------------------------------------------------
@@ -897,17 +902,18 @@ IF lb& <> 0 OR lb& = ub& THEN
     REDIM _PRESERVE guiObjects$(3, 100)
     lb& = 0: ub& = 100
 END IF
-NewObject& = 0
-FOR oix& = guiALBIndex& TO ub& 'keep zero index free (temporary storage)
-    IF guiObjects$(objType%, oix&) = "" THEN
-        NewObject& = oix&
+oix& = 0
+FOR i& = guiALBIndex& TO ub& 'keep zero index free (temporary storage)
+    IF guiObjects$(objType%, i&) = "" THEN
+        oix& = i&
         EXIT FOR
     END IF
-NEXT oix&
-IF NewObject& = 0 THEN
+NEXT i&
+IF oix& = 0 THEN
     REDIM _PRESERVE guiObjects$(3, ub& + 100)
-    NewObject& = ub& + 1
+    oix& = ub& + 1
 END IF
+NewObject& = oix&
 END FUNCTION
 
 '--- INTERNAL --------------------------------------------------------
@@ -920,8 +926,7 @@ END FUNCTION
 '---------------------------------------------------------------------
 ' Inputs: this&      = should be "this&" in function call too
 '         thisTag$   = should be "thisTag$" in function call too
-'         classRes$  = the function result variable (usually the function
-'                      name) of the calling class
+'         classRes$  = the function result variable of the calling class
 '         classID$   = same named variable of the calling class
 '         methodID$  = same named variable of the calling class
 '         tagsID$    = same named variable of the calling class
@@ -1447,7 +1452,7 @@ REDIM cset(0) AS ChunkCSET
 mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-gtprefs.bin" + CHR$(0))
 iff% = SafeOpenFile%("B", appLocalDir$ + "gtprefs.bin")
 found% = 0
-IF SeekChunk&(iff%, CHcsetID$) THEN
+IF SeekChunk&(iff%, 1, CHcsetID$) > 0 THEN
     WHILE NOT EOF(iff%)
         GET iff%, , cset(0)
         IF RStrip$(stripFIX%, cset(0).csetCLASS) = classID$ THEN
@@ -1528,7 +1533,7 @@ REDIM winp(0) AS ChunkWPOS
 mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-wpbrain.bin" + CHR$(0))
 iff% = SafeOpenFile%("B", appLocalDir$ + "wpbrain.bin")
 found% = 0
-IF SeekChunk&(iff%, CHwposID$) THEN
+IF SeekChunk&(iff%, 1, CHwposID$) > 0 THEN
     WHILE NOT EOF(iff%)
         ptr& = SEEK(iff%)
         GET iff%, , winp(0)
@@ -1608,8 +1613,7 @@ END SUB
 ' NOTE: Must be called before InitAssignedPager%() if both are used !!
 '---------------------------------------------------------------------
 ' Inputs: this&     = actual object, should be "this&" in function call too
-'         classRes$ = the function result variable (usually the function
-'                     name) of the calling class
+'         classRes$ = the function result variable of the calling class
 '         classID$  = same named variable of the calling class
 '         methodID$ = same named variable of the calling class
 '         tagsID$   = same named variable of the calling class
@@ -1689,8 +1693,7 @@ END SUB
 ' NOTE: Must be called after InitSetAssignedList%() if both are used !!
 '---------------------------------------------------------------------
 ' Inputs: this&     = actual object, should be "this&" in function call too
-'         classRes$ = the function result variable (usually the function
-'                     name) of the calling class
+'         classRes$ = the function result variable of the calling class
 '         classID$  = same named variable of the calling class
 '         tagsID$   = same named variable of the calling class
 '
@@ -1756,8 +1759,7 @@ END SUB
 ' to the class's function result string.
 '---------------------------------------------------------------------
 ' Inputs: typeTag$  = either IMAGEOBJECT or SYMBOLOBJECT
-'         classRes$ = the function result variable (usually the function
-'                     name) of the calling class
+'         classRes$ = the function result variable of the calling class
 '         classID$  = same named variable of the calling class
 '         tagsID$   = same named variable of the calling class
 '---------------------------------------------------------------------
@@ -1818,8 +1820,7 @@ END SUB
 '---------------------------------------------------------------------
 ' Inputs: this&     = actual object, should be "this&" in function call too
 '         typeTag$  = either IMAGEOBJECT or SYMBOLOBJECT
-'         classRes$ = the function result variable (usually the function
-'                     name) of the calling class
+'         classRes$ = the function result variable of the calling class
 '         classID$  = same named variable of the calling class
 '         tagsID$   = same named variable of the calling class
 '
@@ -1876,8 +1877,7 @@ END FUNCTION
 ' into the class's function result string.
 '---------------------------------------------------------------------
 ' Inputs: this&     = actual object, should be "this&" in function call too
-'         classRes$ = the function result variable (usually the function
-'                     name) of the calling class
+'         classRes$ = the function result variable of the calling class
 '         classID$  = same named variable of the calling class
 '         tagsID$   = same named variable of the calling class
 '---------------------------------------------------------------------
@@ -2201,7 +2201,7 @@ END SUB
 '---------------------------------------------------------------------
 SUB KillInterconnections (this&)
 REDIM oarr$(5)
-oaub% = ParseLine&(guiObjects$(objConn%, this&), oarr$(), 0)
+oaub% = ParseLine&(guiObjects$(objConn%, this&), " ", "", oarr$(), 0)
 IF oaub% >= 0 THEN
     FOR i% = 0 TO oaub%
         resu$ = ModelC$("KILL", NewTag$("OBJECT", oarr$(i%)))

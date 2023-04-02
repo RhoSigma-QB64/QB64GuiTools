@@ -33,7 +33,7 @@
 ' general documentation about the Framework see GuiToolsFramework.pdf.
 '---------------------------------------------------------------------
 FUNCTION ListviewC$ (method$, tagString$)
-ListviewC$ = ""
+ListviewRes$ = ""
 classID$ = "ListviewC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -88,13 +88,14 @@ SELECT CASE methodID$
         GOSUB meUpdate
         'Result Tags: ERROR/WARNING or SELECTED,RELEASED,SHORTCUT (may be empty)
     CASE ELSE
-        SetTag ListviewC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag ListviewRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+ListviewC$ = ListviewRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag ListviewC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag ListviewRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     '--- general init ---
     this& = NewObject&
@@ -106,8 +107,8 @@ ELSE
         RemTag tagsID$, "SHORTCUT"
     END IF
     '--- check list/pager conditions ---
-    IF InitSetAssignedList%(this&, ListviewC$, classID$, methodID$, tagsID$) THEN
-        IF InitAssignedPager%(this&, ListviewC$, classID$, tagsID$) THEN
+    IF InitSetAssignedList%(this&, ListviewRes$, classID$, methodID$, tagsID$) THEN
+        IF InitAssignedPager%(this&, ListviewRes$, classID$, tagsID$) THEN
             '--- object specific init ---
             left% = VAL(GetTagData$(tagsID$, "LEFT", "0")): topp% = VAL(GetTagData$(tagsID$, "TOP", "0"))
             widt% = VAL(GetTagData$(tagsID$, "WIDTH", "0")): heig% = VAL(GetTagData$(tagsID$, "HEIGHT", "0"))
@@ -121,11 +122,11 @@ ELSE
             IF topT% >= (numT% - 1) THEN topT% = (topT% - numT% + 1) \ 2: spac% = spac% + 1: ELSE topT% = topT% \ 2
             stpT% = tObH% + spac%: SetTag tagsID$, "SPACING", LTRIM$(STR$(spac%))
             '--- check for assigned Image/Symbol ---
-            InitAssignedImgSym "IMAGEOBJECT", ListviewC$, classID$, tagsID$
-            InitAssignedImgSym "SYMBOLOBJECT", ListviewC$, classID$, tagsID$
+            InitAssignedImgSym "IMAGEOBJECT", ListviewRes$, classID$, tagsID$
+            InitAssignedImgSym "SYMBOLOBJECT", ListviewRes$, classID$, tagsID$
             '--- background/frame/scroller/text init ---
             BeginChildInit
-            InitObjectBGImg this&, ListviewC$, classID$, tagsID$
+            InitObjectBGImg this&, ListviewRes$, classID$, tagsID$
             fram$ = FrameC$("INIT", GetTags$(tagsID$, "LEFT,TOP,HEIGHT") + NewTag$("WIDTH", LTRIM$(STR$(widt% - 23))) + NewTag$("FORM", "simple"))
             guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("FRM0", fram$)
             itag$ = "": than& = _NEWIMAGE(_WIDTH, _HEIGHT, 256)
@@ -155,7 +156,7 @@ ELSE
             guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
             ObjectsUnselect this&
             '--- set result and schedule gui refresh ---
-            SetTag ListviewC$, "OBJECT", LTRIM$(STR$(this&))
+            SetTag ListviewRes$, "OBJECT", LTRIM$(STR$(this&))
             SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
         END IF
     END IF
@@ -172,10 +173,10 @@ NEXT i%
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, ListviewC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THEN
     '--- check required/optional tag changes ---
     flag% = 0
-    IF InitSetAssignedList%(this&, ListviewC$, classID$, methodID$, tagsID$) THEN
+    IF InitSetAssignedList%(this&, ListviewRes$, classID$, methodID$, tagsID$) THEN
         ltag$ = "LST0": lkil% = 0: GOSUB meEmptyListAndKill 'free old text objects
         left% = VAL(GetTagData$(guiObjects$(objData%, this&), "LEFT", "0")): topp% = VAL(GetTagData$(guiObjects$(objData%, this&), "TOP", "0"))
         widt% = VAL(GetTagData$(guiObjects$(objData%, this&), "WIDTH", "0")): heig% = VAL(GetTagData$(guiObjects$(objData%, this&), "HEIGHT", "0"))
@@ -194,8 +195,8 @@ IF ValidObject%(this&, thisTag$, ListviewC$, classID$, methodID$, tagsID$) THEN
         EndChildInit
         flag% = -1
     END IF
-    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", ListviewC$, classID$, tagsID$) THEN flag% = -1
-    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", ListviewC$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", ListviewRes$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", ListviewRes$, classID$, tagsID$) THEN flag% = -1
     temp$ = GetTagData$(tagsID$, "READONLY", "n/a")
     IF temp$ <> "n/a" THEN
         IF BoolTagTrue%(tagsID$, "READONLY") THEN
@@ -256,19 +257,19 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, ListviewC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
     IF temp$ <> "n/a" THEN
         reco$ = ListC$("READ", ObjectTag$(guiObjects$(objData%, this&), "LISTOBJECT") + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
         IF ValidateTags%(reco$, "ERROR", 0) THEN reco$ = ""
-        ListviewC$ = GetTags$(guiObjects$(objData%, this&) + reco$, temp$)
+        ListviewRes$ = GetTags$(guiObjects$(objData%, this&) + reco$, temp$)
     END IF
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, ListviewC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THEN
     '--- 1st remove interconnections to this object ---
     KillInterconnections this&
     '--- delete child objects ---
@@ -306,7 +307,7 @@ IF lkil% THEN resu$ = ListC$("KILL", ltmp$)
 RETURN
 '---------------------------------------------------------------------
 meDraw:
-IF ValidObject%(this&, thisTag$, ListviewC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THEN
     '--- get object's dimensions ---
     left% = VAL(GetTagData$(guiObjects$(objData%, this&), "LEFT", "0"))
     topp% = VAL(GetTagData$(guiObjects$(objData%, this&), "TOP", "0"))
@@ -389,7 +390,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meUpdate:
-IF ValidObject%(this&, thisTag$, ListviewC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THEN
     '--- don't update, if currently disabled ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN RETURN
     '--- save old drawing relevant states ---
@@ -410,8 +411,8 @@ IF ValidObject%(this&, thisTag$, ListviewC$, classID$, methodID$, tagsID$) THEN
                 SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
                 GOSUB meAdjustScroller
                 resu$ = ListviewC$("DRAW", thisTag$)
-                SetTag ListviewC$, "RELEASED", LTRIM$(STR$(this&))
-                SetTag ListviewC$, "SHORTCUT", "true"
+                SetTag ListviewRes$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag ListviewRes$, "SHORTCUT", "true"
                 RETURN
             END IF
         END IF
@@ -434,7 +435,7 @@ IF ValidObject%(this&, thisTag$, ListviewC$, classID$, methodID$, tagsID$) THEN
        NOT BoolTagTrue%(tagsID$, "FOCUS") OR NOT BoolTagTrue%(tagsID$, "CTRL") THEN
         sTags$ = tagsID$: RemTags sTags$, "KEYPRESS,KEY"
         scr0$ = ScrollerC$("UPDATE", NewTag$("OBJECT", LTRIM$(STR$(sobj&))) + sTags$)
-        ListviewC$ = GetTags$(scr0$, "SHORTCUT,MOUSESCROLL,MOUSEMOVE,IMMFLAG")
+        ListviewRes$ = GetTags$(scr0$, "SHORTCUT,MOUSESCROLL,MOUSEMOVE,IMMFLAG")
         IF INSTR(scr0$, "SELECTED") > 0 OR INSTR(scr0$, "RELEASED") > 0 THEN
             RemTag guiObjects$(objData%, this&), "MITIM"
             resu$ = ListviewC$("DRAW", thisTag$)
@@ -460,10 +461,10 @@ IF ValidObject%(this&, thisTag$, ListviewC$, classID$, methodID$, tagsID$) THEN
                     resu$ = ListviewC$("DRAW", thisTag$)
                 END IF
                 SetTag guiObjects$(objData%, this&), "SELECTED", "true"
-                SetTag ListviewC$, "SELECTED", LTRIM$(STR$(this&))
+                SetTag ListviewRes$, "SELECTED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
                 RemTag guiObjects$(objData%, this&), "SELECTED"
-                SetTag ListviewC$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag ListviewRes$, "RELEASED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(tagsID$, "KEYPRESS") AND guiASCObject& = 0 THEN
                 RemTags tagsID$, "ALT,SHIFT": SetTag tagsID$, "CTRL", "true"
                 etim# = TIMER(0.001) - VAL(GetTagData$(guiObjects$(objData%, this&), "ETIM", "0"))
@@ -555,9 +556,9 @@ IF NOT BoolTagTrue%(tagsID$, "ALT") AND NOT BoolTagTrue%(tagsID$, "SHIFT") THEN
         SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
         SetTag guiObjects$(objData%, this&), "ETIM", LTRIM$(STR$(TIMER(0.001)))
         resu$ = ListviewC$("DRAW", thisTag$)
-        SetTag ListviewC$, "RELEASED", LTRIM$(STR$(this&))
-        SetTag ListviewC$, "SHORTCUT", "true"
-        SetTag ListviewC$, "MOUSESCROLL", "true"
+        SetTag ListviewRes$, "RELEASED", LTRIM$(STR$(this&))
+        SetTag ListviewRes$, "SHORTCUT", "true"
+        SetTag ListviewRes$, "MOUSESCROLL", "true"
     END IF
 END IF
 RETURN

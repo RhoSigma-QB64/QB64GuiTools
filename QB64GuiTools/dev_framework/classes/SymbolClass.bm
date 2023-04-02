@@ -63,7 +63,7 @@
 ' general documentation about the Framework see GuiToolsFramework.pdf.
 '---------------------------------------------------------------------
 FUNCTION SymbolC$ (method$, tagString$)
-SymbolC$ = ""
+SymbolRes$ = ""
 classID$ = "SymbolC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -107,19 +107,20 @@ SELECT CASE methodID$
         GOSUB meUpdate
         'Result Tags: ERROR/WARNING or empty
     CASE ELSE
-        SetTag SymbolC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag SymbolRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+SymbolC$ = SymbolRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag SymbolC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag SymbolRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     '--- general init ---
     this& = NewObject&
     InitGeneralProperties this&, classID$, flagsID$, tagsID$
     '--- check pager conditions ---
-    IF InitAssignedPager%(this&, SymbolC$, classID$, tagsID$) THEN
+    IF InitAssignedPager%(this&, SymbolRes$, classID$, tagsID$) THEN
         IF MID$(guiObjects$(objFlags%, this&), 2, 1) = "p" THEN SetTag guiObjects$(objData%, this&), "STANDALONE", "true"
         '--- add required/optional tags ---
         opti% = ValidateTags%(tagsID$, tagsOpt$, -1)
@@ -128,7 +129,7 @@ ELSE
         RemTags tagsID$, guiInitTags$ + guiCallTags$ + guiEvntTags$ + guiPrivTags$
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
         '--- set result and schedule gui refresh ---
-        SetTag SymbolC$, "OBJECT", LTRIM$(STR$(this&))
+        SetTag SymbolRes$, "OBJECT", LTRIM$(STR$(this&))
         IF BoolTagTrue%(guiObjects$(objData%, this&), "STANDALONE") THEN
             SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
         ELSE
@@ -139,7 +140,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, SymbolC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, SymbolRes$, classID$, methodID$, tagsID$) THEN
     '--- check required/optional tag changes ---
     flag% = UpdateTags%(guiObjects$(objData%, this&), "BACKPEN,SHADOWPEN,SHINEPEN,BORDERPEN", tagsID$)
     '--- check any user tag changes ---
@@ -163,19 +164,19 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, SymbolC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, SymbolRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
-    IF temp$ <> "n/a" THEN SymbolC$ = GetTags$(guiObjects$(objData%, this&), temp$)
+    IF temp$ <> "n/a" THEN SymbolRes$ = GetTags$(guiObjects$(objData%, this&), temp$)
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, SymbolC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, SymbolRes$, classID$, methodID$, tagsID$) THEN
     '--- check use count ---
     reco& = VAL(GetTagData$(guiObjects$(objData%, this&), "RECORDS", "0"))
     IF reco& > 0 THEN
-        SetTag SymbolC$, "ERROR", classID$ + "::" + methodID$ + " -> object still in use"
+        SetTag SymbolRes$, "ERROR", classID$ + "::" + methodID$ + " -> object still in use"
     ELSE
         '--- 1st remove interconnections to this object ---
         KillInterconnections this&
@@ -192,7 +193,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meDraw:
-IF ValidObject%(this&, thisTag$, SymbolC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, SymbolRes$, classID$, methodID$, tagsID$) THEN
     '--- don't draw, if unassigned and not standalone ---
     IF MID$(guiObjects$(objFlags%, this&), 2, 1) = "-" AND _
         NOT BoolTagTrue%(guiObjects$(objData%, this&), "STANDALONE") THEN RETURN
@@ -283,7 +284,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meUpdate:
-IF ValidObject%(this&, thisTag$, SymbolC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, SymbolRes$, classID$, methodID$, tagsID$) THEN
     '--- get mouse position and object dimensions ---
     moux% = VAL(GetTagData$(tagsID$, "MOUSEX", "-1"))
     mouy% = VAL(GetTagData$(tagsID$, "MOUSEY", "-1"))

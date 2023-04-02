@@ -43,7 +43,7 @@
 ' general documentation about the Framework see GuiToolsFramework.pdf.
 '---------------------------------------------------------------------
 FUNCTION CheckboxC$ (method$, tagString$)
-CheckboxC$ = ""
+CheckboxRes$ = ""
 classID$ = "CheckboxC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -83,29 +83,30 @@ SELECT CASE methodID$
         GOSUB meUpdate
         'Result Tags: ERROR/WARNING or SELECTED,RELEASED,SHORTCUT (may be empty)
     CASE ELSE
-        SetTag CheckboxC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag CheckboxRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+CheckboxC$ = CheckboxRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag CheckboxC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag CheckboxRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     '--- general init ---
     this& = NewObject&
     InitGeneralProperties this&, classID$, flagsID$, tagsID$
     ApplyPrefs classID$, tagsID$
     '--- check pager conditions ---
-    IF InitAssignedPager%(this&, CheckboxC$, classID$, tagsID$) THEN
+    IF InitAssignedPager%(this&, CheckboxRes$, classID$, tagsID$) THEN
         '--- object specific init ---
         widt% = VAL(GetTagData$(tagsID$, "WIDTH", "31")): SetTag tagsID$, "WIDTH", LTRIM$(STR$(widt%))
         heig% = VAL(GetTagData$(tagsID$, "HEIGHT", "31")): SetTag tagsID$, "HEIGHT", LTRIM$(STR$(heig%))
         '--- check for assigned Image/Symbol ---
-        InitAssignedImgSym "IMAGEOBJECT", CheckboxC$, classID$, tagsID$
-        InitAssignedImgSym "SYMBOLOBJECT", CheckboxC$, classID$, tagsID$
+        InitAssignedImgSym "IMAGEOBJECT", CheckboxRes$, classID$, tagsID$
+        InitAssignedImgSym "SYMBOLOBJECT", CheckboxRes$, classID$, tagsID$
         '--- background/frame/symbol init ---
         BeginChildInit
-        InitObjectBGImg this&, CheckboxC$, classID$, tagsID$
+        InitObjectBGImg this&, CheckboxRes$, classID$, tagsID$
         fram$ = FrameC$("INIT", GetTags$(tagsID$, "LEFT,TOP,WIDTH,HEIGHT") + NewTag$("FORM", "simple"))
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("FRM0", fram$)
         symb$ = SymbolC$("INIT", NewTag$("WHICH", "Checkmark") + NewTag$("SHADOWPEN", LTRIM$(STR$(guiShadowPen%))) + NewTag$("LEFT", "9") + NewTag$("TOP", "7") + NewTag$("WIDTH", LTRIM$(STR$(widt% - 18))) + NewTag$("HEIGHT", LTRIM$(STR$(heig% - 14))))
@@ -119,18 +120,18 @@ ELSE
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
         ObjectsUnselect this&
         '--- set result and schedule gui refresh ---
-        SetTag CheckboxC$, "OBJECT", LTRIM$(STR$(this&))
+        SetTag CheckboxRes$, "OBJECT", LTRIM$(STR$(this&))
         SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
     END IF
 END IF
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, CheckboxC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, CheckboxRes$, classID$, methodID$, tagsID$) THEN
     '--- check required/optional tag changes ---
     flag% = 0
-    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", CheckboxC$, classID$, tagsID$) THEN flag% = -1
-    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", CheckboxC$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", CheckboxRes$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", CheckboxRes$, classID$, tagsID$) THEN flag% = -1
     IF UpdateTag%(guiObjects$(objData%, this&), "CHECKED", tagsID$) THEN flag% = -1
     temp$ = GetTagData$(tagsID$, "DISABLED", "n/a")
     IF temp$ <> "n/a" THEN
@@ -157,15 +158,15 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, CheckboxC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, CheckboxRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
-    IF temp$ <> "n/a" THEN CheckboxC$ = GetTags$(guiObjects$(objData%, this&), temp$)
+    IF temp$ <> "n/a" THEN CheckboxRes$ = GetTags$(guiObjects$(objData%, this&), temp$)
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, CheckboxC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, CheckboxRes$, classID$, methodID$, tagsID$) THEN
     '--- 1st remove interconnections to this object ---
     KillInterconnections this&
     '--- delete child objects ---
@@ -188,7 +189,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meDraw:
-IF ValidObject%(this&, thisTag$, CheckboxC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, CheckboxRes$, classID$, methodID$, tagsID$) THEN
     '--- select drawing colors ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "FOCUS") AND BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") THEN
         back% = guiFillPen% 'back pen
@@ -229,7 +230,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meUpdate:
-IF ValidObject%(this&, thisTag$, CheckboxC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, CheckboxRes$, classID$, methodID$, tagsID$) THEN
     '--- don't update, if currently disabled ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN RETURN
     '--- save old drawing relevant states ---
@@ -249,8 +250,8 @@ IF ValidObject%(this&, thisTag$, CheckboxC$, classID$, methodID$, tagsID$) THEN
                 ObjectsUnselect this&
                 resu% = ToggleBoolTag%(guiObjects$(objData%, this&), "CHECKED")
                 resu$ = CheckboxC$("DRAW", thisTag$)
-                SetTag CheckboxC$, "RELEASED", LTRIM$(STR$(this&))
-                SetTag CheckboxC$, "SHORTCUT", "true"
+                SetTag CheckboxRes$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag CheckboxRes$, "SHORTCUT", "true"
                 RETURN
             END IF
         END IF
@@ -267,11 +268,11 @@ IF ValidObject%(this&, thisTag$, CheckboxC$, classID$, methodID$, tagsID$) THEN
         SetTag guiObjects$(objData%, this&), "FOCUS", "true"
         IF BoolTagTrue%(tagsID$, "MOUSELBDOWN") THEN
             SetTag guiObjects$(objData%, this&), "SELECTED", "true"
-            SetTag CheckboxC$, "SELECTED", LTRIM$(STR$(this&))
+            SetTag CheckboxRes$, "SELECTED", LTRIM$(STR$(this&))
         ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
             RemTag guiObjects$(objData%, this&), "SELECTED"
             resu% = ToggleBoolTag%(guiObjects$(objData%, this&), "CHECKED")
-            SetTag CheckboxC$, "RELEASED", LTRIM$(STR$(this&))
+            SetTag CheckboxRes$, "RELEASED", LTRIM$(STR$(this&))
         END IF
     ELSE
         RemTag guiObjects$(objData%, this&), "FOCUS"

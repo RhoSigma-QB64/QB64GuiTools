@@ -32,9 +32,23 @@ TODO:
 
 HISTORY:
 --------
+>> 10/04/2021 v0.14
+   - the entire GuiTools Framework got an overhaul to not longer relying
+     on the old recursion bug, which got finally fixed in QB64 v2.0
+     (https://www.qb64.org/forum/index.php?topic=4209), GuiTools now
+     successfully runs on all QB64 versions from v0.954 (SDL) upto the
+     latest v2.0 development builds
+   - makes chunk routines SeekChunk&() and SizeUpdate() more compliant
+     with the EA IFF-85 standard (https://1fish2.github.io/IFF/) and
+     respectively adjusted all calls to it
+   - improved ParseLine&() function to allow several separator and quoting
+     chars and respectively adjusted all calls to it
+   - several minor program flow changes under the hood
+   - continued revision of sub/function documentation (work in progress)
+
 >> 04/03/2021 v0.13 [silent release]
    - dropped old SHARED variable appDrives$, use new function CurrDrives$()
-     instead, which returns accessible drives at calling time, hence also
+     instead, which returns available drives at calling time, hence also
      recognizing drives connected after application start/init
    - the SHARED variable appScreen& is no longer allowed for public access
      to protect the integrity of the GuiViews API, the only supported way
@@ -62,7 +76,7 @@ HISTORY:
      from within the same program using the same GUI object base, hence
      even realtime cross-form/cross-window object interconnections are
      possible without a hassle (see src_MultiWinDemo)
-   - restored former StringC class behavior, hence you'll receive the
+   - restored pre-v0.11 StringC class behavior, hence you'll receive the
      GADGETUP events on random unselection again, if you need it eg. for
      field verification, but it's much smarter now (will only fire the event,
      if the input field was changed since activation) and also you can
@@ -136,7 +150,7 @@ HISTORY:
    - improved StringC class with free editing and cursor movement, find
      possible key controls in StringClass.bm
    - added MULFORMAT/DIVFORMAT tags for ModelC Ratio model to specify
-     a PRINT USING style format for the model's output
+     a PRINT USING (or IndexFormat$) style format for the model's output
    - changed default colors of some symbols (SymbolC class) to be in line
      with new GUI context pens (see dev_storage\Symbols.png)
    - old SCREEN 0 based MakeDATA/MakeCARR tools (dev_storage) are now

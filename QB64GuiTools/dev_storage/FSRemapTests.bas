@@ -163,7 +163,7 @@ IF than& < -1 THEN
 END IF
 END SUB
 
-'=== RS:COPYFROM:GuiAppFrame.bm/RemapImageRS& (modified) =============
+'=== RS:COPYFROM:GuiAppFrame.bm/RemapImageRS& (++RS:CHG) =============
 FUNCTION RemapImageFS& (ohan&, dhan&, fs%) 'RS:CHG fs% added
 RemapImageFS& = -1 'so far return invalid handle
 shan& = ohan& 'avoid side effect on given argument

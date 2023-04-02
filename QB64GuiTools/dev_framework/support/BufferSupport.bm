@@ -266,10 +266,11 @@ FUNCTION GetBufMark& (buf$(), markID%)
 GetBufMark& = SBE_BadIDNumber
 IF (markID% < 1 OR markID% > 100) AND (LEN(buf$(1)) = 12) THEN EXIT FUNCTION
 '--- return mark position, if set ---
-GetBufMark& = CVL(MID$(buf$(2), markID% * 4, 4))
-SELECT CASE GetBufMark&
+markPos& = CVL(MID$(buf$(2), markID% * 4, 4))
+SELECT CASE markPos&
     CASE &HCAFEBABE: GetBufMark& = SBE_UnusedID
     CASE &HDEADBEEF: GetBufMark& = SBE_ClearedID
+    CASE ELSE: GetBufMark& = markPos&
 END SELECT
 END FUNCTION
 
@@ -493,9 +494,8 @@ SELECT CASE mode%
         origin& = INSTR(origin&, buf$(0), brc$)
         IF origin& = 0 THEN origin& = eob&
     CASE IS > 0 'buffer markers mode
-        SeekBuf& = GetBufMark&(buf$(), mode%)
-        IF SeekBuf& < 0 THEN EXIT FUNCTION
-        origin& = SeekBuf&
+        origin& = GetBufMark&(buf$(), mode%)
+        IF origin& < 0 THEN SeekBuf& = origin&: EXIT FUNCTION
     CASE ELSE
         SeekBuf& = SBE_UnknownMode
         EXIT FUNCTION

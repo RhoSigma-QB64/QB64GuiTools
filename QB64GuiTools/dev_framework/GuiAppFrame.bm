@@ -19,6 +19,59 @@
 '| any questions or suggestions. Thanx for your interest in my work. |
 '+-------------------------------------------------------------------+
 
+'--- docs\doc_GuiAppframe.bm\InternalErrHandler.html
+'---------------------------------------------------------------------
+SUB InternalErrHandler
+appLastErr% = 0
+IF UCASE$(ErrorHandlerSwitch$) <> "DISABLED" THEN
+    ON ERROR GOTO InternalErrorHandler
+ELSE
+    ON ERROR GOTO 0
+END IF
+END SUB
+
+'--- docs\doc_GuiAppframe.bm\UserErrHandler.html
+'---------------------------------------------------------------------
+SUB UserErrHandler
+IF UCASE$(ErrorHandlerSwitch$) = "ON" THEN
+    ON ERROR GOTO UserErrorHandler
+ELSE
+    ON ERROR GOTO 0
+END IF
+END SUB
+
+'--- docs\doc_GuiAppframe.bm\GetUniqueID.html
+'---------------------------------------------------------------------
+FUNCTION GetUniqueID$
+REDIM vars(0) AS ChunkVARS
+'--- exclusivly access the unique ID source file ---
+mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-univars.tmp" + CHR$(0))
+iff% = SafeOpenFile%("B", appTempDir$ + "univars.tmp")
+ptr& = SeekChunk&(iff%, 1, CHvarsID$)
+GET iff%, , vars(0)
+'--- create ID and update vital values ---
+GetUniqueID$ = RIGHT$("00000000" + HEX$(vars(0).varsFID), 8) + "." + RIGHT$("000" + HEX$(vars(0).varsEID), 3)
+vars(0).varsEID = vars(0).varsEID + 1
+IF vars(0).varsEID = 4096 THEN
+    vars(0).varsEID = 0
+    IF NOT vars(0).varsIDF THEN
+        vars(0).varsFID = vars(0).varsFID + 1
+    ELSE
+        vars(0).varsFID = -2147483648
+        vars(0).varsIDF = 0
+    END IF
+    IF vars(0).varsFID = 2147483647 THEN
+        vars(0).varsIDF = -1
+    END IF
+END IF
+'--- update & close the unique ID source file ---
+PUT iff%, ptr&, vars(0)
+CLOSE iff%
+UnlockMutex mtx%&
+'--- cleanup & return ---
+ERASE vars
+END FUNCTION
+
 '--- docs\doc_GuiAppframe.bm\MessageBox.html
 '---------------------------------------------------------------------
 FUNCTION MessageBox$ (winIcon$, winTitle$, bodyText$, buttonText$)
@@ -144,10 +197,7 @@ IF winTitle$ <> "*** RhoSigma-MessageBox-HandlerCall ***" THEN
         c$ = MID$(iButtonText$, i%, 1)
         IF c$ = "{" THEN
             j% = INSTR(i% + 1, iButtonText$, "}") + 1
-            FOR k% = i% + 1 TO j% - 2
-                IF MID$(iButtonText$, k%, 1) = "'" THEN MID$(iButtonText$, k%, 1) = CHR$(34)
-            NEXT k%
-            ub% = ParseLine&(MID$(iButtonText$, i% + 1, j% - i% - 2), butArgs$(), 5)
+            ub% = ParseLine&(MID$(iButtonText$, i% + 1, j% - i% - 2), MKI$(&H0920), "'", butArgs$(), 5)
             IF UCASE$(butArgs$(0)) = "IMG" THEN
                 PRINT #rff%, NewTag$("CLASSNAME", "ImageC");
                 PRINT #rff%, NewTag$("IMAGEFILE", butArgs$(1));
@@ -216,9 +266,10 @@ IF winTitle$ <> "*** RhoSigma-MessageBox-HandlerCall ***" THEN
     _DELAY 0.1
 
     rff% = SafeOpenFile%("I", appTempDir$ + file$)
-    LINE INPUT #rff%, MessageBox$
+    LINE INPUT #rff%, temp$
     CLOSE rff%
     KILL appTempDir$ + file$
+    MessageBox$ = temp$
 ELSE
     '--- MessageBox Handler Block ---
     runMtx%& = PlantMutex%&("Global\RhoSigma-GuiApp-MessageBoxHandler-" + buttonText$ + CHR$(0))
@@ -279,6 +330,389 @@ ELSE
 END IF
 END FUNCTION
 
+'--- docs\doc_GuiAppframe.bm\SetPrintMode.html
+'---------------------------------------------------------------------
+SUB SetPrintMode (pm%)
+SELECT CASE pm%
+    CASE 1: _PRINTMODE _KEEPBACKGROUND
+    CASE 2: _PRINTMODE _ONLYBACKGROUND
+    CASE 3: _PRINTMODE _FILLBACKGROUND
+END SELECT
+END SUB
+
+'--- docs\doc_GuiAppframe.bm\Bin.html
+'---------------------------------------------------------------------
+FUNCTION Bin$ (value&&)
+'--- init ---
+temp~&& = value&&
+binStr$ = STRING$(64, "0"): charPos% = 64: highPos% = 64
+'--- convert ---
+DO
+    IF (temp~&& AND 1) THEN MID$(binStr$, charPos%, 1) = "1": highPos% = charPos%
+    charPos% = charPos% - 1: temp~&& = temp~&& \ 2
+LOOP UNTIL temp~&& = 0
+'--- adjust negative size ---
+IF value&& < 0 THEN
+    IF -value&& < &H0080000000~&& THEN highPos% = 33
+    IF -value&& < &H0000008000~&& THEN highPos% = 49
+    IF -value&& < &H0000000080~&& THEN highPos% = 57
+END IF
+'--- set result ---
+Bin$ = MID$(binStr$, highPos%)
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\IndexFormat.html
+'---------------------------------------------------------------------
+FUNCTION IndexFormat$ (fmt$, arg$, sep$)
+'--- init ---
+args$ = arg$ 'avoid side effects
+shan& = _SOURCE: dhan& = _DEST: than& = _NEWIMAGE(256, 1, 0)
+_SOURCE than&: _DEST than&
+REDIM argArr$(0 TO 35) 'all args empty
+'--- parse arguments ---
+IF RIGHT$(args$, LEN(sep$)) <> sep$ THEN args$ = args$ + sep$
+FOR idx% = 0 TO 35
+    cpos& = INSTR(args$, sep$): IF cpos& = 0 THEN EXIT FOR
+    argArr$(idx%) = LEFT$(args$, cpos& - 1)
+    args$ = MID$(args$, cpos& + LEN(sep$))
+NEXT idx%
+'--- process format template ---
+res$ = "": lit% = 0: tok% = 0: ft$ = "": idx% = -1
+FOR cpos& = 1 TO LEN(fmt$)
+    cch$ = MID$(fmt$, cpos&, 1)
+    IF cch$ = "_" AND lit% = 0 THEN 'take next \{} as literal
+        IF NOT tok% THEN lit% = -1
+    ELSEIF cch$ = "\" AND lit% = 0 AND tok% = 0 THEN 'insert esc sequence
+        IF cpos& < LEN(fmt$) THEN
+            SELECT CASE UCASE$(MID$(fmt$, cpos& + 1, 1))
+                CASE "A": och$ = CHR$(7) ' audio bell
+                CASE "B": och$ = CHR$(8) ' backspace
+                CASE "T": och$ = CHR$(9) ' tabulator
+                CASE "N": och$ = CHR$(10) 'line feed
+                CASE "V": och$ = CHR$(11) 'vertical tabulator
+                CASE "F": och$ = CHR$(12) 'form feed
+                CASE "R": och$ = CHR$(13) 'carriage return
+                CASE "E": och$ = CHR$(27) 'escape
+                CASE "0", "1", "2", "3" '  octal ASCII (3 digits)
+                    och$ = CHR$(VAL("&O" + MID$(fmt$, cpos& + 1, 3)))
+                    cpos& = cpos& + 2
+                CASE "X" '                 hex ASCII (x + 2 digits)
+                    och$ = CHR$(VAL("&H" + MID$(fmt$, cpos& + 2, 2)))
+                    cpos& = cpos& + 2
+                CASE ELSE: och$ = "" '     ignore unknowns
+            END SELECT
+            res$ = res$ + och$
+            cpos& = cpos& + 1: opos& = cpos&
+        END IF
+    ELSEIF cch$ = "{" AND lit% = 0 THEN 'begin of formatting token
+        IF idx% = -1 THEN
+            och$ = UCASE$(MID$(fmt$, cpos& - 1, 1)): tok% = -1
+            IF ((cpos& - 1) = opos&) OR ((och$ < "0" OR och$ > "9") AND (och$ < "A" OR och$ > "Z")) THEN och$ = "-"
+            IF och$ = "-" THEN och$ = "0": ELSE res$ = LEFT$(res$, LEN(res$) - 1)
+            IF och$ >= "A" THEN idx% = ASC(och$) - 55: ELSE idx% = VAL(och$)
+        END IF
+    ELSEIF cch$ = "}" AND lit% = 0 THEN 'end of formatting token
+        IF idx% >= 0 THEN
+            GOSUB doArgFormat: res$ = res$ + tmp$
+            tok% = 0: ft$ = "": idx% = -1
+        END IF
+    ELSE 'accumulate chars/symbols in correct channel
+        IF lit% AND INSTR("\{}", cch$) = 0 THEN cch$ = "_" + cch$
+        IF tok% THEN ft$ = ft$ + cch$: ELSE res$ = res$ + cch$
+        lit% = 0
+    END IF
+NEXT cpos&
+'--- cleanup & set result ---
+ERASE argArr$
+_SOURCE shan&: _DEST dhan&: _FREEIMAGE than&
+IndexFormat$ = res$
+EXIT FUNCTION
+'-----------------------------
+doArgFormat:
+CLS: tmp$ = "": fp$ = "": ft$ = LTRIM$(RTRIM$(ft$))
+IF LEFT$(ft$, 1) = "?" THEN
+    tyl% = INSTR(2, ft$, ":")
+    IF tyl% > 0 THEN fp$ = LEFT$(MID$(ft$, 2, tyl% - 2), 2): ft$ = LTRIM$(MID$(ft$, tyl% + 1)) 'extract format prefs
+END IF
+IF ft$ = "" THEN RETURN 'empty token = empty formatted
+SELECT CASE UCASE$(LEFT$(ft$, 1))
+    CASE "!", "&", "\" 'regular string formatting
+        IF LEFT$(ft$, 1) = "\" THEN
+            tyl% = INSTR(2, ft$, "\"): IF tyl% = 0 THEN ft$ = "\" + ft$: tyl% = 2
+            IF LTRIM$(fp$) <> "" AND LEN(argArr$(idx%)) < tyl% THEN
+                SELECT CASE LEFT$(LTRIM$(fp$), 1)
+                    CASE "C", "c": tyl% = (tyl% - LEN(argArr$(idx%))) \ 2
+                    CASE "R", "r": tyl% = tyl% - LEN(argArr$(idx%))
+                    CASE ELSE: tyl% = 0 'L or Unknown is default (left)
+                END SELECT
+                argArr$(idx%) = SPACE$(tyl%) + argArr$(idx%)
+            END IF
+        END IF
+        PRINT USING ft$; argArr$(idx%);: fp$ = ""
+    CASE "B", "D", "H", "O", "R" 'extended number formatting (bin/dec/hex/oct/real)
+        typ$ = LEFT$(ft$, 1): tyl% = VAL(MID$(ft$, 2))
+        SELECT CASE typ$
+            CASE "B", "b": tmp$ = Bin$(VAL(argArr$(idx%)))
+            CASE "D", "d": tmp$ = LTRIM$(STR$(_ROUND(VAL(argArr$(idx%)))))
+            CASE "H", "h"
+                tmp$ = HEX$(VAL(argArr$(idx%)))
+                IF typ$ = "H" THEN tmp$ = UCASE$(tmp$): ELSE tmp$ = LCASE$(tmp$)
+            CASE "O", "o": tmp$ = OCT$(VAL(argArr$(idx%)))
+            CASE "R", "r": tmp$ = LTRIM$(STR$(VAL(argArr$(idx%)))): fp$ = ""
+        END SELECT
+        IF tyl% > 0 THEN 'adjust field length (if any)
+            IF LEN(tmp$) <= tyl% THEN
+                tmp$ = RIGHT$(STRING$(tyl%, "0") + tmp$, tyl%): idx% = INSTR(tmp$, "-")
+                IF idx% > 0 THEN
+                    typ$ = UCASE$(MID$(tmp$, idx% - 1, 1))
+                    IF typ$ <> "E" AND typ$ <> "D" THEN tmp$ = "-" + LEFT$(tmp$, idx% - 1) + MID$(tmp$, idx% + 1)
+                END IF
+            ELSE
+                tmp$ = "%" + tmp$
+            END IF
+        END IF
+        IF LTRIM$(fp$) <> "" THEN 'apply grouping (if any)
+            typ$ = "": tyl% = 0
+            FOR idx% = LEN(tmp$) TO 1 STEP -1
+                typ$ = MID$(tmp$, idx%, 1) + typ$: tyl% = tyl% + 1
+                IF tyl% = VAL(fp$) THEN typ$ = " " + typ$: tyl% = 0
+            NEXT idx%
+            tmp$ = LTRIM$(typ$): IF LEFT$(tmp$, 2) = "- " THEN tmp$ = "-" + MID$(tmp$, 3)
+        END IF
+        RETURN
+    CASE ELSE 'regular number formatting (or invalid nonsense)
+        IF INSTR(ft$, "**") = 0 AND INSTR(ft$, "$$") = 0 AND INSTR(ft$, "#") = 0 THEN
+            PRINT ft$; 'take nonsense as is
+        ELSE
+            PRINT USING ft$; VAL(argArr$(idx%));
+        END IF
+END SELECT
+tyl% = INSTR(fp$, ","): IF tyl% > 0 THEN MID$(fp$, tyl%, 1) = " "
+fp$ = LTRIM$(RTRIM$(fp$))
+FOR idx% = 1 TO POS(0) - 1
+    typ$ = CHR$(SCREEN(1, idx%)): ft$ = typ$
+    IF fp$ <> "" AND typ$ = "$" THEN ft$ = fp$
+    IF tyl% > 0 AND typ$ = "," THEN ft$ = "."
+    IF tyl% > 0 AND typ$ = "." THEN ft$ = ","
+    tmp$ = tmp$ + ft$
+NEXT idx%
+RETURN
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\LRStrip.html
+'---------------------------------------------------------------------
+FUNCTION LStrip$ (mode%, arg$)
+le& = LEN(arg$)
+FOR x& = 1 TO le&
+    mi% = ASC(arg$, x&)
+    IF x& < le& THEN nx% = ASC(UCASE$(MID$(arg$, x& + 1, 1))): ELSE nx% = 0
+    SELECT CASE mode%
+        CASE stripZERO%
+            IF mi% <> 0 THEN EXIT FOR
+        CASE stripTAB%
+            IF mi% <> 9 THEN EXIT FOR
+        CASE stripSPACE%
+            IF mi% <> 32 THEN EXIT FOR
+        CASE stripQUOTE%
+            IF mi% <> 34 THEN EXIT FOR
+        CASE stripFIX%
+            IF mi% <> 0 AND mi% <> 32 THEN EXIT FOR
+        CASE stripWHITE%
+            IF mi% <> 9 AND mi% <> 32 THEN EXIT FOR
+        CASE stripALL%
+            IF mi% <> 0 AND mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
+        CASE stripTEXT%
+            IF mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
+        CASE stripVALUE%
+            IF (mi% = 38 AND (nx% = 66 OR nx% = 72 OR nx% = 79)) OR ((mi% = 43 OR mi% = 45) AND (nx% = 46 OR (nx% >= 48 AND nx% <= 57))) OR (mi% = 46 AND (nx% >= 48 AND nx% <= 57)) OR (mi% >= 48 AND mi% <= 57) THEN EXIT FOR
+    END SELECT
+NEXT x&
+LStrip$ = RIGHT$(arg$, LEN(arg$) - x& + 1)
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\LRStrip.html
+'---------------------------------------------------------------------
+FUNCTION RStrip$ (mode%, arg$)
+FOR x& = LEN(arg$) TO 1 STEP -1
+    mi% = ASC(arg$, x&)
+    SELECT CASE mode%
+        CASE stripZERO%
+            IF mi% <> 0 THEN EXIT FOR
+        CASE stripTAB%
+            IF mi% <> 9 THEN EXIT FOR
+        CASE stripSPACE%
+            IF mi% <> 32 THEN EXIT FOR
+        CASE stripQUOTE%
+            IF mi% <> 34 THEN EXIT FOR
+        CASE stripFIX%
+            IF mi% <> 0 AND mi% <> 32 THEN EXIT FOR
+        CASE stripWHITE%
+            IF mi% <> 9 AND mi% <> 32 THEN EXIT FOR
+        CASE stripALL%
+            IF mi% <> 0 AND mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
+        CASE stripTEXT%
+            IF mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
+        CASE stripVALUE%
+            IF mi% >= 48 AND mi% <= 57 THEN EXIT FOR
+    END SELECT
+NEXT x&
+RStrip$ = LEFT$(arg$, x&)
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\RInstr.html
+'---------------------------------------------------------------------
+FUNCTION RInstr& (start&, source$, find$)
+'--- avoid side effect on passed arg ---
+iStart& = start&
+'--- get string length, set search range ---
+sle& = LEN(source$): fle& = LEN(find$): dst& = sle& - fle& + 1 'default start position
+IF iStart& = 0 OR iStart& > dst& THEN iStart& = dst&
+IF sle& < fle& THEN iStart& = 0
+'--- perform search ---
+x& = 0
+IF fle& > 0 THEN 'avoid a match of "" = ""
+    FOR x& = iStart& TO 1 STEP -1
+        IF MID$(source$, x&, fle&) = find$ THEN EXIT FOR
+    NEXT x&
+END IF
+'--- return result ---
+RInstr& = x&
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\ParseLine.html
+'---------------------------------------------------------------------
+FUNCTION ParseLine& (inpLine$, sepChars$, quoChars$, outArray$(), minUB&)
+'--- so far return nothing ---
+ParseLine& = -1
+'--- init & check some runtime variables ---
+ilen& = LEN(inpLine$): icnt& = 1
+IF ilen& = 0 THEN EXIT FUNCTION
+slen% = LEN(sepChars$)
+IF slen% > 0 THEN s1% = ASC(sepChars$, 1)
+IF slen% > 1 THEN s2% = ASC(sepChars$, 2)
+IF slen% > 2 THEN s3% = ASC(sepChars$, 3)
+IF slen% > 3 THEN s4% = ASC(sepChars$, 4)
+IF slen% > 4 THEN s5% = ASC(sepChars$, 5)
+IF slen% > 5 THEN slen% = 5 'max. 5 chars, ignore the rest
+IF LEN(quoChars$) > 0 THEN q1% = ASC(quoChars$, 1): ELSE q1% = 34
+IF LEN(quoChars$) > 1 THEN q2% = ASC(quoChars$, 2): ELSE q2% = q1%
+oalb& = LBOUND(outArray$): oaub& = UBOUND(outArray$): ocnt& = oalb&
+'--- skip preceding separators ---
+plSkipSepas:
+flag% = 0
+WHILE icnt& <= ilen& AND NOT flag%
+    ch% = ASC(inpLine$, icnt&)
+    SELECT CASE slen%
+        CASE 0: flag% = -1
+        CASE 1: flag% = ch% <> s1%
+        CASE 2: flag% = ch% <> s1% AND ch% <> s2%
+        CASE 3: flag% = ch% <> s1% AND ch% <> s2% AND ch% <> s3%
+        CASE 4: flag% = ch% <> s1% AND ch% <> s2% AND ch% <> s3% AND ch% <> s4%
+        CASE 5: flag% = ch% <> s1% AND ch% <> s2% AND ch% <> s3% AND ch% <> s4% AND ch% <> s5%
+    END SELECT
+    icnt& = icnt& + 1
+WEND
+IF NOT flag% THEN 'nothing else? - then exit
+    IF ocnt& > oalb& GOTO plEnd
+    EXIT FUNCTION
+END IF
+'--- redim to clear array on 1st word/component ---
+IF ocnt& = oalb& THEN REDIM outArray$(oalb& TO oaub&)
+'--- expand array, if required ---
+plNextWord:
+IF ocnt& > oaub& THEN
+    oaub& = oaub& + 10
+    REDIM _PRESERVE outArray$(oalb& TO oaub&)
+END IF
+'--- get current word/component until next separator ---
+flag% = 0: nest% = 0: spos& = icnt& - 1
+WHILE icnt& <= ilen& AND NOT flag%
+    IF ch% = q1% AND nest% = 0 THEN
+        nest% = 1
+    ELSEIF ch% = q1% AND nest% > 0 THEN
+        nest% = nest% + 1
+    ELSEIF ch% = q2% AND nest% > 0 THEN
+        nest% = nest% - 1
+    END IF
+    ch% = ASC(inpLine$, icnt&)
+    SELECT CASE slen%
+        CASE 0: flag% = (nest% = 0 AND (ch% = q1%)) OR (nest% = 1 AND ch% = q2%)
+        CASE 1: flag% = (nest% = 0 AND (ch% = s1% OR ch% = q1%)) OR (nest% = 1 AND ch% = q2%)
+        CASE 2: flag% = (nest% = 0 AND (ch% = s1% OR ch% = s2% OR ch% = q1%)) OR (nest% = 1 AND ch% = q2%)
+        CASE 3: flag% = (nest% = 0 AND (ch% = s1% OR ch% = s2% OR ch% = s3% OR ch% = q1%)) OR (nest% = 1 AND ch% = q2%)
+        CASE 4: flag% = (nest% = 0 AND (ch% = s1% OR ch% = s2% OR ch% = s3% OR ch% = s4% OR ch% = q1%)) OR (nest% = 1 AND ch% = q2%)
+        CASE 5: flag% = (nest% = 0 AND (ch% = s1% OR ch% = s2% OR ch% = s3% OR ch% = s4% OR ch% = s5% OR ch% = q1%)) OR (nest% = 1 AND ch% = q2%)
+    END SELECT
+    icnt& = icnt& + 1
+WEND
+epos& = icnt& - 1
+IF ASC(inpLine$, spos&) = q1% THEN spos& = spos& + 1
+outArray$(ocnt&) = MID$(inpLine$, spos&, epos& - spos&)
+ocnt& = ocnt& + 1
+'--- more words/components following? ---
+IF flag% AND ch% = q1% AND nest% = 0 GOTO plNextWord
+IF flag% GOTO plSkipSepas
+IF (ch% <> q1%) AND (ch% <> q2% OR nest% = 0) THEN outArray$(ocnt& - 1) = outArray$(ocnt& - 1) + CHR$(ch%)
+'--- final array size adjustment, then exit ---
+plEnd:
+IF ocnt& - 1 < minUB& THEN ocnt& = minUB& + 1
+REDIM _PRESERVE outArray$(oalb& TO (ocnt& - 1))
+ParseLine& = ocnt& - 1
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\CurrDrives.html
+'---------------------------------------------------------------------
+FUNCTION CurrDrives$
+cdm& = GetLogicalDrives&
+drives$ = "": i& = (2 ^ 25): d% = ASC("Z")
+DO
+    IF (cdm& AND i&) THEN drives$ = CHR$(d%) + drives$
+    i& = i& \ 2: d% = d% - 1
+LOOP UNTIL i& = 0
+CurrDrives$ = drives$
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\CurrDIR.html
+'---------------------------------------------------------------------
+FUNCTION CurrDIR$
+tmp$ = SPACE$(264)
+tle% = GetCurrentDirectoryA&(LEN(tmp$), tmp$)
+CurrDIR$ = LEFT$(tmp$, tle%)
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\PathPart.html
+'---------------------------------------------------------------------
+FUNCTION PathPart$ (fileSpec$)
+PathPart$ = ""
+sPo% = RInstr&(0, fileSpec$, "\")
+IF sPo% > 0 THEN PathPart$ = LEFT$(fileSpec$, sPo%)
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\FilePart.html
+'---------------------------------------------------------------------
+FUNCTION FilePart$ (fileSpec$)
+FilePart$ = fileSpec$
+sPo% = RInstr&(0, fileSpec$, "\")
+IF sPo% > 0 THEN FilePart$ = MID$(fileSpec$, sPo% + 1)
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\FileNamePart.html
+'---------------------------------------------------------------------
+FUNCTION FileNamePart$ (file$)
+FileNamePart$ = file$
+sPo% = RInstr&(0, file$, "\"): dPo% = RInstr&(0, file$, ".")
+IF dPo% > 0 AND dPo% > sPo% THEN FileNamePart$ = LEFT$(file$, dPo% - 1)
+IF sPo% = LEN(file$) OR dPo% = sPo% + 1 THEN FileNamePart$ = ""
+END FUNCTION
+
+'--- docs\doc_GuiAppframe.bm\FileExtension.html
+'---------------------------------------------------------------------
+FUNCTION FileExtension$ (file$)
+FileExtension$ = ""
+sPo% = RInstr&(0, file$, "\"): dPo% = RInstr&(0, file$, ".")
+IF dPo% > 0 AND dPo% > sPo% THEN FileExtension$ = MID$(file$, dPo%)
+END FUNCTION
+
 '--- docs\doc_GuiAppframe.bm\FileSelect.html
 '---------------------------------------------------------------------
 FUNCTION FileSelect$ (winIcon$, winTitle$, opMode%, iniDir$, iniFile$)
@@ -319,11 +753,12 @@ IF winTitle$ <> "*** RhoSigma-FileSelect-HandlerCall ***" THEN
     _DELAY 0.1
 
     rff% = SafeOpenFile%("I", appTempDir$ + file$)
-    LINE INPUT #rff%, FileSelect$
+    LINE INPUT #rff%, fsTemp$
     LINE INPUT #rff%, fsPatt$
     LINE INPUT #rff%, fsCurr$
     CLOSE rff%
     KILL appTempDir$ + file$
+    FileSelect$ = fsTemp$
 ELSE
     '--- FileSelect Handler Block ---
     runMtx%& = PlantMutex%&("Global\RhoSigma-GuiApp-FileSelectHandler-" + iniFile$ + CHR$(0))
@@ -517,26 +952,19 @@ ELSE
                                             "Path does not exist yet !!",_
                                             "{SYM Checkmark * * * *}Create|{SYM Cross * * * *}Ignore")
                         IF resu$ = "Create" THEN
-                            temp$ = curr$: colo% = 0
-                            FOR i% = 1 TO LEN(temp$)
-                                SELECT CASE MID$(temp$, i%, 1)
-                                    CASE ":": colo% = colo% + 1
-                                    CASE "\": MID$(temp$, i%, 1) = " "
-                                    CASE " ": MID$(temp$, i%, 1) = "*"
-                                END SELECT
+                            colo% = 0
+                            FOR i% = 1 TO LEN(curr$)
+                                IF MID$(curr$, i%, 1) = ":" THEN colo% = colo% + 1
                             NEXT i%
                             IF colo% > 1 THEN
                                 resu$ = MessageBox$("Error16px.png", "FileSelect",_
                                                     "Invalid char (:) in name !!", "")
                             ELSE
                                 REDIM car$(0)
-                                cub% = ParseLine&(temp$, car$(), 0)
+                                cub% = ParseLine&(curr$, "\", "*", car$(), 0)
                                 IF cub% > 0 THEN
                                     temp$ = car$(0)
                                     FOR i% = 1 TO cub%
-                                        FOR j% = 1 TO LEN(car$(i%))
-                                            IF MID$(car$(i%), j%, 1) = "*" THEN MID$(car$(i%), j%, 1) = " "
-                                        NEXT j%
                                         temp$ = temp$ + "\" + car$(i%)
                                         IF NOT _DIREXISTS(temp$) THEN
                                             InternalErrHandler
@@ -791,36 +1219,21 @@ resu$ = ListviewC$("SET", fslv$ + ro$ + NewTag$("ACTUAL", actu$) + ListTag$(flis
 RETURN
 END FUNCTION
 
-'--- docs\doc_GuiAppframe.bm\GetUniqueID.html
+'--- docs\doc_GuiAppframe.bm\SafeOpenFile.html
 '---------------------------------------------------------------------
-FUNCTION GetUniqueID$
-REDIM vars(0) AS ChunkVARS
-'--- exclusivly access the unique ID source file ---
-mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-univars.tmp" + CHR$(0))
-iff% = SafeOpenFile%("B", appTempDir$ + "univars.tmp")
-ptr& = SeekChunk&(iff%, CHvarsID$)
-GET iff%, , vars(0)
-'--- create ID and update vital values ---
-GetUniqueID$ = RIGHT$("00000000" + HEX$(vars(0).varsFID), 8) + "." + RIGHT$("000" + HEX$(vars(0).varsEID), 3)
-vars(0).varsEID = vars(0).varsEID + 1
-IF vars(0).varsEID = 4096 THEN
-    vars(0).varsEID = 0
-    IF NOT vars(0).varsIDF THEN
-        vars(0).varsFID = vars(0).varsFID + 1
-    ELSE
-        vars(0).varsFID = -2147483648
-        vars(0).varsIDF = 0
-    END IF
-    IF vars(0).varsFID = 2147483647 THEN
-        vars(0).varsIDF = -1
-    END IF
-END IF
-'--- update & close the unique ID source file ---
-PUT iff%, ptr&, vars(0)
-CLOSE iff%
-UnlockMutex mtx%&
-'--- cleanup & return ---
-ERASE vars
+FUNCTION SafeOpenFile% (mode$, file$)
+ff% = FREEFILE
+InternalErrHandler
+SELECT CASE UCASE$(LEFT$(mode$, 1))
+    CASE "A": OPEN file$ FOR APPEND LOCK WRITE AS ff%
+    CASE "B": OPEN file$ FOR BINARY LOCK WRITE AS ff%
+    CASE "I": OPEN file$ FOR INPUT SHARED AS ff%
+    CASE "O": OPEN file$ FOR OUTPUT LOCK WRITE AS ff%
+    CASE "R": OPEN file$ FOR RANDOM LOCK WRITE AS ff%
+END SELECT
+UserErrHandler
+IF appLastErr% <> 0 THEN ff% = 0 'if error, then invalidate result
+SafeOpenFile% = ff%
 END FUNCTION
 
 '--- docs\doc_GuiAppframe.bm\TempLog.html
@@ -831,13 +1244,13 @@ REDIM tlog(0) AS ChunkTLOG
 '--- exclusivly access the temp logfile ---
 mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-templog.tmp" + CHR$(0))
 iff% = SafeOpenFile%("B", appTempDir$ + "templog.tmp")
-ptr& = SeekChunk&(iff%, CHthdrID$)
+ptr& = SeekChunk&(iff%, 1, CHthdrID$)
 GET iff%, , thdr(0)
 '--- check for a free entry to use ---
 IF thdr(0).thdrUNUSED > 0 THEN
     thdr(0).thdrUNUSED = thdr(0).thdrUNUSED - 1
     PUT iff%, ptr&, thdr(0)
-    ptr& = SeekChunk&(iff%, CHfreeID$)
+    ptr& = SeekChunk&(iff%, 1, CHfreeID$)
     GET iff%, , tlog(0)
     flag% = -1
 ELSE
@@ -863,515 +1276,44 @@ ERASE tlog
 ERASE thdr
 END SUB
 
-'--- docs\doc_GuiAppframe.bm\SetPrintMode.html
 '---------------------------------------------------------------------
-SUB SetPrintMode (pm%)
-SELECT CASE pm%
-    CASE 1: _PRINTMODE _KEEPBACKGROUND
-    CASE 2: _PRINTMODE _ONLYBACKGROUND
-    CASE 3: _PRINTMODE _FILLBACKGROUND
-END SELECT
-END SUB
-
-'--- docs\doc_GuiAppframe.bm\InternalErrHandler.html
-'---------------------------------------------------------------------
-SUB InternalErrHandler
-appLastErr% = 0
-IF UCASE$(ErrorHandlerSwitch$) <> "DISABLED" THEN
-    ON ERROR GOTO InternalErrorHandler
-ELSE
-    ON ERROR GOTO 0
-END IF
-END SUB
-
-'--- docs\doc_GuiAppframe.bm\UserErrHandler.html
-'---------------------------------------------------------------------
-SUB UserErrHandler
-IF UCASE$(ErrorHandlerSwitch$) = "ON" THEN
-    ON ERROR GOTO UserErrorHandler
-ELSE
-    ON ERROR GOTO 0
-END IF
-END SUB
-
-'--- docs\doc_GuiAppframe.bm\Bin.html
-'---------------------------------------------------------------------
-FUNCTION Bin$ (value&&)
-'--- init ---
-temp~&& = value&&
-Bin$ = STRING$(64, "0"): charPos% = 64: highPos% = 64
-'--- convert ---
-DO
-    IF (temp~&& AND 1) THEN MID$(Bin$, charPos%, 1) = "1": highPos% = charPos%
-    charPos% = charPos% - 1: temp~&& = temp~&& \ 2
-LOOP UNTIL temp~&& = 0
-'--- adjust negative size ---
-IF value&& < 0 THEN
-    IF -value&& < &H0080000000~&& THEN highPos% = 33
-    IF -value&& < &H0000008000~&& THEN highPos% = 49
-    IF -value&& < &H0000000080~&& THEN highPos% = 57
-END IF
-'--- set result ---
-Bin$ = MID$(Bin$, highPos%)
-END FUNCTION
-
-'--- docs\doc_GuiAppframe.bm\IndexFormat.html
-'---------------------------------------------------------------------
-FUNCTION IndexFormat$ (fmt$, arg$, sep$)
-'--- init ---
-args$ = arg$ 'avoid side effects
-shan& = _SOURCE: dhan& = _DEST: than& = _NEWIMAGE(256, 1, 0)
-_SOURCE than&: _DEST than&
-REDIM argArr$(0 TO 35) 'all args empty
-'--- parse arguments ---
-IF RIGHT$(args$, LEN(sep$)) <> sep$ THEN args$ = args$ + sep$
-FOR idx% = 0 TO 35
-    cpos& = INSTR(args$, sep$): IF cpos& = 0 THEN EXIT FOR
-    argArr$(idx%) = LEFT$(args$, cpos& - 1)
-    args$ = MID$(args$, cpos& + LEN(sep$))
-NEXT idx%
-'--- process format template ---
-res$ = "": lit% = 0: tok% = 0: ft$ = "": idx% = -1
-FOR cpos& = 1 TO LEN(fmt$)
-    cch$ = MID$(fmt$, cpos&, 1)
-    IF cch$ = "_" AND lit% = 0 THEN 'take next \{} as literal
-        IF NOT tok% THEN lit% = -1
-    ELSEIF cch$ = "\" AND lit% = 0 AND tok% = 0 THEN 'insert esc sequence
-        IF cpos& < LEN(fmt$) THEN
-            SELECT CASE UCASE$(MID$(fmt$, cpos& + 1, 1))
-                CASE "A": och$ = CHR$(7) ' audio bell
-                CASE "B": och$ = CHR$(8) ' backspace
-                CASE "T": och$ = CHR$(9) ' tabulator
-                CASE "N": och$ = CHR$(10) 'line feed
-                CASE "V": och$ = CHR$(11) 'vertical tabulator
-                CASE "F": och$ = CHR$(12) 'form feed
-                CASE "R": och$ = CHR$(13) 'carriage return
-                CASE "E": och$ = CHR$(27) 'escape
-                CASE "0", "1", "2", "3" '  octal ASCII (3 digits)
-                    och$ = CHR$(VAL("&O" + MID$(fmt$, cpos& + 1, 3)))
-                    cpos& = cpos& + 2
-                CASE "X" '                 hex ASCII (x + 2 digits)
-                    och$ = CHR$(VAL("&H" + MID$(fmt$, cpos& + 2, 2)))
-                    cpos& = cpos& + 2
-                CASE ELSE: och$ = "" '     ignore unknowns
-            END SELECT
-            res$ = res$ + och$
-            cpos& = cpos& + 1: opos& = cpos&
-        END IF
-    ELSEIF cch$ = "{" AND lit% = 0 THEN 'begin of formatting token
-        IF idx% = -1 THEN
-            och$ = UCASE$(MID$(fmt$, cpos& - 1, 1)): tok% = -1
-            IF ((cpos& - 1) = opos&) OR ((och$ < "0" OR och$ > "9") AND (och$ < "A" OR och$ > "Z")) THEN och$ = "-"
-            IF och$ = "-" THEN och$ = "0": ELSE res$ = LEFT$(res$, LEN(res$) - 1)
-            IF och$ >= "A" THEN idx% = ASC(och$) - 55: ELSE idx% = VAL(och$)
-        END IF
-    ELSEIF cch$ = "}" AND lit% = 0 THEN 'end of formatting token
-        IF idx% >= 0 THEN
-            GOSUB doArgFormat: res$ = res$ + tmp$
-            tok% = 0: ft$ = "": idx% = -1
-        END IF
-    ELSE 'accumulate chars/symbols in correct channel
-        IF lit% AND INSTR("\{}", cch$) = 0 THEN cch$ = "_" + cch$
-        IF tok% THEN ft$ = ft$ + cch$: ELSE res$ = res$ + cch$
-        lit% = 0
-    END IF
-NEXT cpos&
-'--- cleanup & set result ---
-ERASE argArr$
-_SOURCE shan&: _DEST dhan&: _FREEIMAGE than&
-IndexFormat$ = res$
-EXIT FUNCTION
-'-----------------------------
-doArgFormat:
-CLS: tmp$ = "": fp$ = "": ft$ = LTRIM$(RTRIM$(ft$))
-IF LEFT$(ft$, 1) = "?" THEN
-    tyl% = INSTR(2, ft$, ":")
-    IF tyl% > 0 THEN fp$ = LEFT$(MID$(ft$, 2, tyl% - 2), 2): ft$ = LTRIM$(MID$(ft$, tyl% + 1)) 'extract format prefs
-END IF
-IF ft$ = "" THEN RETURN 'empty token = empty formatted
-SELECT CASE UCASE$(LEFT$(ft$, 1))
-    CASE "!", "&", "\" 'regular string formatting
-        IF LEFT$(ft$, 1) = "\" THEN
-            tyl% = INSTR(2, ft$, "\"): IF tyl% = 0 THEN ft$ = "\" + ft$: tyl% = 2
-            IF LTRIM$(fp$) <> "" AND LEN(argArr$(idx%)) < tyl% THEN
-                SELECT CASE LEFT$(LTRIM$(fp$), 1)
-                    CASE "C", "c": tyl% = (tyl% - LEN(argArr$(idx%))) \ 2
-                    CASE "R", "r": tyl% = tyl% - LEN(argArr$(idx%))
-                    CASE ELSE: tyl% = 0 'L or Unknown is default (left)
-                END SELECT
-                argArr$(idx%) = SPACE$(tyl%) + argArr$(idx%)
-            END IF
-        END IF
-        PRINT USING ft$; argArr$(idx%);: fp$ = ""
-    CASE "B", "D", "H", "O", "R" 'extended number formatting (bin/dec/hex/oct/real)
-        typ$ = LEFT$(ft$, 1): tyl% = VAL(MID$(ft$, 2))
-        SELECT CASE typ$
-            CASE "B", "b": tmp$ = Bin$(VAL(argArr$(idx%)))
-            CASE "D", "d": tmp$ = LTRIM$(STR$(_ROUND(VAL(argArr$(idx%)))))
-            CASE "H", "h"
-                tmp$ = HEX$(VAL(argArr$(idx%)))
-                IF typ$ = "H" THEN tmp$ = UCASE$(tmp$): ELSE tmp$ = LCASE$(tmp$)
-            CASE "O", "o": tmp$ = OCT$(VAL(argArr$(idx%)))
-            CASE "R", "r": tmp$ = LTRIM$(STR$(VAL(argArr$(idx%)))): fp$ = ""
-        END SELECT
-        IF tyl% > 0 THEN 'adjust field length (if any)
-            IF LEN(tmp$) <= tyl% THEN
-                tmp$ = RIGHT$(STRING$(tyl%, "0") + tmp$, tyl%): idx% = INSTR(tmp$, "-")
-                IF idx% > 0 THEN
-                    typ$ = UCASE$(MID$(tmp$, idx% - 1, 1))
-                    IF typ$ <> "E" AND typ$ <> "D" THEN tmp$ = "-" + LEFT$(tmp$, idx% - 1) + MID$(tmp$, idx% + 1)
-                END IF
-            ELSE
-                tmp$ = "%" + tmp$
-            END IF
-        END IF
-        IF LTRIM$(fp$) <> "" THEN 'apply grouping (if any)
-            typ$ = "": tyl% = 0
-            FOR idx% = LEN(tmp$) TO 1 STEP -1
-                typ$ = MID$(tmp$, idx%, 1) + typ$: tyl% = tyl% + 1
-                IF tyl% = VAL(fp$) THEN typ$ = " " + typ$: tyl% = 0
-            NEXT idx%
-            tmp$ = LTRIM$(typ$): IF LEFT$(tmp$, 2) = "- " THEN tmp$ = "-" + MID$(tmp$, 3)
-        END IF
-        RETURN
-    CASE ELSE 'regular number formatting (or invalid nonsense)
-        IF INSTR(ft$, "**") = 0 AND INSTR(ft$, "$$") = 0 AND INSTR(ft$, "#") = 0 THEN
-            PRINT ft$; 'take nonsense as is
-        ELSE
-            PRINT USING ft$; VAL(argArr$(idx%));
-        END IF
-END SELECT
-tyl% = INSTR(fp$, ","): IF tyl% > 0 THEN MID$(fp$, tyl%, 1) = " "
-fp$ = LTRIM$(RTRIM$(fp$))
-FOR idx% = 1 TO POS(0) - 1
-    typ$ = CHR$(SCREEN(1, idx%)): ft$ = typ$
-    IF fp$ <> "" AND typ$ = "$" THEN ft$ = fp$
-    IF tyl% > 0 AND typ$ = "," THEN ft$ = "."
-    IF tyl% > 0 AND typ$ = "." THEN ft$ = ","
-    tmp$ = tmp$ + ft$
-NEXT idx%
-RETURN
-END FUNCTION
-
-'--- docs\doc_GuiAppframe.bm\LRStrip.html
-'---------------------------------------------------------------------
-FUNCTION LStrip$ (mode%, arg$)
-le& = LEN(arg$)
-FOR x& = 1 TO le&
-    mi% = ASC(arg$, x&)
-    IF x& < le& THEN nx% = ASC(UCASE$(MID$(arg$, x& + 1, 1))): ELSE nx% = 0
-    SELECT CASE mode%
-        CASE stripZERO%
-            IF mi% <> 0 THEN EXIT FOR
-        CASE stripTAB%
-            IF mi% <> 9 THEN EXIT FOR
-        CASE stripSPACE%
-            IF mi% <> 32 THEN EXIT FOR
-        CASE stripQUOTE%
-            IF mi% <> 34 THEN EXIT FOR
-        CASE stripFIX%
-            IF mi% <> 0 AND mi% <> 32 THEN EXIT FOR
-        CASE stripWHITE%
-            IF mi% <> 9 AND mi% <> 32 THEN EXIT FOR
-        CASE stripALL%
-            IF mi% <> 0 AND mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
-        CASE stripTEXT%
-            IF mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
-        CASE stripVALUE%
-            IF (mi% = 38 AND (nx% = 66 OR nx% = 72 OR nx% = 79)) OR ((mi% = 43 OR mi% = 45) AND (nx% = 46 OR (nx% >= 48 AND nx% <= 57))) OR (mi% = 46 AND (nx% >= 48 AND nx% <= 57)) OR (mi% >= 48 AND mi% <= 57) THEN EXIT FOR
-    END SELECT
-NEXT x&
-LStrip$ = RIGHT$(arg$, LEN(arg$) - x& + 1)
-END FUNCTION
-'-----
-FUNCTION RStrip$ (mode%, arg$)
-FOR x& = LEN(arg$) TO 1 STEP -1
-    mi% = ASC(arg$, x&)
-    SELECT CASE mode%
-        CASE stripZERO%
-            IF mi% <> 0 THEN EXIT FOR
-        CASE stripTAB%
-            IF mi% <> 9 THEN EXIT FOR
-        CASE stripSPACE%
-            IF mi% <> 32 THEN EXIT FOR
-        CASE stripQUOTE%
-            IF mi% <> 34 THEN EXIT FOR
-        CASE stripFIX%
-            IF mi% <> 0 AND mi% <> 32 THEN EXIT FOR
-        CASE stripWHITE%
-            IF mi% <> 9 AND mi% <> 32 THEN EXIT FOR
-        CASE stripALL%
-            IF mi% <> 0 AND mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
-        CASE stripTEXT%
-            IF mi% <> 9 AND mi% <> 32 AND mi% <> 34 THEN EXIT FOR
-        CASE stripVALUE%
-            IF mi% >= 48 AND mi% <= 57 THEN EXIT FOR
-    END SELECT
-NEXT x&
-RStrip$ = LEFT$(arg$, x&)
-END FUNCTION
-
-'--- docs\doc_GuiAppframe.bm\RInstr.html
-'---------------------------------------------------------------------
-FUNCTION RInstr& (start&, source$, find$)
-'--- avoid side effect on passed arg ---
-iStart& = start&
-'--- get string length, set search range ---
-sle& = LEN(source$): fle& = LEN(find$): dst& = sle& - fle& + 1 'default start position
-IF iStart& = 0 OR iStart& > dst& THEN iStart& = dst&
-IF sle& < fle& THEN iStart& = 0
-'--- perform search ---
-x& = 0
-IF fle& > 0 THEN 'avoid a match of "" = ""
-    FOR x& = iStart& TO 1 STEP -1
-        IF MID$(source$, x&, fle&) = find$ THEN EXIT FOR
-    NEXT x&
-END IF
-'--- return result ---
-RInstr& = x&
-END FUNCTION
-
-'--- docs\doc_GuiAppframe.bm\ParseLine.html
-'---------------------------------------------------------------------
-FUNCTION ParseLine& (inpLine$, outArray$(), minUB&)
-'--- so far return nothing ---
-ParseLine& = -1
-'--- init & check some runtime variables ---
-ilen& = LEN(inpLine$): icnt& = 1
-IF ilen& = 0 THEN EXIT FUNCTION
-oalb& = LBOUND(outArray$): oaub& = UBOUND(outArray$): ocnt& = oalb&
-'--- skip preceding whitespaces ---
-plSkipWhite:
-flag% = 0
-WHILE icnt& <= ilen& AND NOT flag%
-    ch% = ASC(inpLine$, icnt&)
-    IF ch% <> 9 AND ch% <> 32 THEN flag% = -1
-    icnt& = icnt& + 1
-WEND
-IF NOT flag% THEN 'nothing else? - then exit
-    IF ocnt& > oalb& THEN
-        GOTO plEnd
-    ELSE
-        EXIT FUNCTION
-    END IF
-END IF
-'--- redim to clear array on 1st word/component ---
-IF ocnt& = oalb& THEN REDIM outArray$(oalb& TO oaub&)
-'--- expand array, if required ---
-plNextArg:
-IF ocnt& > oaub& THEN
-    oaub& = oaub& + 10
-    REDIM _PRESERVE outArray$(oalb& TO oaub&)
-END IF
-'--- get current word/component until next separator ---
-flag% = 0: quot% = 0
-WHILE icnt& <= ilen& AND NOT flag%
-    IF ch% = 34 AND NOT quot% THEN
-        quot% = -1
-    ELSEIF ch% = 34 AND quot% THEN
-        quot% = 0
-    END IF
-    IF ch% <> 34 THEN outArray$(ocnt&) = outArray$(ocnt&) + CHR$(ch%)
-    ch% = ASC(inpLine$, icnt&)
-    IF (NOT quot% AND (ch% = 9 OR ch% = 32 OR ch% = 34)) OR (quot% AND ch% = 34) THEN flag% = -1
-    icnt& = icnt& + 1
-WEND
-ocnt& = ocnt& + 1
-'--- more words/components following? ---
-IF flag% AND ch% = 34 AND NOT quot% AND icnt& <= ilen& GOTO plNextArg
-IF flag% THEN
-    GOTO plSkipWhite
-ELSE
-    IF (NOT quot% AND ch% <> 9 AND ch% <> 32 AND ch% <> 34) OR (quot% AND ch% <> 34) THEN
-        outArray$(ocnt& - 1) = outArray$(ocnt& - 1) + CHR$(ch%)
-    END IF
-END IF
-'--- final array size adjustment, then exit ---
-plEnd:
-IF ocnt& - 1 < minUB& THEN ocnt& = minUB& + 1
-REDIM _PRESERVE outArray$(oalb& TO (ocnt& - 1))
-ParseLine& = ocnt& - 1
-END FUNCTION
-
-'--- docs\doc_GuiAppframe.bm\CurrDrives.html
-'---------------------------------------------------------------------
-FUNCTION CurrDrives$
-cdm& = GetLogicalDrives&
-CurrDrives$ = "": i& = (2 ^ 25): d% = ASC("Z")
-DO
-    IF (cdm& AND i&) THEN CurrDrives$ = CHR$(d%) + CurrDrives$
-    i& = i& \ 2: d% = d% - 1
-LOOP UNTIL i& = 0
-END FUNCTION
-
-'--- docs\doc_GuiAppframe.bm\CurrDIR.html
-'---------------------------------------------------------------------
-FUNCTION CurrDIR$
-tmp$ = SPACE$(264)
-tle% = GetCurrentDirectoryA&(LEN(tmp$), tmp$)
-CurrDIR$ = LEFT$(tmp$, tle%)
-END FUNCTION
-
-'---------------------------------------------------------------------
-'Function:  Return the path part of the given file specification.
-'           Ie. the part upto and incl. the rightmost backslash.
+'Function:  Attempt to set the the IFF file pointer to the next found
+'           data chunk of the given type, starting at given position.
 '
-'Synopsis:  path$ = PathPart$ (fileSpec$)
-'
-'Result:    path$ --> depending on fileSpec$:
-'                     - the path part incl. the trailing backslash
-'                       (regular operation)
-'                     - identical to fileSpec$, if it was a path only
-'                       (trailing backslash found)
-'                     - empty, if it was a file name only (no
-'                       backslash found)
-'
-'Inputs:    fileSpec$ --> the file specification to get the path from,
-'                         empty input allowed, results in empty path part
-'---------------------------------------------------------------------
-FUNCTION PathPart$ (fileSpec$)
-PathPart$ = ""
-sPo% = RInstr&(0, fileSpec$, "\")
-IF sPo% > 0 THEN PathPart$ = LEFT$(fileSpec$, sPo%)
-END FUNCTION
-
-'---------------------------------------------------------------------
-'Function:  Return the file part of the given file specification.
-'           Ie. the part after the rightmost backslash.
-'
-'Synopsis:  file$ = FilePart$ (fileSpec$)
-'
-'Result:    file$ --> depending on fileSpec$:
-'                     - the file part (regular operation)
-'                     - identical to fileSpec$, if it was a file name
-'                       only (no backslash found)
-'                     - empty, if it was a path only (trailing
-'                       backslash found)
-'
-'Inputs:    fileSpec$ --> the file specification to get the file from,
-'                         empty input allowed, results in empty file part
-'---------------------------------------------------------------------
-FUNCTION FilePart$ (fileSpec$)
-FilePart$ = fileSpec$
-sPo% = RInstr&(0, fileSpec$, "\")
-IF sPo% > 0 THEN FilePart$ = MID$(fileSpec$, sPo% + 1)
-END FUNCTION
-
-'---------------------------------------------------------------------
-'Function:  Return the name part (without extension) of the given file.
-'           Ie. the part left of the rightmost found dot.
-'
-'Synopsis:  name$ = FileNamePart$ (file$)
-'
-'Result:    name$ --> depending on file$:
-'                     - the file name part (regular operation)
-'                     - identical to file$, if it was a file without
-'                       extension (no dot found)
-'                     - empty, if it was a extension only (leading
-'                       dot found)
-'
-'Inputs:    file$ --> the file to get the file name part from,
-'                     empty input allowed, results in empty name part
-'
-'Notes:     You can pass in a file$ inclusive a path, then the name part
-'           returned will contain the same path.
-'---------------------------------------------------------------------
-FUNCTION FileNamePart$ (file$)
-FileNamePart$ = file$
-sPo% = RInstr&(0, file$, ".")
-IF sPo% > 0 THEN FileNamePart$ = LEFT$(file$, sPo% - 1)
-END FUNCTION
-
-'---------------------------------------------------------------------
-'Function:  Return the file extension only of the given file.
-'           Ie. the part starting with the rightmost found dot.
-'
-'Synopsis:  ext$ = FileExtension$ (file$)
-'
-'Result:    ext$ --> depending on file$:
-'                    - the file extension incl. dot (regular operation)
-'                    - identical to file$, if it was a extension only
-'                      (leading dot found)
-'                    - empty, if it was a file without extension (no
-'                      dot found)
-'
-'Inputs:    file$ --> the file to get the extension from,
-'                     empty input allowed, results in empty extension
-'
-'Notes:     You can pass in a file$ inclusive a path, it will not
-'           affect the result.
-'---------------------------------------------------------------------
-FUNCTION FileExtension$ (file$)
-FileExtension$ = ""
-sPo% = RInstr&(0, file$, ".")
-IF sPo% > 0 THEN FileExtension$ = MID$(file$, sPo%)
-END FUNCTION
-
-'---------------------------------------------------------------------
-'Function: Opens a file with next free number and given mode, it will also
-'          lock the file according to the given mode. Errors opening the
-'          file are ignored and just saved to appLastErr%, you'll get a
-'          zero result in such an case and you should decide if you handle
-'          the error in place or send it to the global user error handler
-'          using the statement ERROR appLastErr%.
-'
-'Synopsis: fid% = SafeOpenFile% (mode$, file$)
-'
-'Result:   fid% --> the number of the new opened file or zero on failure
-'
-'Inputs:   mode$  --> the desired file open mode (INPUT, OUTPUT etc.),
-'                     you may abbreviate it, just the 1st letter counts
-'          file$  --> the full path/name of the file
-'---------------------------------------------------------------------
-FUNCTION SafeOpenFile% (mode$, file$)
-ff% = FREEFILE
-InternalErrHandler
-SELECT CASE UCASE$(LEFT$(mode$, 1))
-    CASE "A": OPEN file$ FOR APPEND LOCK WRITE AS ff%
-    CASE "B": OPEN file$ FOR BINARY LOCK WRITE AS ff%
-    CASE "I": OPEN file$ FOR INPUT SHARED AS ff%
-    CASE "O": OPEN file$ FOR OUTPUT LOCK WRITE AS ff%
-    CASE "R": OPEN file$ FOR RANDOM LOCK WRITE AS ff%
-END SELECT
-UserErrHandler
-IF appLastErr% <> 0 THEN ff% = 0 'if error, then invalidate result
-SafeOpenFile% = ff%
-END FUNCTION
-
-'---------------------------------------------------------------------
-'Function:  Attempt to set the the IFF file pointer to the first found
-'           data chunk of the given type.
-'
-'Synopsis:  ptr& = SeekChunk& (fileNum%, chunkID$)
+'Synopsis:  ptr& = SeekChunk& (fileNum%, start&, chunkID$)
 '
 'Result:    ptr&     --> the byte position within the file, where you
-'                        find the first chunk of given type, zero if no
-'                        chunk of that type is found
+'                        find the next chunk of given type, zero if no
+'                        chunk of that type is found, negative on error
+'                        (not a valid IFF file)
 '
 'Inputs:    fileNum% --> the file ID you got from SafeOpenFile%("B",...)
+'           start&   --> start position in file, 0 = current
 '           chunkID$ --> the 4 char ID of the wanted chunk (see the TYPE
 '                        defines in file GuiAppFrame.bi)
 '
-'Notes:     In case of failure the file pointer is reset to TOF, in
-'           case of success it is set to found byte position.
+'Notes:     In case of error/not found the file pointer is reset to TOF,
+'           in case of success it is set to found byte position.
 '---------------------------------------------------------------------
-FUNCTION SeekChunk& (fileNum%, chunkID$)
-'--- get valid data size from FORM chunk ---
-GET fileNum%, 5, vds&: vds& = vds& + chunkSIZEOF%
-'--- search given chunk ---
+FUNCTION SeekChunk& (fileNum%, start&, chunkID$)
+'--- check optional start position ---
+IF start& > 0 THEN iStart& = start&: ELSE iStart& = SEEK(fileNum%)
+'--- check file type and get valid data size ---
 REDIM scChunk(0) AS Chunk
-cnt& = 13 'start after FORM....TYPE
-WHILE scChunk(0).chunkID <> chunkID$ AND cnt& < vds&
+cnt& = -1: GET fileNum%, 1, scChunk(0)
+IF scChunk(0).chunkID <> CHformID$ GOTO scNotIFF
+vds& = scChunk(0).chunkLEN + chunkSIZEOF%
+'--- search next chunk after given start ---
+cnt& = 13: DO
     GET fileNum%, cnt&, scChunk(0)
-    cnt& = cnt& + chunkSIZEOF% + scChunk(0).chunkLEN
-WEND
-IF scChunk(0).chunkID = chunkID$ THEN
-    cnt& = cnt& - chunkSIZEOF% - scChunk(0).chunkLEN
-    SEEK fileNum%, cnt&
-ELSE
-    cnt& = 0
-    SEEK fileNum%, 1
-END IF
+    IF cnt& >= iStart& AND scChunk(0).chunkID = chunkID$ THEN EXIT DO
+    cnt& = cnt& + chunkSIZEOF% + ((scChunk(0).chunkLEN + 1) AND -2)
+    IF cnt& > vds& THEN cnt& = 0
+LOOP UNTIL cnt& = 0
+'--- set the file pointer ---
+scNotIFF:
+SEEK fileNum%, 1
+IF cnt& > 0 THEN SEEK fileNum%, cnt&
 ERASE scChunk
 '--- return result ---
 SeekChunk& = cnt&
@@ -1384,14 +1326,29 @@ END FUNCTION
 'Synopsis:  VOID SizeUpdate (fileNum%, raise&)
 '
 'Inputs:    fileNum% --> the file ID you got from SafeOpenFile%("B",...)
-'           raise&   --> the size of data you added to that file
+'           raise&   --> the size of the data chunk you added to that file
 '
 'Notes:     The file pointer is reset to TOF after this routine was called.
+'           Does nothing with non-IFF files. Checks against LOF().
 '---------------------------------------------------------------------
 SUB SizeUpdate (fileNum%, raise&)
-'--- update valid data size in FORM chunk ---
-GET fileNum%, 5, vds&: vds& = vds& + raise&
-PUT fileNum%, 5, vds&: SEEK fileNum%, 1
+'--- check file type ---
+REDIM suChunk(0) AS Chunk
+GET fileNum%, 1, suChunk(0)
+IF suChunk(0).chunkID <> CHformID$ GOTO suNotIFF
+'--- update valid data size ---
+pad%% = 0: vds& = suChunk(0).chunkLEN + raise&
+IF (vds& AND 1) THEN
+    PUT fileNum%, LOF(fileNum%) + 1, pad%%
+    vds& = vds& + 1
+END IF
+IF vds& > LOF(fileNum%) - 8 THEN vds& = LOF(fileNum%) - 8
+suChunk(0).chunkLEN = vds&
+PUT fileNum%, 1, suChunk(0)
+'--- reset the file pointer ---
+suNotIFF:
+SEEK fileNum%, 1
+ERASE suChunk
 END SUB
 
 '---------------------------------------------------------------------

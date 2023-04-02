@@ -38,7 +38,7 @@
 '   prepared for ERROR/WARNING tag results. Check for these, if needed.
 '---------------------------------------------------------------------
 FUNCTION GenC$ (method$, tagString$)
-GenC$ = ""
+GenRes$ = ""
 classID$ = "GenC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -61,11 +61,12 @@ SELECT CASE methodID$
         GOSUB meOther
         'Result Tags: ERROR/WARNING or object method specific result
 END SELECT
+GenC$ = GenRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag GenC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag GenRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     object$ = GetTagData$(tagsID$, "CLASSNAME", "")
     objectID$ = UCASE$(LEFT$(object$, 1)) + LCASE$(MID$(object$, 2, LEN(object$) - 2)) + UCASE$(RIGHT$(object$, 1))
@@ -74,7 +75,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meOther:
-IF ValidObject%(this&, thisTag$, GenC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, GenRes$, classID$, methodID$, tagsID$) THEN
     objectID$ = guiObjects$(objType%, this&)
     GOSUB meCallObjectClass
 END IF
@@ -83,46 +84,46 @@ RETURN
 meCallObjectClass:
 SELECT CASE objectID$
     CASE "ModelC"
-        GenC$ = ModelC$(methodID$, tagsID$)
+        GenRes$ = ModelC$(methodID$, tagsID$)
     CASE "ListC"
-        GenC$ = ListC$(methodID$, tagsID$)
+        GenRes$ = ListC$(methodID$, tagsID$)
     CASE "ImageC"
-        GenC$ = ImageC$(methodID$, tagsID$)
+        GenRes$ = ImageC$(methodID$, tagsID$)
     CASE "SymbolC"
-        GenC$ = SymbolC$(methodID$, tagsID$)
+        GenRes$ = SymbolC$(methodID$, tagsID$)
     CASE "RulerC"
-        GenC$ = RulerC$(methodID$, tagsID$)
+        GenRes$ = RulerC$(methodID$, tagsID$)
     CASE "FrameC"
-        GenC$ = FrameC$(methodID$, tagsID$)
+        GenRes$ = FrameC$(methodID$, tagsID$)
     CASE "StringC"
-        GenC$ = StringC$(methodID$, tagsID$)
+        GenRes$ = StringC$(methodID$, tagsID$)
     CASE "TextC"
-        GenC$ = TextC$(methodID$, tagsID$)
+        GenRes$ = TextC$(methodID$, tagsID$)
     CASE "ProgressC"
-        GenC$ = ProgressC$(methodID$, tagsID$)
+        GenRes$ = ProgressC$(methodID$, tagsID$)
     CASE "PagerC"
-        GenC$ = PagerC$(methodID$, tagsID$)
+        GenRes$ = PagerC$(methodID$, tagsID$)
     CASE "ButtonC"
-        GenC$ = ButtonC$(methodID$, tagsID$)
+        GenRes$ = ButtonC$(methodID$, tagsID$)
     CASE "CheckboxC"
-        GenC$ = CheckboxC$(methodID$, tagsID$)
+        GenRes$ = CheckboxC$(methodID$, tagsID$)
     CASE "CycleC"
-        GenC$ = CycleC$(methodID$, tagsID$)
+        GenRes$ = CycleC$(methodID$, tagsID$)
     CASE "RadioC"
-        GenC$ = RadioC$(methodID$, tagsID$)
+        GenRes$ = RadioC$(methodID$, tagsID$)
     CASE "ListviewC"
-        GenC$ = ListviewC$(methodID$, tagsID$)
+        GenRes$ = ListviewC$(methodID$, tagsID$)
     CASE "SliderC"
-        GenC$ = SliderC$(methodID$, tagsID$)
+        GenRes$ = SliderC$(methodID$, tagsID$)
     CASE "ScrollerC"
-        GenC$ = ScrollerC$(methodID$, tagsID$)
+        GenRes$ = ScrollerC$(methodID$, tagsID$)
     CASE "ColorwheelC"
-        GenC$ = ColorwheelC$(methodID$, tagsID$)
+        GenRes$ = ColorwheelC$(methodID$, tagsID$)
     CASE ELSE
         IF objectID$ = "" THEN
-            SetTag GenC$, "ERROR", classID$ + "::" + methodID$ + " -> undefined object"
+            SetTag GenRes$, "ERROR", classID$ + "::" + methodID$ + " -> undefined object"
         ELSE
-            SetTag GenC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown object type"
+            SetTag GenRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown object type"
         END IF
 END SELECT
 RETURN

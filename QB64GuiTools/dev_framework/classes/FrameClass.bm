@@ -38,7 +38,7 @@
 ' general documentation about the Framework see GuiToolsFramework.pdf.
 '---------------------------------------------------------------------
 FUNCTION FrameC$ (method$, tagString$)
-FrameC$ = ""
+FrameRes$ = ""
 classID$ = "FrameC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -75,19 +75,20 @@ SELECT CASE methodID$
         GOSUB meDraw
         'Result Tags: ERROR/WARNING or empty
     CASE ELSE
-        SetTag FrameC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag FrameRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+FrameC$ = FrameRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag FrameC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag FrameRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     '--- general init ---
     this& = NewObject&
     InitGeneralProperties this&, classID$, flagsID$, tagsID$
     '--- check pager conditions ---
-    IF InitAssignedPager%(this&, FrameC$, classID$, tagsID$) THEN
+    IF InitAssignedPager%(this&, FrameRes$, classID$, tagsID$) THEN
         '--- add required/optional tags ---
         opti% = ValidateTags%(tagsID$, tagsOpt$, -1)
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + GetTags$(tagsID$, tagsReq$ + tagsOpt$)
@@ -95,14 +96,14 @@ ELSE
         RemTags tagsID$, guiInitTags$ + guiCallTags$ + guiEvntTags$ + guiPrivTags$
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
         '--- set result and schedule gui refresh ---
-        SetTag FrameC$, "OBJECT", LTRIM$(STR$(this&))
+        SetTag FrameRes$, "OBJECT", LTRIM$(STR$(this&))
         SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
     END IF
 END IF
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, FrameC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, FrameRes$, classID$, methodID$, tagsID$) THEN
     '--- check any user tag changes ---
     RemTags tagsID$, guiInitTags$ + guiCallTags$ + guiEvntTags$ + guiPrivTags$
     DO
@@ -116,15 +117,15 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, FrameC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, FrameRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
-    IF temp$ <> "n/a" THEN FrameC$ = GetTags$(guiObjects$(objData%, this&), temp$)
+    IF temp$ <> "n/a" THEN FrameRes$ = GetTags$(guiObjects$(objData%, this&), temp$)
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, FrameC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, FrameRes$, classID$, methodID$, tagsID$) THEN
     '--- 1st remove interconnections to this object ---
     KillInterconnections this&
     '--- check pager conditions ---
@@ -139,7 +140,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meDraw:
-IF ValidObject%(this&, thisTag$, FrameC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, FrameRes$, classID$, methodID$, tagsID$) THEN
     '--- select drawing colors ---
     tole% = guiShinePen%: bori% = guiShadowPen%: soli% = guiSolidPen% 'top/left & bottom/right & solid pens
     text% = guiShadowPen%: high% = guiHighPen% 'text pens

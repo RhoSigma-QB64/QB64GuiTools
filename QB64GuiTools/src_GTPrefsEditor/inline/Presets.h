@@ -38,7 +38,7 @@ static const unsigned int8 PresetsB[] = {
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.
 // ---------------------------------------------------------------------
-char PresetsName[1056]; // (MAX_PATH * 4) + 16
+char PresetsName[8192]; // it's a safe size for any current OS
 
 // --- Cleanup function to delete the written file, called by the atexit()
 // --- handler at program termination time, if requested by user.
@@ -57,7 +57,11 @@ const char *WritePresetsData(const char *FileName, int16 AutoClean)
     FILE *han = NULL; // file handle
     int32 num = NULL; // written elements
 
-    if (!_fullpath(PresetsName, FileName, 1056)) return "";
+    #ifdef QB64_WINDOWS
+    if (!_fullpath(PresetsName, FileName, 8192)) return "";
+    #else
+    if (!realpath(FileName, PresetsName)) return "";
+    #endif
 
     if (!(han = fopen(PresetsName, "wb"))) return "";
     if (AutoClean) atexit(KillPresetsData);

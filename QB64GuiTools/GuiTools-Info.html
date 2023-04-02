@@ -149,11 +149,11 @@ ul {
   padding-left: 30px;
 }
 
-ul li > :first-child, 
-ol li > :first-child, 
-ul li ul:first-of-type, 
-ol li ol:first-of-type, 
-ul li ol:first-of-type, 
+ul li > :first-child,
+ol li > :first-child,
+ul li ul:first-of-type,
+ol li ol:first-of-type,
+ul li ol:first-of-type,
 ol li ul:first-of-type {
   margin-top: 0px;
 }
@@ -342,89 +342,117 @@ img {
 </code></pre>
 
 <h2>NOTE</h2>
-<p>This is a Windows only project, as some Win API calls are used for mutual
-exclusion handling in file <strong>GuiAppFrame.h</strong> and some other Win API calls
-in the DECLARE LIBRARY block in <strong>GuiAppFrame.bi</strong>.</p>
-<p>However, according to a forum member, the windows version of QB64 runs very
-fine under Linux or MacOS, if you have installed <a href="https://www.winehq.org/">Wine</a>
+<p>This is a Windows only project, as some WinAPI calls are used in the file
+<strong>GuiAppFrame.h</strong> and some other WinAPI calls in the DECLARE LIBRARY block
+in file <strong>GuiAppFrame.bi</strong>.</p>
+<p>However, according to a forum member, the Windows version of QB64 runs very
+fine under Linux or MacOS, if you have installed <a target="_blank" href="https://www.winehq.org/">Wine</a>
 on your system. If this is an option for you, then you can also use the
-GuiTools Framework within the QB64 windows version on your Linux/MacOS system.</p>
+<strong>GuiTools Framework</strong> within the QB64 Windows version on your Linux/MacOS
+system.</p>
+<h2></h2>
+<h2></h2>
+<h4>&nbsp;</h4>
 <h2>IMPORTANT</h2>
 <p>Please move the <strong>QB64GuiTools</strong> folder with its entire contents into your
 QB64 folder (where qb64.exe is located in). I also recommend to keep the
 inner folder structure in order to maintain the internal linkage between
 all referenced files ($INCLUDE, DECLARE LIBRARY etc.).</p>
-<p>Except images, all files in the <strong>QB64GuiTools</strong> folder and its subfolders
-are placed under the <strong>MIT License</strong> (see <a href="license">license</a> folder).</p>
-<p>You may safely use the <strong>Output EXE to source folder</strong> option of the QB64 IDE
-(see Run menu) with <strong>GuiTools</strong>, as long as you reference external files
-relative to your EXE location, when trying to open them.</p>
-<p>For informations on actual additions, changes and/or bugfixes consult the
-HISTORY section in file <a href="docs\ReleaseNotes.txt">docs\ReleaseNotes.txt</a>.</p>
+<p>You may safely use the <em>&quot;Output EXE to source folder&quot;</em> compiler option of
+the QB64 IDE (see Run menu) with <strong>GuiTools</strong>, as long as you reference your
+own external files relative to your EXE location, when trying to open them.</p>
+<p>Except the contents of the <strong>images</strong> subfolder, all files in the
+<strong>QB64GuiTools</strong> folder and its subfolders are placed under the
+<a target="_blank" href="license">MIT License</a>.</p>
+<p>For more informations on the current development state, changes and/or
+bugfixes please consult the <em>&quot;HISTORY&quot;</em> section in the file
+<a target="_blank" href="docs\ReleaseNotes.txt">docs\ReleaseNotes.txt</a>.</p>
 <p>If you can't longer wait to start your own experiments with <strong>GuiTools</strong>
 after finish reading of this HTML document, then your next required reading
-should be <a href="docs\QuickIntro.txt">docs\QuickIntro.txt</a>, which gives you the
+should be <a target="_blank" href="docs\QuickIntro.txt">docs\QuickIntro.txt</a>, which gives you the
 most compact description of usage.</p>
-<h2>FOLDER CONTENTS</h2>
-<pre><code>dev_framework
-</code></pre>
-
+<h2></h2>
+<h2></h2>
+<h4>&nbsp;</h4>
+<h3>FOLDER CONTENTS</h3>
+<hr />
+<h1></h1>
+<blockquote>
+<blockquote>
+<h5>dev_framework</h5>
+</blockquote>
+</blockquote>
 <p>This is the heart of the <strong>GuiTools Framework</strong>, it contains all files
-(.h/.bi/.bm) which are required for development and are included by the
-various application sources.</p>
-<pre><code>dev_storage
-</code></pre>
-
-<p>Various test and helper stuff which came out of the GuiTools development.
+(<strong>.h</strong> / <strong>.bi</strong> / <strong>.bm</strong>) which are required for development and which
+will be included by the various application sources.</p>
+<blockquote>
+<blockquote>
+<h5>dev_storage</h5>
+</blockquote>
+</blockquote>
+<p>Various test and helper stuff which came out of the <strong>GuiTools</strong> development.
 You do not really need this for making your own Apps, but maybe you're
 interested to have a look on it.</p>
-<pre><code>docs
-</code></pre>
-
-<p>Various describing documents for the GuiTools Framework. This is a work in
-progress. If you have questions about anything what's not yet documented in
-any source, HTML or PDF file, then please don't hesitate to ask for help in
-the forums or via e-mail (support@rhosigma-cw.net).</p>
-<pre><code>images
-</code></pre>
-
+<blockquote>
+<blockquote>
+<h5>docs (<a target="_blank" href="docs\GuiToolsFramework.pdf">GuiToolsFramework.pdf</a>, <a target="_blank" href="docs\KnownTags.txt">KnownTags.txt</a>, <a target="_blank" href="docs\ReleaseNotes.txt">ReleaseNotes.txt</a>)</h5>
+</blockquote>
+</blockquote>
+<p>Various describing documents for the <strong>GuiTools Framework</strong>. This is still
+a work in progress. If you have questions about anything what's not yet
+documented in any source, HTML or PDF file, then please don't hesitate to
+ask for help in the forums or via e-mail (support@rhosigma-cw.net).</p>
+<blockquote>
+<blockquote>
+<h5>images</h5>
+</blockquote>
+</blockquote>
 <p>A small collection of images, which can be used by the Apps. Place more
 images into this folder if required. When publishing your Apps, then bundle
-this folder with your EXE. If you don't wanna bundle the entire images
+this folder with your EXE. If you don't wanna bundle the entire <strong>images</strong>
 folder, then feel free to leave out the unused images. If you otherwise
 only need a few images, then the best way would be to embed these images
-directly into your EXE and temporarily write them back on any user's
-computer (see <strong>src_MakeDATA</strong> and <strong>src_MakeCARR</strong> below for creation of
-those embedded files and the <strong>Init/Exit handler</strong> section in your
-applications for the writeback &amp; cleanup). The latter method is also useful
-to make sure, that certain images are always available on any computer, as
-I've done it already for some MessageBox icons.</p>
-<pre><code>license
-</code></pre>
-
+directly into your EXE and temporarily write them back at runtime on any
+user's computer (see <strong>src_MakeDATA</strong> and <strong>src_MakeCARR</strong> below for
+creation of those embedded files and the <em>&quot;Init/Exit handler&quot;</em> section in
+your applications for the writeback &amp; cleanup). The embedding method is also
+useful to make sure, that certain images are always available on any computer.</p>
+<blockquote>
+<blockquote>
+<h5>license</h5>
+</blockquote>
+</blockquote>
 <p>This folder contains all the required licenses and copyright notices for
-the GuiTools Framework. You should always bundle this folder with your EXE,
-when publishing your Apps.</p>
-<pre><code>src_GuiApp
-</code></pre>
-
-<p>A ready to use <strong>template/skeleton</strong> for your own Apps with just an defined
-demo background and Quit button. Also already included as embedded files
-are the Info, Problem/Warning and Error icons for MessageBoxes. It's best
-to leave this all as is and rather make a copy of this entire folder for
-any new Apps you create.</p>
-<pre><code>src_GuiAppDemo
-</code></pre>
-
-<p>The sources of a complex showcase example for the GuiTools Framework.
-You'll also find a lot of useful comments within these sourcefiles, which
-you probably find nowhere else.</p>
-<pre><code>src_MultiWinDemo
-</code></pre>
-
-<p>The sources of a simple showcase example for GuiViews, GuiTools its own
-multiple forms/windows system available since v0.12 of the Framework.</p>
-<h1></h1>
+the <strong>GuiTools Framework</strong>. You should always bundle this folder with your
+EXE, when publishing your Apps.</p>
+<blockquote>
+<blockquote>
+<h5>src_GuiApp (<a target="_blank" href="docs\QuickIntro.txt">QuickIntro.txt</a>)</h5>
+</blockquote>
+</blockquote>
+<p>A ready to use <strong>template/skeleton</strong> for your own Apps. It's best to leave
+this all as is and rather make a copy of this entire folder for each new App
+which you create. For demo purposes it just defines a window background and
+a Quit button, which you may either delete or redefine for your needs. Also
+the Info, Problem/Warning and Error icons (eg. for MessageBoxes) are already
+embedded (saved in the <strong>inline</strong> subfolder and $INCLUDEd at the end of the
+<strong>GuiApp.bas</strong> file).</p>
+<blockquote>
+<blockquote>
+<h5>src_GuiAppDemo</h5>
+</blockquote>
+</blockquote>
+<p>The sources of a complex showcase example for the <strong>GuiTools Framework</strong>.
+You'll also find a lot of useful comments and hints within these source files,
+which you probably find nowhere else in the documentation.</p>
+<blockquote>
+<blockquote>
+<h5>src_MultiWinDemo (<a target="_blank" href="docs\GuiViews-API.txt">GuiViews-API.txt</a>)</h5>
+</blockquote>
+</blockquote>
+<p>The sources of a simple showcase example for <strong>GuiViews</strong>, which is <strong>GuiTools</strong>
+its own multiple forms/windows system available since v0.12 of the Framework.</p>
+<h4>&nbsp;</h4>
 <hr />
 <blockquote>
 <p><em>Additional to its defined purpose, the following programs/sources can
@@ -432,43 +460,54 @@ also serve as real world examples, which you can analyze to learn more
 about how to do a complex GuiTools Application.</em></p>
 </blockquote>
 <hr />
-<pre><code>src_GTPrefsEditor
-</code></pre>
-
+<h4>&nbsp;</h4>
+<blockquote>
+<blockquote>
+<h5>src_GTPrefsEditor</h5>
+</blockquote>
+</blockquote>
 <p>The source code of the <strong>GuiTools Preferences Editor</strong>. With this program
-users may easily alterate the internal default settings of all GuiTools
-object classes and also change the used default color scheme. The made
-settings are permanently saved into the <strong>%localappdata%</strong> folder and all
-running GuiTools based applications will use it. Hence every user can
-create his own desired look, which all GuiTools applications will follow,
-doesn't matter what colors or object background images were originally
-defined and used by the application developer.</p>
-<pre><code>src_MakeDATA
-</code></pre>
-
+users may easily alterate the internal default settings of all <strong>GuiTools</strong>
+object classes and also change the used default color scheme. The chosen
+settings are permanently saved into the current user's <em>&quot;%localappdata%&quot;</em>
+folder and all <strong>GuiTools</strong> based applications will automatically use it
+without the need to recompile the Apps. Hence every user can create his own
+desired look, which all <strong>GuiTools</strong> applications will follow, doesn't matter
+what colors or object background images were originally defined and used by
+the application developer.</p>
+<blockquote>
+<blockquote>
+<h5>src_MakeDATA</h5>
+</blockquote>
+</blockquote>
 <p>This is a simple <strong>File To DATA</strong> converter with LZW packing support. You
 may use this to create a DATA block out of a given file, so you can embed
 it in your program and write it back on any computer when needed. The DATAs
 are written into a <strong>.bm</strong> file together with a ready to use write back
 FUNCTION. You just need to $INCLUDE this <strong>.bm</strong> file at the end your program
-and call the write back FUNCTION (preferably in the <strong>Init Handler</strong>).</p>
-<pre><code>src_MakeCARR
-</code></pre>
-
+and call the write back FUNCTION (preferably in the <em>&quot;Init Handler&quot;</em> section).</p>
+<blockquote>
+<blockquote>
+<h5>src_MakeCARR</h5>
+</blockquote>
+</blockquote>
 <p>This is a simple <strong>File To C-Array</strong> converter with LZW packing support.
 It's very similar to the above, but here the given file is converted into a
-C-Array, which is included into your program via a C header file. Although
+C-Array, which is included into your program via a C-header file. Although
 it's a bit harder to follow/understand by a pure BASIC hobbyist, it offers
-some advantages, such as saving space (EXE size) and more speed for the
-write back function. Two files are created, the <strong>.h</strong> file, which contains
-the C-Array and some functions, and a respective <strong>.bm</strong> file which needs
-to be $INCLUDEd with your program and does provide the FUNCTION to write
-back the Array.</p>
-<pre><code>src_Xxx
-</code></pre>
-
+some advantages, such as saving space (EXE size) and more speed for both,
+the compiling process and the write back function. Two files are created,
+the <strong>.h</strong> file, which contains the C-Array and some functions, and a respective
+<strong>.bm</strong> file which needs to be $INCLUDEd with your program and does provide
+the FUNCTION to write back the Array (preferably called in the <em>&quot;Init Handler&quot;</em>
+section).</p>
+<blockquote>
+<blockquote>
+<h5>src_Xxx</h5>
+</blockquote>
+</blockquote>
 <p>There may be more source folders, each of it containing a real world
-application made with the GuiTools Framework.</p>
+application made with the <strong>GuiTools Framework</strong>.</p>
 
 </body>
 </html>

@@ -93,7 +93,7 @@ static const unsigned int32 HelpImgL0[] = {
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.
 // ---------------------------------------------------------------------
-char HelpImgName[1056]; // (MAX_PATH * 4) + 16
+char HelpImgName[8192]; // it's a safe size for any current OS
 
 // --- Cleanup function to delete the written file, called by the atexit()
 // --- handler at program termination time, if requested by user.
@@ -112,7 +112,11 @@ const char *WriteHelpImgData(const char *FileName, int16 AutoClean)
     FILE *han = NULL; // file handle
     int32 num = NULL; // written elements
 
-    if (!_fullpath(HelpImgName, FileName, 1056)) return "";
+    #ifdef QB64_WINDOWS
+    if (!_fullpath(HelpImgName, FileName, 8192)) return "";
+    #else
+    if (!realpath(FileName, HelpImgName)) return "";
+    #endif
 
     if (!(han = fopen(HelpImgName, "wb"))) return "";
     if (AutoClean) atexit(KillHelpImgData);

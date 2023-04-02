@@ -3,26 +3,37 @@
 '=== you must $INCLUDE this at the end of your program.   ===
 '============================================================
 
-'=====================================================================
-'Function to write the embedded DATAs back to disk. Call this FUNCTION
-'once, before you will access the represented file for the first time.
-'After the call always use the returned realFile$ ONLY to access the
-'written file, as the filename was maybe altered in order to avoid the
-'overwriting of an existing file of the same name in the given location.
+'----------------------------
+'--- WriteError32ImgData$ ---
+'----------------------------
+' This function will write the DATAs you've created with MakeDATA.bas
+' back to disk and so it rebuilds the original file.
+'
+' After the writeback call, only use the returned realFile$ to access the
+' written file. It's your given path, but with an maybe altered filename
+' (number added) in order to avoid the overwriting of an already existing
+' file with the same name in the given location.
+'----------
+' SYNTAX:
+'   realFile$ = WriteError32ImgData$ (wantFile$)
+'----------
+' INPUTS:
+'   --- wantFile$ ---
+'    The filename you would like to write the DATAs to, can contain
+'    a full or relative path.
+'----------
+' RESULT:
+'   --- realFile$ ---
+'    - On success this is the path and filename finally used after all
+'      applied checks, use only this returned filename to access the
+'      written file.
+'    - On failure this function will panic with the appropriate runtime
+'      error code which you may trap and handle as needed with your own
+'      ON ERROR GOTO... handler.
 '---------------------------------------------------------------------
-'SYNTAX: realFile$ = WriteError32ImgData$ (wantFile$)
-'
-'INPUTS: wantFile$ --> The filename you would like to write the DATAs
-'                      to, can contain a full or relative path.
-'
-'RESULT: realFile$ --> On success the path and filename finally used
-'                      after applied checks, use ONLY this returned
-'                      name to access the file.
-'                   -> On failure this FUNCTION will panic with the
-'                      appropriate ERROR code, you may handle this as
-'                      needed with your own ON ERROR GOTO... handler.
-'=====================================================================
 FUNCTION WriteError32ImgData$ (file$)
+'--- option _explicit requirements ---
+DIM po%, body$, ext$, num%, numL&, numB&, rawdata$, stroffs&, i&, dat&, ff%
 '--- separate filename body & extension ---
 FOR po% = LEN(file$) TO 1 STEP -1
     IF MID$(file$, po%, 1) = "." THEN

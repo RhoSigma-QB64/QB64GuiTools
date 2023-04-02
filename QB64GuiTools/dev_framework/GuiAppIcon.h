@@ -92,7 +92,7 @@ static const unsigned int8 GuiAppIconB[] = {
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.
 // ---------------------------------------------------------------------
-char GuiAppIconName[1056]; // (MAX_PATH * 4) + 16
+char GuiAppIconName[8192]; // it's a safe size for any current OS
 
 // --- Cleanup function to delete the written file, called by the atexit()
 // --- handler at program termination time, if requested by user.
@@ -111,7 +111,11 @@ const char *WriteGuiAppIconData(const char *FileName, int16 AutoClean)
     FILE *han = NULL; // file handle
     int32 num = NULL; // written elements
 
-    if (!_fullpath(GuiAppIconName, FileName, 1056)) return "";
+    #ifdef QB64_WINDOWS
+    if (!_fullpath(GuiAppIconName, FileName, 8192)) return "";
+    #else
+    if (!realpath(FileName, GuiAppIconName)) return "";
+    #endif
 
     if (!(han = fopen(GuiAppIconName, "wb"))) return "";
     if (AutoClean) atexit(KillGuiAppIconData);

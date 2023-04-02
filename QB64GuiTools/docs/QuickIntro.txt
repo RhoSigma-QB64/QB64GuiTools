@@ -23,7 +23,7 @@ If you wanna try to do your own application, then the folder src_GuiApp
 is your starting point. This is a ready to use program skeleton, which
 you shouldn't mess up. Ie. your first task should be to make a copy of
 that folder with its entire contents and rename that copy as you like,
-eg. src_MyApp. Then also reaname the file GuiApp.bas inside to MyApp.bas.
+eg. src_MyApp. Then also rename the file GuiApp.bas inside to MyApp.bas.
 
 First thing I want to bring to your attention is the fact, that everything
 inside GuiApp.bas (respectively MyApp.bas) are just GOSUB style subroutines,
@@ -54,7 +54,9 @@ comments along the code.
    it just shows a MessageBox about the error and will then nicely branch
    back into the GuiTools Framework exit/cleanup procedure, which of course
    also includes calling the UserExitHandler: label. You may add your stuff
-   in this error handler to deal with specific errors.
+   in this error handler to deal with specific errors. See also:
+   - docs\doc_GuiAppFrame.bm\InternalErrHandler.html
+   - docs\doc_GuiAppFrame.bm\UserErrHandler.html
 
 Right after the error handler you find the label
  - UserMain:
@@ -107,8 +109,9 @@ framework library with dozens of useful SUBs and FUNCTIONs which you can
 freely use in your code as required. You find desciptions of the available
 functions in the "docs" directory separated into sub-folders by context.
 You should at least have a look into "doc_GuiAppFrame.bm" for a list of
-globally SHARED variables, maybe there is something ready to use, which
-you don't need to code yourself (eg. temp or local user folders).
+common SUBs/FUNCTIONs and the globally SHARED variables, maybe there is
+something ready to use, which you don't need to code yourself (eg. temp
+or local user folders).
 
 If you need to embed any files (eg. images) into your program, then you
 can use one of the provided GuiTools applications MakeDATA or MakeCARR

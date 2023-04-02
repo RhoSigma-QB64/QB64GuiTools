@@ -98,7 +98,7 @@
 '           record in list.
 '---------------------------------------------------------------------
 FUNCTION ListC$ (method$, tagString$)
-ListC$ = ""
+ListRes$ = ""
 classID$ = "ListC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -167,14 +167,15 @@ SELECT CASE methodID$
         GOSUB meDelete
         'Result Tags: ERROR/WARNING or empty
     CASE ELSE
-        SetTag ListC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+ListC$ = ListRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 '--- check required tags ---
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag ListC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     '--- general init ---
     this& = NewObject&
@@ -193,24 +194,24 @@ ELSE
     RemTags tagsID$, guiInitTags$ + guiCallTags$ + guiEvntTags$ + guiPrivTags$
     guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
     '--- set result ---
-    SetTag ListC$, "OBJECT", LTRIM$(STR$(this&))
+    SetTag ListRes$, "OBJECT", LTRIM$(STR$(this&))
 END IF
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- check required/optional tag changes ---
     reco& = VAL(GetTagData$(guiObjects$(objData%, this&), "RECORDS", "0"))
     temp$ = GetTagData$(tagsID$, "ACTUAL", "n/a")
     IF temp$ <> "n/a" THEN
         IF reco& = 0 THEN
-            SetTag ListC$, "WARNING", classID$ + "::" + methodID$ + " -> can't set ACTUAL on empty list"
+            SetTag ListRes$, "WARNING", classID$ + "::" + methodID$ + " -> can't set ACTUAL on empty list"
             GOTO labSetReverse
         END IF
         actu& = VAL(temp$)
         IF actu& < 0 THEN actu& = reco& 'last record requested
         IF actu& < 1 OR actu& > reco& THEN
-            SetTag ListC$, "WARNING", classID$ + "::" + methodID$ + " -> tag ACTUAL out of valid range"
+            SetTag ListRes$, "WARNING", classID$ + "::" + methodID$ + " -> tag ACTUAL out of valid range"
             GOTO labSetReverse
         END IF
         SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
@@ -235,15 +236,15 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
-    IF temp$ <> "n/a" THEN ListC$ = GetTags$(guiObjects$(objData%, this&), temp$)
+    IF temp$ <> "n/a" THEN ListRes$ = GetTags$(guiObjects$(objData%, this&), temp$)
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- 1st remove interconnections to this object ---
     KillInterconnections this&
     '--- delete remaining records ---
@@ -259,17 +260,17 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meStore:
-IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- check required tags ---
     IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-        SetTag ListC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+        SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
     ELSE
         '--- adjust actual position ---
         temp$ = GetTag$(tagsID$, "ACTUAL")
         IF temp$ <> "" THEN
             resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$ + GetTag$(tagsID$, "REFOBJ")), "WARNING", "n/a")
             IF resu$ <> "n/a" THEN 'remap error + exit
-                SetTag ListC$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
+                SetTag ListRes$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
                 RETURN
             END IF
         END IF
@@ -280,8 +281,8 @@ IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
         guiObjects$(objFlags%, stor&) = "---"
         guiObjects$(objConn%, stor&) = ""
         '--- check for assigned Image/Symbol ---
-        InitAssignedImgSym "IMAGEOBJECT", ListC$, classID$, tagsID$
-        InitAssignedImgSym "SYMBOLOBJECT", ListC$, classID$, tagsID$
+        InitAssignedImgSym "IMAGEOBJECT", ListRes$, classID$, tagsID$
+        InitAssignedImgSym "SYMBOLOBJECT", ListRes$, classID$, tagsID$
         IF GetTags$(tagsID$, "IMAGEOBJECT,SYMBOLOBJECT") <> "" THEN
             SetTag guiObjects$(objData%, this&), "HASLVIS", "true"
         END IF
@@ -363,20 +364,20 @@ SetTag guiObjects$(objData%, this&), "LAST", LTRIM$(STR$(stor&))
 RETURN
 '---------------------------------------------------------------------
 meAdd:
-IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- adjust actual position ---
     temp$ = GetTag$(tagsID$, "ACTUAL")
     IF temp$ <> "" THEN
         resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$ + GetTag$(tagsID$, "REFOBJ")), "WARNING", "n/a")
         IF resu$ <> "n/a" THEN 'remap error + exit
-            SetTag ListC$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
+            SetTag ListRes$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
             RETURN
         END IF
     END IF
     '--- check any user tag changes ---
     reco& = VAL(GetTagData$(guiObjects$(objData%, this&), "RECORDS", "0"))
     IF reco& = 0 THEN
-        SetTag ListC$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
+        SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
         RETURN
     END IF
     stor& = VAL(GetTagData$(guiObjects$(objData%, this&), "CURRENT", "0"))
@@ -392,13 +393,13 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meRead:
-IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- adjust read position/direction ---
     temp$ = GetTags$(tagsID$, "ACTUAL,REVERSE")
     IF temp$ <> "" THEN
         resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$ + GetTag$(tagsID$, "REFOBJ")), "WARNING", "n/a")
         IF resu$ <> "n/a" THEN 'remap error + exit
-            SetTag ListC$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
+            SetTag ListRes$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
             RETURN
         END IF
     END IF
@@ -406,7 +407,7 @@ IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
     actu& = VAL(GetTagData$(guiObjects$(objData%, this&), "ACTUAL", "0"))
     reco& = VAL(GetTagData$(guiObjects$(objData%, this&), "RECORDS", "0"))
     IF reco& = 0 THEN
-        SetTag ListC$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
+        SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
         RETURN
     END IF
     resu$ = guiObjects$(objData%, VAL(GetTagData$(guiObjects$(objData%, this&), "CURRENT", "0")))
@@ -431,19 +432,19 @@ IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
     END IF
     '--- set result w/o the internal tags ---
     RemTags resu$, guiPrivTags$
-    ListC$ = resu$
+    ListRes$ = resu$
 END IF
 RETURN
 '---------------------------------------------------------------------
 meSearch:
-IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- check required tags ---
     IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-        SetTag ListC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+        SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
     ELSE
         reco& = VAL(GetTagData$(guiObjects$(objData%, this&), "RECORDS", "0"))
         IF reco& = 0 THEN
-            SetTag ListC$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
+            SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
             RETURN
         END IF
         idat$ = GetTagData$(tagsID$, "DATA", "")
@@ -473,8 +474,8 @@ IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
         WEND
         '--- set result w/o the internal tags and do CONTINUE/HOLD checks ---
         IF node& > 0 THEN
-            ListC$ = guiObjects$(objData%, node&)
-            RemTags ListC$, guiPrivTags$
+            ListRes$ = guiObjects$(objData%, node&)
+            RemTags ListRes$, guiPrivTags$
             succ$ = GetTagData$(guiObjects$(objData%, node&), "NEXT", "0")
             IF VAL(succ$) > 0 THEN SetTag guiObjects$(objData%, this&), "CONTINUE", succ$
             IF BoolTagTrue%(tagsID$, "HOLD") THEN
@@ -492,20 +493,20 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meRem:
-IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- adjust actual position ---
     temp$ = GetTag$(tagsID$, "ACTUAL")
     IF temp$ <> "" THEN
         resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$ + GetTag$(tagsID$, "REFOBJ")), "WARNING", "n/a")
         IF resu$ <> "n/a" THEN 'remap error + exit
-            SetTag ListC$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
+            SetTag ListRes$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
             RETURN
         END IF
     END IF
     '--- remove given user tags ---
     reco& = VAL(GetTagData$(guiObjects$(objData%, this&), "RECORDS", "0"))
     IF reco& = 0 THEN
-        SetTag ListC$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
+        SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
         RETURN
     END IF
     stor& = VAL(GetTagData$(guiObjects$(objData%, this&), "CURRENT", "0"))
@@ -530,13 +531,13 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meDelete:
-IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- adjust actual position ---
     temp$ = GetTag$(tagsID$, "ACTUAL")
     IF temp$ <> "" THEN
         resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$ + GetTag$(tagsID$, "REFOBJ")), "WARNING", "n/a")
         IF resu$ <> "n/a" THEN 'remap error + exit
-            SetTag ListC$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
+            SetTag ListRes$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
             RETURN
         END IF
     END IF
@@ -544,7 +545,7 @@ IF ValidObject%(this&, thisTag$, ListC$, classID$, methodID$, tagsID$) THEN
     actu& = VAL(GetTagData$(guiObjects$(objData%, this&), "ACTUAL", "0"))
     reco& = VAL(GetTagData$(guiObjects$(objData%, this&), "RECORDS", "0"))
     IF reco& = 0 THEN
-        SetTag ListC$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
+        SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
         RETURN
     END IF
     stor& = VAL(GetTagData$(guiObjects$(objData%, this&), "CURRENT", "0"))

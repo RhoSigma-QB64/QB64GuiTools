@@ -17,7 +17,7 @@ reads data from the specified buffer starting at the current buffer position
 (which may be anywhere in the line) and continuing until it finds the next
 line break (according to the active line endings logic of the buffer) or
 until the buffer end, if no more line breaks exist. The operation is in that
-very similar to LINE&nbsp;INPUT when reading from text files.</p>
+very similar to LINE INPUT when reading from text files.</p>
 <p>The current buffer position is updated accordingly and is on the first byte
 behind the line break (ie. at the start of the next line) after the call.
 Hence, sequential reading is easily possible with subsequent calls. You may
@@ -68,10 +68,10 @@ wanna read.</li>
 <h4>text$ <em>(STRING)</em></h4>
 <ul>
 <li>The text read from the buffer without the actual line break char(s),
-similar to LINE&nbsp;INPUT, which returns lines also without the line breaks,
+similar to LINE INPUT, which returns lines also without the line breaks,
 when reading from text files.</li>
 <li>Depending on the current buffer position, this must not necessarily be the
-entire line as it is present in the buffer.</li>
+entire line as it is present in the buffer (see Notes).</li>
 <li>Will be an empty string, if you try to read past the buffer end. However,
 no error is thrown in such a case.</li>
 </ul>

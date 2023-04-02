@@ -33,7 +33,7 @@
 ' general documentation about the Framework see GuiToolsFramework.pdf.
 '---------------------------------------------------------------------
 FUNCTION RadioC$ (method$, tagString$)
-RadioC$ = ""
+RadioRes$ = ""
 classID$ = "RadioC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -87,29 +87,30 @@ SELECT CASE methodID$
         GOSUB meUpdate
         'Result Tags: ERROR/WARNING or SELECTED,RELEASED,SHORTCUT (may be empty)
     CASE ELSE
-        SetTag RadioC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag RadioRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+RadioC$ = RadioRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag RadioC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag RadioRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     '--- general init ---
     this& = NewObject&
     InitGeneralProperties this&, classID$, flagsID$, tagsID$
     ApplyPrefs classID$, tagsID$
     '--- check list/pager conditions ---
-    IF InitSetAssignedList%(this&, RadioC$, classID$, methodID$, tagsID$) THEN
-        IF InitAssignedPager%(this&, RadioC$, classID$, tagsID$) THEN
+    IF InitSetAssignedList%(this&, RadioRes$, classID$, methodID$, tagsID$) THEN
+        IF InitAssignedPager%(this&, RadioRes$, classID$, tagsID$) THEN
             '--- object specific init ---
             widt% = VAL(GetTagData$(tagsID$, "WIDTH", "0"))
             IF widt% < 16 THEN widt% = 16
             IF widt% > 48 THEN widt% = 48
             SetTag tagsID$, "WIDTH", LTRIM$(STR$(widt%))
             '--- check for assigned Image/Symbol ---
-            InitAssignedImgSym "IMAGEOBJECT", RadioC$, classID$, tagsID$
-            InitAssignedImgSym "SYMBOLOBJECT", RadioC$, classID$, tagsID$
+            InitAssignedImgSym "IMAGEOBJECT", RadioRes$, classID$, tagsID$
+            InitAssignedImgSym "SYMBOLOBJECT", RadioRes$, classID$, tagsID$
             '--- background/frame (if any) init ---
             BeginChildInit
             priw% = 0: lobj& = VAL(GetTagData$(tagsID$, "LISTOBJECT", "0"))
@@ -125,7 +126,7 @@ ELSE
             IF ValidateTags%(tagsID$, "IMAGEFILE", -1) OR ValidateTags%(tagsID$, "IMAGEHANDLE", -1) THEN
                 imag$ = ImageC$("INIT", GetTags$(tagsID$, "IMAGEFILE,IMAGEHANDLE,AREA") + leto$ + wihe$)
                 guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("BGIMG", imag$)
-                IF ValidateTags%(imag$, "ERROR", 0) THEN SetTag RadioC$, "WARNING", "RadioC::Init -> background image failure"
+                IF ValidateTags%(imag$, "ERROR", 0) THEN SetTag RadioRes$, "WARNING", "RadioC::Init -> background image failure"
             END IF
             IF ValidateTags%(tagsID$, "FORM", -1) THEN
                 fram$ = FrameC$("INIT", leto$ + wihe$ + GetTags$(tagsID$, "FORM,RECESSED"))
@@ -150,7 +151,7 @@ ELSE
             guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
             ObjectsUnselect this&
             '--- set result and schedule gui refresh ---
-            SetTag RadioC$, "OBJECT", LTRIM$(STR$(this&))
+            SetTag RadioRes$, "OBJECT", LTRIM$(STR$(this&))
             SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
         END IF
     END IF
@@ -158,11 +159,11 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, RadioC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
     '--- check required/optional tag changes ---
     flag% = 0
-    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", RadioC$, classID$, tagsID$) THEN flag% = -1
-    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", RadioC$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", RadioRes$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", RadioRes$, classID$, tagsID$) THEN flag% = -1
     temp$ = GetTagData$(tagsID$, "ACTUAL", "n/a")
     IF temp$ <> "n/a" THEN
         otag$ = GetTagData$(guiObjects$(objData%, this&), "ACTUAL", "n/a")
@@ -206,19 +207,19 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, RadioC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
     IF temp$ <> "n/a" THEN
         reco$ = ListC$("READ", ObjectTag$(guiObjects$(objData%, this&), "LISTOBJECT") + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
         IF ValidateTags%(reco$, "ERROR", 0) THEN reco$ = ""
-        RadioC$ = GetTags$(guiObjects$(objData%, this&) + reco$, temp$)
+        RadioRes$ = GetTags$(guiObjects$(objData%, this&) + reco$, temp$)
     END IF
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, RadioC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
     '--- 1st remove interconnections to this object ---
     KillInterconnections this&
     '--- delete child objects ---
@@ -242,7 +243,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meDraw:
-IF ValidObject%(this&, thisTag$, RadioC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
     '--- get object's dimensions ---
     left% = VAL(GetTagData$(guiObjects$(objData%, this&), "LEFT", "0"))
     topp% = VAL(GetTagData$(guiObjects$(objData%, this&), "TOP", "0"))
@@ -334,7 +335,7 @@ NEXT angl!
 RETURN
 '---------------------------------------------------------------------
 meUpdate:
-IF ValidObject%(this&, thisTag$, RadioC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
     '--- don't update, if currently disabled ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN RETURN
     '--- save old drawing relevant states ---
@@ -351,8 +352,8 @@ IF ValidObject%(this&, thisTag$, RadioC$, classID$, methodID$, tagsID$) THEN
                 actu& = actu& + 1: IF actu& > reco& THEN actu& = 1
                 SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
                 resu$ = RadioC$("DRAW", thisTag$)
-                SetTag RadioC$, "RELEASED", LTRIM$(STR$(this&))
-                SetTag RadioC$, "SHORTCUT", "true"
+                SetTag RadioRes$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag RadioRes$, "SHORTCUT", "true"
                 RETURN
             END IF
         END IF
@@ -378,10 +379,10 @@ IF ValidObject%(this&, thisTag$, RadioC$, classID$, methodID$, tagsID$) THEN
             SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(fbut%))
             resu$ = RadioC$("DRAW", thisTag$)
             SetTag guiObjects$(objData%, this&), "SELECTED", "true"
-            SetTag RadioC$, "SELECTED", LTRIM$(STR$(this&))
+            SetTag RadioRes$, "SELECTED", LTRIM$(STR$(this&))
         ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
             RemTag guiObjects$(objData%, this&), "SELECTED"
-            SetTag RadioC$, "RELEASED", LTRIM$(STR$(this&))
+            SetTag RadioRes$, "RELEASED", LTRIM$(STR$(this&))
         ELSEIF BoolTagTrue%(tagsID$, "KEYPRESS") AND guiASCObject& = 0 THEN
             RemTags tagsID$, "ALT,SHIFT": SetTag tagsID$, "CTRL", "true"
             IF GetTagData$(tagsID$, "KEY", "n/a") = CHR$(0) + "O" THEN
@@ -428,9 +429,9 @@ IF NOT BoolTagTrue%(tagsID$, "ALT") AND NOT BoolTagTrue%(tagsID$, "SHIFT") THEN
         IF actu& < 1 THEN actu& = reco&: ELSE IF actu& > reco& THEN actu& = 1
         SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
         resu$ = RadioC$("DRAW", thisTag$)
-        SetTag RadioC$, "RELEASED", LTRIM$(STR$(this&))
-        SetTag RadioC$, "SHORTCUT", "true"
-        SetTag RadioC$, "MOUSESCROLL", "true"
+        SetTag RadioRes$, "RELEASED", LTRIM$(STR$(this&))
+        SetTag RadioRes$, "SHORTCUT", "true"
+        SetTag RadioRes$, "MOUSESCROLL", "true"
     END IF
 END IF
 RETURN

@@ -71,7 +71,7 @@
 ' general documentation about the Framework see GuiToolsFramework.pdf.
 '---------------------------------------------------------------------
 FUNCTION PagerC$ (method$, tagString$)
-PagerC$ = ""
+PagerRes$ = ""
 classID$ = "PagerC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -116,13 +116,14 @@ SELECT CASE methodID$
         GOSUB meUpdate
         'Result Tags: ERROR/WARNING or SELECTED,RELEASED,SHORTCUT (may be empty)
     CASE ELSE
-        SetTag PagerC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag PagerRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+PagerC$ = PagerRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag PagerC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag PagerRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     '--- general init ---
     this& = NewObject&
@@ -136,7 +137,7 @@ ELSE
     ApplyPrefs classID$ + ".WallImg", tagsID$
     ApplyPrefs classID$ + ".WallPen", tagsID$
     '--- check pager conditions ---
-    IF InitAssignedPager%(this&, PagerC$, classID$, tagsID$) THEN
+    IF InitAssignedPager%(this&, PagerRes$, classID$, tagsID$) THEN
         '--- object specific init ---
         papa& = VAL(GetTagData$(tagsID$, "PAGEROBJECT", "0"))
         pale% = VAL(GetTagData$(guiObjects$(objData%, papa&), "WALLLEFT", "0"))
@@ -154,11 +155,11 @@ ELSE
         SetTag tagsID$, "WALLBOTTOM", LTRIM$(STR$(wato% + wahe% - 1))
         SetTag guiObjects$(objData%, this&), "ACTIVE", "true"
         '--- check for assigned Image/Symbol ---
-        InitAssignedImgSym "IMAGEOBJECT", PagerC$, classID$, tagsID$
-        InitAssignedImgSym "SYMBOLOBJECT", PagerC$, classID$, tagsID$
+        InitAssignedImgSym "IMAGEOBJECT", PagerRes$, classID$, tagsID$
+        InitAssignedImgSym "SYMBOLOBJECT", PagerRes$, classID$, tagsID$
         '--- background/frame/childlist/wallimage init ---
         BeginChildInit
-        InitObjectBGImg this&, PagerC$, classID$, tagsID$
+        InitObjectBGImg this&, PagerRes$, classID$, tagsID$
         fram$ = FrameC$("INIT", GetTags$(tagsID$, "LEFT,TOP,WIDTH,HEIGHT") + NewTag$("FORM", "simple"))
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("FRM0", fram$)
         fram$ = FrameC$("INIT", NewTag$("LEFT", LTRIM$(STR$(wale%))) + NewTag$("TOP", LTRIM$(STR$(wato% - 2))) +_
@@ -174,7 +175,7 @@ ELSE
                     NewTag$("LEFT", LTRIM$(STR$(wale%))) + NewTag$("TOP", LTRIM$(STR$(wato%))) +_
                     NewTag$("WIDTH", LTRIM$(STR$(wawi%))) + NewTag$("HEIGHT", LTRIM$(STR$(wahe%))))
             guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("WBGIMG", wimg$)
-            IF ValidateTags%(wimg$, "ERROR", 0) THEN SetTag PagerC$, "WARNING", classID$ + "::" + methodID$ + " -> cannot load WALLIMAGE"
+            IF ValidateTags%(wimg$, "ERROR", 0) THEN SetTag PagerRes$, "WARNING", classID$ + "::" + methodID$ + " -> cannot load WALLIMAGE"
         END IF
         EndChildInit
         '--- add required/optional tags ---
@@ -185,14 +186,14 @@ ELSE
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
         usel$ = "yes": GOSUB meAllOtherInactive
         '--- set result and schedule gui refresh ---
-        SetTag PagerC$, "OBJECT", LTRIM$(STR$(this&))
+        SetTag PagerRes$, "OBJECT", LTRIM$(STR$(this&))
         SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
     END IF
 END IF
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, PagerC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, PagerRes$, classID$, methodID$, tagsID$) THEN
     temp$ = GetTagData$(tagsID$, "WALLPEN", "n/a")
     IF temp$ <> "n/a" THEN
         IF VAL(temp$) < 0 THEN temp$ = LTRIM$(STR$(guiBackPen%)): SetTag tagsID$, "WALLPEN", temp$
@@ -207,8 +208,8 @@ IF ValidObject%(this&, thisTag$, PagerC$, classID$, methodID$, tagsID$) THEN
     IF owp$ = "" THEN RemTag tagsID$, "WALLPEN"
     '--- check required/optional tag changes ---
     flag% = 0
-    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", PagerC$, classID$, tagsID$) THEN flag% = -1
-    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", PagerC$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", PagerRes$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", PagerRes$, classID$, tagsID$) THEN flag% = -1
     IF UpdateTags%(guiObjects$(objData%, this&), "TEXT,TEXTMOVEX,TEXTMOVEY", tagsID$) THEN flag% = -1
     text$ = GetTag$(tagsID$, "TEXT"): temp$ = GetTagData$(text$, "TEXT", "n/a")
     IF text$ <> "" AND temp$ = "n/a" THEN RemTag guiObjects$(objData%, this&), "TEXT": flag% = -1
@@ -247,15 +248,15 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, PagerC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, PagerRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
-    IF temp$ <> "n/a" THEN PagerC$ = GetTags$(guiObjects$(objData%, this&), temp$)
+    IF temp$ <> "n/a" THEN PagerRes$ = GetTags$(guiObjects$(objData%, this&), temp$)
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, PagerC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, PagerRes$, classID$, methodID$, tagsID$) THEN
     '--- 1st remove interconnections to this object ---
     KillInterconnections this&
     '--- if active page, then activate another (if any) ---
@@ -306,7 +307,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meDraw:
-IF ValidObject%(this&, thisTag$, PagerC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, PagerRes$, classID$, methodID$, tagsID$) THEN
     '--- select drawing colors ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "ACTIVE") THEN
         tole% = guiShinePen%: bori% = guiShadowPen% 'top/left & bottom/right pens
@@ -391,7 +392,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meUpdate:
-IF ValidObject%(this&, thisTag$, PagerC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, PagerRes$, classID$, methodID$, tagsID$) THEN
     '--- don't update, if currently disabled ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN RETURN
     '--- save old drawing relevant states ---
@@ -418,8 +419,8 @@ IF ValidObject%(this&, thisTag$, PagerC$, classID$, methodID$, tagsID$) THEN
                 usel$ = "yes": GOSUB meAllOtherInactive
                 resu$ = PagerC$("DRAW", thisTag$)
                 what$ = "du": GOSUB meActivePagerRefresh
-                SetTag PagerC$, "RELEASED", LTRIM$(STR$(this&))
-                SetTag PagerC$, "SHORTCUT", "true"
+                SetTag PagerRes$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag PagerRes$, "SHORTCUT", "true"
                 RETURN
             END IF
         END IF
@@ -438,12 +439,12 @@ IF ValidObject%(this&, thisTag$, PagerC$, classID$, methodID$, tagsID$) THEN
         IF NOT BoolTagTrue%(guiObjects$(objData%, this&), "ACTIVE") THEN
             IF BoolTagTrue%(tagsID$, "MOUSELBDOWN") THEN
                 SetTag guiObjects$(objData%, this&), "SELECTED", "true"
-                SetTag PagerC$, "SELECTED", LTRIM$(STR$(this&))
+                SetTag PagerRes$, "SELECTED", LTRIM$(STR$(this&))
             ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
                 RemTag guiObjects$(objData%, this&), "SELECTED"
                 SetTag guiObjects$(objData%, this&), "ACTIVE", "true"
                 usel$ = "no": GOSUB meAllOtherInactive
-                SetTag PagerC$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag PagerRes$, "RELEASED", LTRIM$(STR$(this&))
             END IF
         END IF
     ELSE
@@ -517,25 +518,25 @@ DO
             RemTags guiObjects$(objData%, obje&), "FOCUS,SELECTED"
             IF guiObjects$(objType%, obje&) = classID$ THEN PushStr STR$(obje&)
         END IF
-        PagerC$ = PagerC$ + ObjectRefresh$(obje&, what$, tagsID$)
+        PagerRes$ = PagerRes$ + ObjectRefresh$(obje&, what$, tagsID$)
         IF methodID$ = "Update" THEN
-            IF BoolTagTrue%(PagerC$, "SHORTCUT") THEN
-                pusc$ = ExtractTag$(PagerC$, "SHORTCUT")
+            IF BoolTagTrue%(PagerRes$, "SHORTCUT") THEN
+                pusc$ = ExtractTag$(PagerRes$, "SHORTCUT")
                 RemTags tagsID$, "KEYPRESS,KEY,SHIFT,CTRL,ALT,MODKEYS"
             END IF
-            IF BoolTagTrue%(PagerC$, "MOUSESCROLL") THEN
-                pums$ = ExtractTag$(PagerC$, "MOUSESCROLL")
+            IF BoolTagTrue%(PagerRes$, "MOUSESCROLL") THEN
+                pums$ = ExtractTag$(PagerRes$, "MOUSESCROLL")
                 RemTags tagsID$, "MOUSESCROLL,SCRVAL"
             END IF
-            IF BoolTagTrue%(PagerC$, "MOUSEMOVE") THEN
-                pumm$ = ExtractTag$(PagerC$, "MOUSEMOVE")
+            IF BoolTagTrue%(PagerRes$, "MOUSEMOVE") THEN
+                pumm$ = ExtractTag$(PagerRes$, "MOUSEMOVE")
                 RemTags tagsID$, "MOUSEMOVE"
             END IF
         END IF
     NEXT node&
     temp& = VAL(PopStr$)
 LOOP WHILE temp&
-PagerC$ = PagerC$ + pusc$ + pums$ + pumm$
+PagerRes$ = PagerRes$ + pusc$ + pums$ + pumm$
 RestoreStack
 RETURN
 END FUNCTION

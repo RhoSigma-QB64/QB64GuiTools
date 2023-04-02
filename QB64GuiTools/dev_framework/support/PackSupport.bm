@@ -78,8 +78,7 @@ DO
             pcCode% = 256: GOSUB PutCode 'send "end of file" code to decompressor
             pcCode% = 0: GOSUB PutCode: GOSUB PutCode 'and flush entire gateway
             ERASE PrefArr%, SuffArr%, CodeArr%, UsedArr&
-            LzwPack$ = LEFT$(TargetBuf$, TargetPos& - 1)
-            LzwPack$ = LzwPack$ + "QB64LZW1" + MKL$(SourceLen&) + MKL$(GetCRC32&(SourceData$))
+            LzwPack$ = LEFT$(TargetBuf$, TargetPos& - 1) + "QB64LZW1" + MKL$(SourceLen&) + MKL$(GetCRC32&(SourceData$))
             IF pGui% THEN
                 res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", "100"))
                 lzwProgress$ = "": UpdateGuiViews: _AUTODISPLAY
@@ -371,9 +370,9 @@ DO
     '--- process codes ---
     SELECT CASE code%
         CASE 256 'code "end of file"
-            LzwUnpack$ = LEFT$(TargetBuf$, TargetPos& - 1)
+            upStr$ = LEFT$(TargetBuf$, TargetPos& - 1)
             ERASE PrefArr%, SuffArr%, UsedArr&, stack%
-            IF CVL(MID$(LzwSig$, 13, 4)) <> GetCRC32&(LzwUnpack$) THEN LzwUnpack$ = "" 'data corrupted
+            IF CVL(MID$(LzwSig$, 13, 4)) = GetCRC32&(upStr$) THEN LzwUnpack$ = upStr$ 'data ok
             IF pGui% THEN
                 res$ = GenC$("SET", lzwProgress$ + NewTag$("LEVEL", "100"))
                 lzwProgress$ = "": UpdateGuiViews: _AUTODISPLAY

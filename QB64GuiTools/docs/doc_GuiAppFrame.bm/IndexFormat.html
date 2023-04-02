@@ -267,11 +267,11 @@ without preferences specifiers).</li>
 This is a concatenated string of all arguments separated by a user chosen
 char or string.
 <ul>
-<li>Choose a char, which is not used in the arguments itself. If you need all
-printable chars, then CHR$(0) might be suitable, or you can use a sequence
-of 2 or more chars which is unique enough to not interfere with the arguments
-itself.</li>
-<li>Use STR$() to add in a numeric variable.</li>
+<li>Choose a separator char, which is not used in the arguments itself. If
+you need all printable chars, then CHR$(0) might be suitable, or you can
+use a sequence of 2 or more chars which is unique enough to not interfere
+with the arguments itself, eg. &quot;<em>(+)</em>&quot;, &quot;<em>|^|</em>&quot; or similar.</li>
+<li>Use the STR$() function to add in the values of numeric variables.</li>
 <li>It won't hurt, if there are more arguments than used in the format template.</li>
 </ul>
 </li>

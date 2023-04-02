@@ -196,20 +196,22 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
 (LONG) SECOBJECT        pub: Index of the secondary interconnected object.
 (TEXT) SECTAG           pub: Name of the secondary's tag to forward.
 -----
---- Ratio model (forwarding through an intermediary ratio equation)
+--- Ratio model (forwarding through an interposed ratio equation)
 -----
 (LONG) MULOBJECT        pub: Index of the multiplier interconnected object.
 (TEXT) MULTAG           pub: Name of the multiplier's tag to ratio forward.
-(TEXT) MULFORMAT        pub: Optional the PRINT USING format symbols for
-                             the multiplier's output, numeric only.
+(TEXT) MULFORMAT        pub: Optional a PRINT USING (or IndexFormat$)
+                             format template for the multiplier's output,
+                             can be literal text and/or one numeric token.
 (DOUB) RATIO            pub: The ratio between the interconnected objects.
 (LONG) DIVOBJECT        pub: Index of the divisor interconnected object.
 (TEXT) DIVTAG           pub: Name of the divisor's tag to ratio forward.
-(TEXT) DIVFORMAT        pub: Optional the PRINT USING format symbols for
-                             the divisor's output, numeric only.
+(TEXT) DIVFORMAT        pub: Optional a PRINT USING (or IndexFormat$)
+                             format template for the divisor's output,
+                             can be literal text and/or one numeric token.
 (BOOL) INTONLY          pub: If true, then the ratio results will be CLNGed.
 -----
---- HsbRgb model (forwarding through an intermediary HSB/RGB converter)
+--- HsbRgb model (forwarding through an interposed HSB/RGB converter)
 -----
 (LONG) HUEOBJECT        pub: Index of the object containing the Hue value of the model
 (TEXT) HUETAG           pub: Name of the Hue object's value tag.

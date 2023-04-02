@@ -120,7 +120,7 @@ END FUNCTION
 'Create a new tag. Similar to AddTag, but this will just return the new
 'tag instead of adding it to any tag string.
 FUNCTION NewTag$ (tagName$, tagData$)
-NewTag$ = NewTag$ + tagIntr$ + UCASE$(LTRIM$(RTRIM$(FilterChars$(tagName$, "")))) + tagSepa$ + FilterChars$(tagData$, " ") + tagTerm$
+NewTag$ = tagIntr$ + UCASE$(LTRIM$(RTRIM$(FilterChars$(tagName$, "")))) + tagSepa$ + FilterChars$(tagData$, " ") + tagTerm$
 END FUNCTION
 
 '---------------------------------------------------------------------
@@ -143,7 +143,7 @@ END FUNCTION
 '(comma separated) list of tag names. Can return a single tag too,
 'although GetTag$ would be more efficient in that case.
 FUNCTION GetTags$ (tagString$, getNames$)
-GetTags$ = ""
+tags$ = ""
 tmpGetNames$ = LTRIM$(RTRIM$(getNames$))
 IF LEFT$(tmpGetNames$, 1) = "," THEN tmpGetNames$ = MID$(tmpGetNames$, 2)
 IF RIGHT$(tmpGetNames$, 1) <> "," THEN tmpGetNames$ = tmpGetNames$ + ","
@@ -153,9 +153,10 @@ DO
     ket% = INSTR(bra%, tmpGetNames$, ",")
     IF ket% > bra% THEN
         getName$ = LTRIM$(RTRIM$(MID$(tmpGetNames$, bra%, ket% - bra%)))
-        IF getName$ <> "" THEN GetTags$ = GetTags$ + GetTag$(tagString$, getName$)
+        IF getName$ <> "" THEN tags$ = tags$ + GetTag$(tagString$, getName$)
     END IF
 LOOP WHILE ket% > 0
+GetTags$ = tags$
 END FUNCTION
 
 '---------------------------------------------------------------------
@@ -191,7 +192,7 @@ END FUNCTION
 'If the tag does not exist or appears to be invalid, then return the
 'provided default data instead.
 FUNCTION GetTagData$ (tagString$, tagName$, defData$)
-GetTagData$ = defData$
+dat$ = defData$
 tmpTagName$ = UCASE$(LTRIM$(RTRIM$(FilterChars$(tagName$, ""))))
 bra% = INSTR(tagString$, tagIntr$ + tmpTagName$ + tagSepa$)
 IF bra% > 0 THEN
@@ -199,13 +200,14 @@ IF bra% > 0 THEN
     bra% = bra% + LEN(tmpTagName$) + 2
     IF ket% > 0 THEN
         IF ket% > bra% THEN 'ket% must be after tagIntr$+tagName$+tagSepa$
-            GetTagData$ = MID$(tagString$, bra%, ket% - bra%)
-            FOR i% = 1 TO LEN(GetTagData$)
-                IF MID$(GetTagData$, i%, 1) = tagRepl$ THEN MID$(GetTagData$, i%, 1) = CHR$(0)
+            dat$ = MID$(tagString$, bra%, ket% - bra%)
+            FOR i% = 1 TO LEN(dat$)
+                IF MID$(dat$, i%, 1) = tagRepl$ THEN MID$(dat$, i%, 1) = CHR$(0)
             NEXT i%
         END IF
     END IF
 END IF
+GetTagData$ = dat$
 END FUNCTION
 
 '---------------------------------------------------------------------

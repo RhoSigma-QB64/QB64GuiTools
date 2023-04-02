@@ -476,7 +476,7 @@ static const unsigned int8 MarbleImgB[] = {
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.
 // ---------------------------------------------------------------------
-char MarbleImgName[1056]; // (MAX_PATH * 4) + 16
+char MarbleImgName[8192]; // it's a safe size for any current OS
 
 // --- Cleanup function to delete the written file, called by the atexit()
 // --- handler at program termination time, if requested by user.
@@ -495,7 +495,11 @@ const char *WriteMarbleImgData(const char *FileName, int16 AutoClean)
     FILE *han = NULL; // file handle
     int32 num = NULL; // written elements
 
-    if (!_fullpath(MarbleImgName, FileName, 1056)) return "";
+    #ifdef QB64_WINDOWS
+    if (!_fullpath(MarbleImgName, FileName, 8192)) return "";
+    #else
+    if (!realpath(FileName, MarbleImgName)) return "";
+    #endif
 
     if (!(han = fopen(MarbleImgName, "wb"))) return "";
     if (AutoClean) atexit(KillMarbleImgData);

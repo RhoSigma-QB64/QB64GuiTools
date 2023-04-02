@@ -1165,7 +1165,7 @@ SUB GetPrefs (sect$, opts AS ChunkCSET)
 mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-gtprefs.bin" + CHR$(0))
 iff% = SafeOpenFile%("B", appLocalDir$ + "gtprefs.bin")
 found% = 0
-IF SeekChunk&(iff%, CHcsetID$) THEN
+IF SeekChunk&(iff%, 1, CHcsetID$) > 0 THEN
     WHILE NOT EOF(iff%)
         GET iff%, , opts
         IF RStrip$(stripFIX%, opts.csetCLASS) = sect$ THEN
@@ -1200,7 +1200,7 @@ SUB SetPrefs (sect$, opts AS ChunkCSET)
 '--- exclusivly search prefs ---
 mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-gtprefs.bin" + CHR$(0))
 iff% = SafeOpenFile%("B", appLocalDir$ + "gtprefs.bin")
-IF SeekChunk&(iff%, CHcsetID$) THEN
+IF SeekChunk&(iff%, 1, CHcsetID$) > 0 THEN
     REDIM temp(0) AS ChunkCSET
     WHILE NOT EOF(iff%)
         ptr& = SEEK(iff%)

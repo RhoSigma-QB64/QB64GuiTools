@@ -56,8 +56,6 @@ wanna write to.</li>
 <ul>
 <li>The text line to write into the buffer without any line break char(s),
 hence just as you'd give it to PRINT, when writing into text files.</li>
-<li>Depending on the current buffer position, your write may go into the middle
-of a line and split this line up.</li>
 </ul>
 </blockquote>
 <hr />
@@ -72,10 +70,12 @@ of a line and split this line up.</li>
 </blockquote>
 </blockquote>
 <ul>
-<li>To make sure you write a new line before or after the current line, you may
-want to move the current buffer position either to the start of the current
-line or the start of the next line before calling this subroutine, if this
-is not guaranteed automatically (eg. by writing lines sequentially).</li>
+<li>Depending on the current buffer position, your write may go into the middle
+of another text line and split that line up.</li>
+<li>To make sure you write a new line entirely before or after the current line,
+you may want to move the current buffer position either to the start of the
+current line or the start of the next line before calling this subroutine, if
+this is not guaranteed automatically (eg. by writing lines sequentially).</li>
 <li>You may move the current buffer position to the current line's start
 using the function <a href="SeekBuf.html">SeekBuf()</a> with an displacement of zero (0) and mode
 SBM_LineStart.</li>

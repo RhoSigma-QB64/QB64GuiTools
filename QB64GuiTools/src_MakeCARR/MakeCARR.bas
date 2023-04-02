@@ -26,8 +26,8 @@
 '| == and some functions, and a respective .bm file which needs to   |
 '| == be $INCLUDEd with your program and does provide the FUNCTION   |
 '| == to write back the array(s) into any file. All used functions   |
-'| == are standard library calls, no Win API calls are involved, so  |
-'| == this entire thing should work on all QB64 supported platforms. |
+'| == are standard library calls, no API calls are involved, so the  |
+'| == writeback should work on all QB64 supported platforms.         |
 '|                                                                   |
 '| == Make sure to adjust the path for the .h file for your personal |
 '| == needs in the created .bm files (DECLARE LIBRARY), if required. |
@@ -633,6 +633,7 @@ fl& = LOF(1)
 cntL& = INT(fl& / 32)
 cntV& = INT(cntL& / 8180)
 cntB& = (fl& - (cntL& * 32))
+
 '--- .h include file ---
 OPEN "O", #2, hdrPath$ + hdr$
 PRINT #2, "// ============================================================"
@@ -696,7 +697,7 @@ PRINT #2, "// --- Saved full qualified output path and filename, so we've no tro
 PRINT #2, "// --- when cleaning up, even if the current working folder was changed"
 PRINT #2, "// --- during program runtime."
 PRINT #2, "// ---------------------------------------------------------------------"
-PRINT #2, "char "; hdrName$; "Name[1056]; // (MAX_PATH * 4) + 16"
+PRINT #2, "char "; hdrName$; "Name[8192]; // it's a safe size for any current OS"
 PRINT #2, ""
 PRINT #2, "// --- Cleanup function to delete the written file, called by the atexit()"
 PRINT #2, "// --- handler at program termination time, if requested by user."
@@ -715,7 +716,11 @@ PRINT #2, "{"
 PRINT #2, "    FILE *han = NULL; // file handle"
 PRINT #2, "    int32 num = NULL; // written elements"
 PRINT #2, ""
-PRINT #2, "    if (!_fullpath("; hdrName$; "Name, FileName, 1056)) return "; CHR$(34); CHR$(34); ";"
+PRINT #2, "    #ifdef QB64_WINDOWS"
+PRINT #2, "    if (!_fullpath("; hdrName$; "Name, FileName, 8192)) return "; CHR$(34); CHR$(34); ";"
+PRINT #2, "    #else"
+PRINT #2, "    if (!realpath(FileName, "; hdrName$; "Name)) return "; CHR$(34); CHR$(34); ";"
+PRINT #2, "    #endif"
 PRINT #2, ""
 PRINT #2, "    if (!(han = fopen("; hdrName$; "Name, "; CHR$(34); "wb"; CHR$(34); "))) return "; CHR$(34); CHR$(34); ";"
 PRINT #2, "    if (AutoClean) atexit(Kill"; hdrName$; "Data);"
@@ -747,41 +752,57 @@ IF packed% THEN
     PRINT #2, "'=== ---------------------------------------------------- ==="
     PRINT #2, "'=== If your program is NOT a GuiTools based application, ==="
     PRINT #2, "'=== then it must also $INCLUDE: 'lzwpacker.bm' available ==="
-    PRINT #2, "'=== from http://www.qb64.org/forum/index.php?topic=783.0 ==="
+    PRINT #2, "'=== from the Libraries Collection here:                  ==="
+    PRINT #2, "'===    https://www.qb64.org/forum/index.php?topic=809    ==="
 END IF
 PRINT #2, "'============================================================"
 PRINT #2, ""
-PRINT #2, "'====================================================================="
-PRINT #2, "'Function to write the array(s) defined in the respective .h file back"
-PRINT #2, "'to disk. Make sure the path in the DECLARE LIBRARY statement does match"
-PRINT #2, "'the actual .h file location. Call this FUNCTION once, before you will"
-PRINT #2, "'access the represented file for the first time. After the call always"
-PRINT #2, "'use the returned realFile$ ONLY to access the written file, don't add"
-PRINT #2, "'any path or extension, as realFile$ is already a full qualified absolute"
-PRINT #2, "'path and filename, which is made by expanding your maybe given relative"
-PRINT #2, "'path and an maybe altered filename in order to avoid the overwriting of"
-PRINT #2, "'an existing file of the same name in the given location. By this means"
-PRINT #2, "'you'll always have easy access to the file, no matter how your current"
-PRINT #2, "'working folder changes during runtime. If requested, the written file"
-PRINT #2, "'can automatically be deleted for you when your program will end, so you"
-PRINT #2, "'don't need to worry about the cleanup yourself. This cleanup feature is"
-PRINT #2, "'implemented on the C/C++ level by using a "; CHR$(34); "atexit()"; CHR$(34); " function."
+PRINT #2, "'-----------------"
+PRINT #2, "'--- Important ---"
+PRINT #2, "'-----------------"
+PRINT #2, "' If you need to move around this .bm file and its respective .h file"
+PRINT #2, "' to fit in your project, then make sure the path in the DECLARE LIBRARY"
+PRINT #2, "' statement below does match the actual .h file location. It's best to"
+PRINT #2, "' specify a relative path assuming your QB64 installation folder as root."
 PRINT #2, "'---------------------------------------------------------------------"
-PRINT #2, "'SYNTAX: realFile$ = Write"; tarName$; "Array$ (wantFile$, autoDel%)"
+PRINT #2, ""
+'--- writeback function ---
+PRINT #2, "'"; STRING$(LEN(tarName$) + 19, "-")
+PRINT #2, "'--- Write"; tarName$; "Array$ ---"
+PRINT #2, "'"; STRING$(LEN(tarName$) + 19, "-")
+PRINT #2, "' This function will write the array(s) you've created with MakeCARR.bas"
+PRINT #2, "' back to disk and so it rebuilds the original file."
 PRINT #2, "'"
-PRINT #2, "'INPUTS: wantFile$ --> The filename you would like to write the array(s)"
-PRINT #2, "'                      to, can contain a full or relative path."
-PRINT #2, "'        autoDel%  --> Shows whether you want the auto cleanup at the"
-PRINT #2, "'                      program end or not (-1 = del file, 0 = don't del)."
+PRINT #2, "' After the writeback call, only use the returned realFile$ to access the"
+PRINT #2, "' written file. It's the full qualified absolute path and filename, which"
+PRINT #2, "' is made by expanding your maybe given relative path and an maybe altered"
+PRINT #2, "' filename (number added) in order to avoid the overwriting of an already"
+PRINT #2, "' existing file with the same name in the given location. By this means"
+PRINT #2, "' you'll always have safe access to the file, no matter how your current"
+PRINT #2, "' working folder changes during runtime."
 PRINT #2, "'"
-PRINT #2, "'RESULT: realFile$ --> On success the full qualified path and filename"
-PRINT #2, "'                      finally used after applied checks, use ONLY this"
-PRINT #2, "'                      returned name to access the file, don't add any"
-PRINT #2, "'                      path or extension anymore."
-PRINT #2, "'                   -> On failure (write/access) this will be an empty"
-PRINT #2, "'                      string, so you should check for it before trying"
-PRINT #2, "'                      to access the file."
-PRINT #2, "'====================================================================="
+PRINT #2, "' If you wish, the written file can automatically be deleted for you when"
+PRINT #2, "' your program will end, so you don't need to do the cleanup yourself."
+PRINT #2, "'----------"
+PRINT #2, "' SYNTAX:"
+PRINT #2, "'   realFile$ = Write"; tarName$; "Array$ (wantFile$, autoDel%)"
+PRINT #2, "'----------"
+PRINT #2, "' INPUTS:"
+PRINT #2, "'   --- wantFile$ ---"
+PRINT #2, "'    The filename you would like to write the array(s) to, can contain"
+PRINT #2, "'    a full or relative path."
+PRINT #2, "'   --- autoDel% ---"
+PRINT #2, "'    Shows whether you want the auto cleanup (see description above) at"
+PRINT #2, "'    the program end or not (-1 = delete file, 0 = don't delete file)."
+PRINT #2, "'----------"
+PRINT #2, "' RESULT:"
+PRINT #2, "'   --- realFile$ ---"
+PRINT #2, "'    - On success this is the full qualified path and filename finally"
+PRINT #2, "'      used after all applied checks, use only this returned filename"
+PRINT #2, "'      to access the written file."
+PRINT #2, "'    - On failure (write/access) this will be an empty string, so you"
+PRINT #2, "'      should check for this before trying to access/open the file."
+PRINT #2, "'---------------------------------------------------------------------"
 PRINT #2, "FUNCTION Write"; tarName$; "Array$ (file$, clean%)"
 PRINT #2, "'--- declare C/C++ function ---"
 tmp$ = hdrPath$ + FileNamePart$(hdr$)
@@ -791,6 +812,9 @@ END IF
 PRINT #2, "DECLARE LIBRARY "; CHR$(34); tmp$; CHR$(34); " 'Do not add .h here !!"
 PRINT #2, "    FUNCTION Write"; hdrName$; "Data$ (FileName$, BYVAL AutoClean%)"
 PRINT #2, "END DECLARE"
+PRINT #2, "'--- option _explicit requirements ---"
+PRINT #2, "DIM po%, body$, ext$, num%";
+IF packed% THEN PRINT #2, ", real$, ff%, rawdata$, filedata$": ELSE PRINT #2, ""
 PRINT #2, "'--- separate filename body & extension ---"
 PRINT #2, "FOR po% = LEN(file$) TO 1 STEP -1"
 PRINT #2, "    IF MID$(file$, po%, 1) = "; CHR$(34); "."; CHR$(34); " THEN"
@@ -810,21 +834,26 @@ PRINT #2, "    file$ = body$ + "; CHR$(34); "("; CHR$(34); " + LTRIM$(STR$(num%)
 PRINT #2, "    num% = num% + 1"
 PRINT #2, "WEND"
 PRINT #2, "'--- write array & set result ---"
-PRINT #2, "Write"; tarName$; "Array$ = Write"; hdrName$; "Data$(file$ + CHR$(0), clean%)"
-IF packed% THEN
-    PRINT #2, "IF Write"; tarName$; "Array$ <> "; CHR$(34); CHR$(34); " THEN"
+IF NOT packed% THEN
+    PRINT #2, "Write"; tarName$; "Array$ = Write"; hdrName$; "Data$(file$ + CHR$(0), clean%)"
+ELSE
+    PRINT #2, "real$ = Write"; hdrName$; "Data$(file$ + CHR$(0), clean%)"
+    PRINT #2, "IF real$ <> "; CHR$(34); CHR$(34); " THEN"
     PRINT #2, "    ff% = FREEFILE"
-    PRINT #2, "    OPEN Write"; tarName$; "Array$ FOR BINARY AS ff%"
+    PRINT #2, "    OPEN real$ FOR BINARY AS ff%"
     PRINT #2, "    rawdata$ = SPACE$(LOF(ff%))"
     PRINT #2, "    GET #ff%, , rawdata$"
     PRINT #2, "    filedata$ = LzwUnpack$(rawdata$)"
     PRINT #2, "    PUT #ff%, 1, filedata$"
     PRINT #2, "    CLOSE ff%"
     PRINT #2, "END IF"
+    PRINT #2, "Write"; tarName$; "Array$ = real$"
 END IF
 PRINT #2, "END FUNCTION"
 PRINT #2, ""
+'--- ending ---
 CLOSE #2
+
 '--- finish message ---
 ConvertFile% = -1
 IF packed% THEN

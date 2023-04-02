@@ -31,14 +31,19 @@
 '+-------------------------------------------------------------------+
 </code></pre>
 
-<h2>The Stringbuffer System</h2>
+<h1>The Stringbuffer System</h1>
+<hr />
 <blockquote>
 <p><em>You may use it for simple file buffering or as general purpose storage.
 You can read and write data, search data (fwd/rev), copy &amp; paste data blocks
 and use bookmarks. The buffer system supports Windows as well as Linux/MacOSX
 line endings and can convert one to the other.</em></p>
 </blockquote>
-<h2>Table of Contents</h2>
+<hr />
+<h3><u>Table of Contents</u></h3>
+<blockquote>
+<p><strong><em>GENERAL</em></strong></p>
+</blockquote>
 <ul>
 <li>
 <a href="BufferSupport-Common.html">Common Info</a>
@@ -47,7 +52,9 @@ line endings and can convert one to the other.</em></p>
 </ul>
 </li>
 </ul>
-<h1></h1>
+<blockquote>
+<p><strong><em>INIT, LOAD &amp; SAVE BUFFERS</em></strong></p>
+</blockquote>
 <ul>
 <li>
 <a href="InitBuf.html">InitBuf</a>
@@ -86,7 +93,9 @@ line endings and can convert one to the other.</em></p>
 </ul>
 </li>
 </ul>
-<h1></h1>
+<blockquote>
+<p><strong><em>READ &amp; WRITE DATA</em></strong></p>
+</blockquote>
 <ul>
 <li>
 <a href="ReadBufLine.html">ReadBufLine$</a>
@@ -137,7 +146,9 @@ line endings and can convert one to the other.</em></p>
 </ul>
 </li>
 </ul>
-<h1></h1>
+<blockquote>
+<p><strong><em>SET &amp; RECALL BOOKMARKS</em></strong></p>
+</blockquote>
 <ul>
 <li>
 <a href="FreeBufMarkID.html">FreeBufMarkID</a>
@@ -170,7 +181,9 @@ line endings and can convert one to the other.</em></p>
 </ul>
 </li>
 </ul>
-<h1></h1>
+<blockquote>
+<p><strong><em>SEARCH DATA</em></strong></p>
+</blockquote>
 <ul>
 <li>
 <a href="FreeBufFindID.html">FreeBufFindID</a>
@@ -181,7 +194,7 @@ line endings and can convert one to the other.</em></p>
 <li>
 <a href="SetBufFind.html">SetBufFind</a>
 <ul>
-<li>define the search criteria vor any find data</li>
+<li>define the search criteria for any find data</li>
 </ul>
 </li>
 <li>
@@ -198,7 +211,9 @@ line endings and can convert one to the other.</em></p>
 </ul>
 </li>
 </ul>
-<h1></h1>
+<blockquote>
+<p><strong><em>COPY &amp; PASTE DATA</em></strong></p>
+</blockquote>
 <ul>
 <li>
 <a href="CopyBufBlock.html">CopyBufBlock</a>
@@ -221,7 +236,9 @@ from the buffer</li>
 </ul>
 </li>
 </ul>
-<h1></h1>
+<blockquote>
+<p><strong><em>POSITION CONTROL</em></strong></p>
+</blockquote>
 <ul>
 <li>
 <a href="SeekBuf.html">SeekBuf</a>
@@ -248,15 +265,17 @@ characteristics</li>
 <li>return the current &quot;End Of Buffer&quot; condition (SB-Synonym for EOF)</li>
 </ul>
 </li>
+</ul>
+<blockquote>
+<p><strong><em>EOL CONVERSION</em></strong></p>
+</blockquote>
+<ul>
 <li>
 <a href="BufEolSeq.html">BufEolSeq$</a>
 <ul>
 <li>return the current &quot;End Of Line&quot; (line break) char sequence in any buffer</li>
 </ul>
 </li>
-</ul>
-<h1></h1>
-<ul>
 <li>
 <a href="ConvBufToAnyEol.html">ConvBufToNativeEol &amp; ConvBufToLnxMacEol &amp; ConvBufToWinEol</a>
 <ul>

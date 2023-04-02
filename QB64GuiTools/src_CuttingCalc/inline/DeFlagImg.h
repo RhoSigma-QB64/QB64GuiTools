@@ -39,7 +39,7 @@ static const unsigned int8 DeFlagImgB[] = {
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.
 // ---------------------------------------------------------------------
-char DeFlagImgName[1056]; // (MAX_PATH * 4) + 16
+char DeFlagImgName[8192]; // it's a safe size for any current OS
 
 // --- Cleanup function to delete the written file, called by the atexit()
 // --- handler at program termination time, if requested by user.
@@ -58,7 +58,11 @@ const char *WriteDeFlagImgData(const char *FileName, int16 AutoClean)
     FILE *han = NULL; // file handle
     int32 num = NULL; // written elements
 
-    if (!_fullpath(DeFlagImgName, FileName, 1056)) return "";
+    #ifdef QB64_WINDOWS
+    if (!_fullpath(DeFlagImgName, FileName, 8192)) return "";
+    #else
+    if (!realpath(FileName, DeFlagImgName)) return "";
+    #endif
 
     if (!(han = fopen(DeFlagImgName, "wb"))) return "";
     if (AutoClean) atexit(KillDeFlagImgData);

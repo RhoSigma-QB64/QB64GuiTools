@@ -209,7 +209,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 460, 345, 0
-appCR$ = "The GuiTools Framework v0.13, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.14, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------

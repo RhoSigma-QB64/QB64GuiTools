@@ -25,6 +25,9 @@
 FUNCTION PolToCartX% (ang!, rad!)
 PolToCartX% = CINT(rad! * COS(ang! * 0.017453292519943))
 END FUNCTION
+
+'--- docs\doc_ConvertSupport.bm\PolToCartXY.html
+'---------------------------------------------------------------------
 FUNCTION PolToCartY% (ang!, rad!)
 PolToCartY% = CINT(rad! * SIN(ang! * 0.017453292519943))
 END FUNCTION
@@ -41,6 +44,9 @@ ang! = bow! / 0.017453292519943
 IF ang! < 0 THEN ang! = ang! + 360
 CartToPolA! = ang!
 END FUNCTION
+
+'--- docs\doc_ConvertSupport.bm\CartToPolAR.html
+'---------------------------------------------------------------------
 FUNCTION CartToPolR! (xPos%, yPos%)
 CartToPolR! = SQR((xPos% * xPos%) + (yPos% * yPos%))
 END FUNCTION
@@ -51,6 +57,9 @@ FUNCTION MovePointX% (xPos%, yPos%, ang!, dist!)
 tmpY% = yPos% 'avoid unused warning in QB64-GL v1.2 and up
 MovePointX% = xPos% + PolToCartX%(ang!, dist!)
 END FUNCTION
+
+'--- docs\doc_ConvertSupport.bm\MovePointXY.html
+'---------------------------------------------------------------------
 FUNCTION MovePointY% (xPos%, yPos%, ang!, dist!)
 tmpX% = xPos% 'avoid unused warning in QB64-GL v1.2 and up
 MovePointY% = yPos% + PolToCartY%(ang!, dist!)
@@ -62,6 +71,9 @@ FUNCTION RotPointX% (xPos%, yPos%, ang!, xCen%, yCen%)
 tmpX% = xPos% - xCen%: tmpY% = yPos% - yCen%: bow! = ang! * 0.017453292519943
 RotPointX% = CINT((tmpX% * COS(bow!)) - (tmpY% * SIN(bow!))) + xCen%
 END FUNCTION
+
+'--- docs\doc_ConvertSupport.bm\RotPointXY.html
+'---------------------------------------------------------------------
 FUNCTION RotPointY% (xPos%, yPos%, ang!, xCen%, yCen%)
 tmpX% = xPos% - xCen%: tmpY% = yPos% - yCen%: bow! = ang! * 0.017453292519943
 RotPointY% = CINT((tmpX% * SIN(bow!)) + (tmpY% * COS(bow!))) + yCen%
@@ -76,6 +88,9 @@ IF bri! < 0 THEN bri! = 0: ELSE IF bri! > 100 THEN bri! = 100
 HSBtoRGB CLNG(hue! * 182.041666666666666#), CLNG(sat! * 655.35#), CLNG(bri! * 655.35#), red~&, gre~&, blu~&
 HSB32~& = _RGB32(red~& \ 256, gre~& \ 256, blu~& \ 256)
 END FUNCTION
+
+'--- docs\doc_ConvertSupport.bm\HSBA32.html
+'---------------------------------------------------------------------
 FUNCTION HSBA32~& (hue!, sat!, bri!, alp%)
 IF hue! < 0 THEN hue! = 0: ELSE IF hue! > 360 THEN hue! = 360
 IF sat! < 0 THEN sat! = 0: ELSE IF sat! > 100 THEN sat! = 100
@@ -90,10 +105,16 @@ FUNCTION HUE32! (argbColor&)
 RGBtoHSB (argbColor& AND &HFF0000~&) \ 256, (argbColor& AND &HFF00~&), (argbColor& AND &HFF~&) * 256, hue~&, sat~&, bri~&
 HUE32! = hue~& / 182.041666666666666#
 END FUNCTION
+
+'--- docs\doc_ConvertSupport.bm\HUE32-SAT32-BRI32.html
+'---------------------------------------------------------------------
 FUNCTION SAT32! (argbColor&)
 RGBtoHSB (argbColor& AND &HFF0000~&) \ 256, (argbColor& AND &HFF00~&), (argbColor& AND &HFF~&) * 256, hue~&, sat~&, bri~&
 SAT32! = sat~& / 655.35#
 END FUNCTION
+
+'--- docs\doc_ConvertSupport.bm\HUE32-SAT32-BRI32.html
+'---------------------------------------------------------------------
 FUNCTION BRI32! (argbColor&)
 RGBtoHSB (argbColor& AND &HFF0000~&) \ 256, (argbColor& AND &HFF00~&), (argbColor& AND &HFF~&) * 256, hue~&, sat~&, bri~&
 BRI32! = bri~& / 655.35#

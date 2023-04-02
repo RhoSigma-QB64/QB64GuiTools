@@ -33,7 +33,7 @@
 ' general documentation about the Framework see GuiToolsFramework.pdf.
 '---------------------------------------------------------------------
 FUNCTION CycleC$ (method$, tagString$)
-CycleC$ = ""
+CycleRes$ = ""
 classID$ = "CycleC"
 methodID$ = UCASE$(LEFT$(method$, 1)) + LCASE$(MID$(method$, 2))
 tagsID$ = tagString$ 'avoid side effects on passed argument
@@ -83,27 +83,28 @@ SELECT CASE methodID$
         GOSUB meUpdate
         'Result Tags: ERROR/WARNING or SELECTED,RELEASED,SHORTCUT (may be empty)
     CASE ELSE
-        SetTag CycleC$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
+        SetTag CycleRes$, "ERROR", classID$ + "::" + methodID$ + " -> unknown method"
 END SELECT
+CycleC$ = CycleRes$
 EXIT FUNCTION
 '---------------------------------------------------------------------
 meInit:
 IF NOT ValidateTags%(tagsID$, tagsReq$, 0) THEN
-    SetTag CycleC$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
+    SetTag CycleRes$, "ERROR", classID$ + "::" + methodID$ + " -> missing required tags"
 ELSE
     '--- general init ---
     this& = NewObject&
     InitGeneralProperties this&, classID$, flagsID$, tagsID$
     ApplyPrefs classID$, tagsID$
     '--- check list/pager conditions ---
-    IF InitSetAssignedList%(this&, CycleC$, classID$, methodID$, tagsID$) THEN
-        IF InitAssignedPager%(this&, CycleC$, classID$, tagsID$) THEN
+    IF InitSetAssignedList%(this&, CycleRes$, classID$, methodID$, tagsID$) THEN
+        IF InitAssignedPager%(this&, CycleRes$, classID$, tagsID$) THEN
             '--- check for assigned Image/Symbol ---
-            InitAssignedImgSym "IMAGEOBJECT", CycleC$, classID$, tagsID$
-            InitAssignedImgSym "SYMBOLOBJECT", CycleC$, classID$, tagsID$
+            InitAssignedImgSym "IMAGEOBJECT", CycleRes$, classID$, tagsID$
+            InitAssignedImgSym "SYMBOLOBJECT", CycleRes$, classID$, tagsID$
             '--- background/frame/symbol init ---
             BeginChildInit
-            InitObjectBGImg this&, CycleC$, classID$, tagsID$
+            InitObjectBGImg this&, CycleRes$, classID$, tagsID$
             fram$ = FrameC$("INIT", GetTags$(tagsID$, "LEFT,TOP,WIDTH,HEIGHT") + NewTag$("FORM", "simple"))
             guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("FRM0", fram$)
             heig% = VAL(GetTagData$(tagsID$, "HEIGHT", "0"))
@@ -118,7 +119,7 @@ ELSE
             guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + tagsID$
             ObjectsUnselect this&
             '--- set result and schedule gui refresh ---
-            SetTag CycleC$, "OBJECT", LTRIM$(STR$(this&))
+            SetTag CycleRes$, "OBJECT", LTRIM$(STR$(this&))
             SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
         END IF
     END IF
@@ -126,12 +127,12 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meSet:
-IF ValidObject%(this&, thisTag$, CycleC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, CycleRes$, classID$, methodID$, tagsID$) THEN
     '--- check required/optional tag changes ---
     flag% = 0
-    IF InitSetAssignedList%(this&, CycleC$, classID$, methodID$, tagsID$) THEN flag% = -1
-    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", CycleC$, classID$, tagsID$) THEN flag% = -1
-    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", CycleC$, classID$, tagsID$) THEN flag% = -1
+    IF InitSetAssignedList%(this&, CycleRes$, classID$, methodID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "IMAGEOBJECT", CycleRes$, classID$, tagsID$) THEN flag% = -1
+    IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", CycleRes$, classID$, tagsID$) THEN flag% = -1
     IF UpdateTags%(guiObjects$(objData%, this&), "TEXTMOVEX,TEXTMOVEY", tagsID$) THEN flag% = -1
     temp$ = GetTagData$(tagsID$, "ACTUAL", "n/a")
     IF temp$ <> "n/a" THEN
@@ -175,19 +176,19 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meGet:
-IF ValidObject%(this&, thisTag$, CycleC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, CycleRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
     IF temp$ <> "n/a" THEN
         reco$ = ListC$("READ", ObjectTag$(guiObjects$(objData%, this&), "LISTOBJECT") + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
         IF ValidateTags%(reco$, "ERROR", 0) THEN reco$ = ""
-        CycleC$ = GetTags$(guiObjects$(objData%, this&) + reco$, temp$)
+        CycleRes$ = GetTags$(guiObjects$(objData%, this&) + reco$, temp$)
     END IF
 END IF
 RETURN
 '---------------------------------------------------------------------
 meKill:
-IF ValidObject%(this&, thisTag$, CycleC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, CycleRes$, classID$, methodID$, tagsID$) THEN
     '--- 1st remove interconnections to this object ---
     KillInterconnections this&
     '--- delete child objects ---
@@ -211,7 +212,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meDraw:
-IF ValidObject%(this&, thisTag$, CycleC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, CycleRes$, classID$, methodID$, tagsID$) THEN
     '--- select drawing colors ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "FOCUS") AND BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") THEN
         back% = guiFillPen%: text% = guiFillTextPen% 'text pens
@@ -270,7 +271,7 @@ END IF
 RETURN
 '---------------------------------------------------------------------
 meUpdate:
-IF ValidObject%(this&, thisTag$, CycleC$, classID$, methodID$, tagsID$) THEN
+IF ValidObject%(this&, thisTag$, CycleRes$, classID$, methodID$, tagsID$) THEN
     '--- don't update, if currently disabled ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN RETURN
     '--- save old drawing relevant states ---
@@ -294,8 +295,8 @@ IF ValidObject%(this&, thisTag$, CycleC$, classID$, methodID$, tagsID$) THEN
                 actu& = actu& + 1: IF actu& > reco& THEN actu& = 1
                 SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
                 resu$ = CycleC$("DRAW", thisTag$)
-                SetTag CycleC$, "RELEASED", LTRIM$(STR$(this&))
-                SetTag CycleC$, "SHORTCUT", "true"
+                SetTag CycleRes$, "RELEASED", LTRIM$(STR$(this&))
+                SetTag CycleRes$, "SHORTCUT", "true"
                 RETURN
             END IF
         END IF
@@ -313,12 +314,12 @@ IF ValidObject%(this&, thisTag$, CycleC$, classID$, methodID$, tagsID$) THEN
         SetTag guiObjects$(objData%, this&), "FOCUS", "true"
         IF BoolTagTrue%(tagsID$, "MOUSELBDOWN") THEN
             SetTag guiObjects$(objData%, this&), "SELECTED", "true"
-            SetTag CycleC$, "SELECTED", LTRIM$(STR$(this&))
+            SetTag CycleRes$, "SELECTED", LTRIM$(STR$(this&))
         ELSEIF BoolTagTrue%(guiObjects$(objData%, this&), "SELECTED") AND BoolTagTrue%(tagsID$, "MOUSELBUP") THEN
             RemTag guiObjects$(objData%, this&), "SELECTED"
             actu& = actu& + 1: IF actu& > reco& THEN actu& = 1
             SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
-            SetTag CycleC$, "RELEASED", LTRIM$(STR$(this&))
+            SetTag CycleRes$, "RELEASED", LTRIM$(STR$(this&))
         ELSEIF BoolTagTrue%(tagsID$, "KEYPRESS") AND guiASCObject& = 0 THEN
             RemTags tagsID$, "ALT,SHIFT": SetTag tagsID$, "CTRL", "true"
             IF GetTagData$(tagsID$, "KEY", "n/a") = CHR$(0) + "P" THEN
@@ -368,9 +369,9 @@ IF NOT BoolTagTrue%(tagsID$, "ALT") AND NOT BoolTagTrue%(tagsID$, "SHIFT") THEN
         IF actu& < 1 THEN actu& = reco&: ELSE IF actu& > reco& THEN actu& = 1
         SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
         resu$ = CycleC$("DRAW", thisTag$)
-        SetTag CycleC$, "RELEASED", LTRIM$(STR$(this&))
-        SetTag CycleC$, "SHORTCUT", "true"
-        SetTag CycleC$, "MOUSESCROLL", "true"
+        SetTag CycleRes$, "RELEASED", LTRIM$(STR$(this&))
+        SetTag CycleRes$, "SHORTCUT", "true"
+        SetTag CycleRes$, "MOUSESCROLL", "true"
     END IF
 END IF
 RETURN

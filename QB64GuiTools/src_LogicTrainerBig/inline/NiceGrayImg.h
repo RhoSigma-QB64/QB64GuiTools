@@ -88,7 +88,7 @@ static const unsigned int8 NiceGrayImgB[] = {
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.
 // ---------------------------------------------------------------------
-char NiceGrayImgName[1056]; // (MAX_PATH * 4) + 16
+char NiceGrayImgName[8192]; // it's a safe size for any current OS
 
 // --- Cleanup function to delete the written file, called by the atexit()
 // --- handler at program termination time, if requested by user.
@@ -107,7 +107,11 @@ const char *WriteNiceGrayImgData(const char *FileName, int16 AutoClean)
     FILE *han = NULL; // file handle
     int32 num = NULL; // written elements
 
-    if (!_fullpath(NiceGrayImgName, FileName, 1056)) return "";
+    #ifdef QB64_WINDOWS
+    if (!_fullpath(NiceGrayImgName, FileName, 8192)) return "";
+    #else
+    if (!realpath(FileName, NiceGrayImgName)) return "";
+    #endif
 
     if (!(han = fopen(NiceGrayImgName, "wb"))) return "";
     if (AutoClean) atexit(KillNiceGrayImgData);

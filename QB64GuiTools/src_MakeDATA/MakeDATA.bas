@@ -570,6 +570,7 @@ res$ = GenC$("SET", OutputState$ + NewTag$("TEXT", "converting"))
 fl& = LOF(1)
 cntL& = INT(fl& / 32)
 cntB& = (fl& - (cntL& * 32))
+
 '--- .bm include file ---
 OPEN "O", #2, tarPath$ + tar$
 PRINT #2, "'============================================================"
@@ -579,30 +580,44 @@ IF packed% THEN
     PRINT #2, "'=== ---------------------------------------------------- ==="
     PRINT #2, "'=== If your program is NOT a GuiTools based application, ==="
     PRINT #2, "'=== then it must also $INCLUDE: 'lzwpacker.bm' available ==="
-    PRINT #2, "'=== from http://www.qb64.org/forum/index.php?topic=783.0 ==="
+    PRINT #2, "'=== from the Libraries Collection here:                  ==="
+    PRINT #2, "'===    https://www.qb64.org/forum/index.php?topic=809    ==="
 END IF
 PRINT #2, "'============================================================"
 PRINT #2, ""
-PRINT #2, "'====================================================================="
-PRINT #2, "'Function to write the embedded DATAs back to disk. Call this FUNCTION"
-PRINT #2, "'once, before you will access the represented file for the first time."
-PRINT #2, "'After the call always use the returned realFile$ ONLY to access the"
-PRINT #2, "'written file, as the filename was maybe altered in order to avoid the"
-PRINT #2, "'overwriting of an existing file of the same name in the given location."
+'--- writeback function ---
+PRINT #2, "'"; STRING$(LEN(tarName$) + 18, "-")
+PRINT #2, "'--- Write"; tarName$; "Data$ ---"
+PRINT #2, "'"; STRING$(LEN(tarName$) + 18, "-")
+PRINT #2, "' This function will write the DATAs you've created with MakeDATA.bas"
+PRINT #2, "' back to disk and so it rebuilds the original file."
+PRINT #2, "'"
+PRINT #2, "' After the writeback call, only use the returned realFile$ to access the"
+PRINT #2, "' written file. It's your given path, but with an maybe altered filename"
+PRINT #2, "' (number added) in order to avoid the overwriting of an already existing"
+PRINT #2, "' file with the same name in the given location."
+PRINT #2, "'----------"
+PRINT #2, "' SYNTAX:"
+PRINT #2, "'   realFile$ = Write"; tarName$; "Data$ (wantFile$)"
+PRINT #2, "'----------"
+PRINT #2, "' INPUTS:"
+PRINT #2, "'   --- wantFile$ ---"
+PRINT #2, "'    The filename you would like to write the DATAs to, can contain"
+PRINT #2, "'    a full or relative path."
+PRINT #2, "'----------"
+PRINT #2, "' RESULT:"
+PRINT #2, "'   --- realFile$ ---"
+PRINT #2, "'    - On success this is the path and filename finally used after all"
+PRINT #2, "'      applied checks, use only this returned filename to access the"
+PRINT #2, "'      written file."
+PRINT #2, "'    - On failure this function will panic with the appropriate runtime"
+PRINT #2, "'      error code which you may trap and handle as needed with your own"
+PRINT #2, "'      ON ERROR GOTO... handler."
 PRINT #2, "'---------------------------------------------------------------------"
-PRINT #2, "'SYNTAX: realFile$ = Write"; tarName$; "Data$ (wantFile$)"
-PRINT #2, "'"
-PRINT #2, "'INPUTS: wantFile$ --> The filename you would like to write the DATAs"
-PRINT #2, "'                      to, can contain a full or relative path."
-PRINT #2, "'"
-PRINT #2, "'RESULT: realFile$ --> On success the path and filename finally used"
-PRINT #2, "'                      after applied checks, use ONLY this returned"
-PRINT #2, "'                      name to access the file."
-PRINT #2, "'                   -> On failure this FUNCTION will panic with the"
-PRINT #2, "'                      appropriate ERROR code, you may handle this as"
-PRINT #2, "'                      needed with your own ON ERROR GOTO... handler."
-PRINT #2, "'====================================================================="
 PRINT #2, "FUNCTION Write"; tarName$; "Data$ (file$)"
+PRINT #2, "'--- option _explicit requirements ---"
+PRINT #2, "DIM po%, body$, ext$, num%, numL&, numB&, rawdata$, stroffs&, i&, dat&, ff%";
+IF packed% THEN PRINT #2, ", filedata$": ELSE PRINT #2, ""
 PRINT #2, "'--- separate filename body & extension ---"
 PRINT #2, "FOR po% = LEN(file$) TO 1 STEP -1"
 PRINT #2, "    IF MID$(file$, po%, 1) = "; CHR$(34); "."; CHR$(34); " THEN"
@@ -695,9 +710,9 @@ IF cntB& > 0 THEN
     NEXT x%
     PRINT #2, ""
 END IF
-'--- ending ---
 PRINT #2, "END FUNCTION"
 PRINT #2, ""
+'--- ending ---
 CLOSE #2
 CLOSE #1
 '--- finish message ---

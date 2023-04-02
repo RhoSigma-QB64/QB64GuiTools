@@ -214,8 +214,8 @@ void EndDirRead(ptrszint dirHandle) {
 int16 RegexMatch(const char *qbStr, const char *qbRegex) {
     #ifdef GTREGEX
     int16 result;
-    try {result = regex_match(qbStr, regex(qbRegex));}
-    catch (const regex_error& e) {result = ~e.code();}
+    try {result = regex_match(qbStr, std::regex(qbRegex));}
+    catch (const std::regex_error& e) {result = ~e.code();}
     return result;
     #else
     return 1; // regex support disabled, simulate a "match all"
@@ -234,19 +234,19 @@ const char *RegexError(int16 errCode) {
         case -2: {return "No error, it was a positive RegEx match."; break;}
         case -1: {return "No error, the RegEx just didn't match."; break;}
         // and now the real errors known to the regex library
-        case regex_constants::error_collate: {return "RegEx has an invalid collating element name."; break;}
-        case regex_constants::error_ctype: {return "RegEx has an invalid character class name."; break;}
-        case regex_constants::error_escape: {return "RegEx has an invalid escaped character, or a trailing escape."; break;}
-        case regex_constants::error_backref: {return "RegEx has an invalid back reference."; break;}
-        case regex_constants::error_brack: {return "RegEx has mismatched brackets [ and ]."; break;}
-        case regex_constants::error_paren: {return "RegEx has mismatched parentheses ( and )."; break;}
-        case regex_constants::error_brace: {return "RegEx has mismatched braces { and }."; break;}
-        case regex_constants::error_badbrace: {return "RegEx has an invalid range between braces { and }."; break;}
-        case regex_constants::error_range: {return "RegEx has an invalid character range."; break;}
-        case regex_constants::error_space: {return "Out of memory while converting RegEx into a finite state machine."; break;}
-        case regex_constants::error_badrepeat: {return "RegEx has a repeat specifier, one of *?+{, that was not preceded by a valid token."; break;}
-        case regex_constants::error_complexity: {return "Complexity of an attempted match exceeded a pre-set level."; break;}
-        case regex_constants::error_stack: {return "Out of memory while trying to match the specified string."; break;}
+        case std::regex_constants::error_collate: {return "RegEx has an invalid collating element name."; break;}
+        case std::regex_constants::error_ctype: {return "RegEx has an invalid character class name."; break;}
+        case std::regex_constants::error_escape: {return "RegEx has an invalid escaped character, or a trailing escape."; break;}
+        case std::regex_constants::error_backref: {return "RegEx has an invalid back reference."; break;}
+        case std::regex_constants::error_brack: {return "RegEx has mismatched brackets [ and ]."; break;}
+        case std::regex_constants::error_paren: {return "RegEx has mismatched parentheses ( and )."; break;}
+        case std::regex_constants::error_brace: {return "RegEx has mismatched braces { and }."; break;}
+        case std::regex_constants::error_badbrace: {return "RegEx has an invalid range between braces { and }."; break;}
+        case std::regex_constants::error_range: {return "RegEx has an invalid character range."; break;}
+        case std::regex_constants::error_space: {return "Out of memory while converting RegEx into a finite state machine."; break;}
+        case std::regex_constants::error_badrepeat: {return "RegEx has a repeat specifier, one of *?+{, that was not preceded by a valid token."; break;}
+        case std::regex_constants::error_complexity: {return "Complexity of an attempted match exceeded a pre-set level."; break;}
+        case std::regex_constants::error_stack: {return "Out of memory while trying to match the specified string."; break;}
         // everything else is unknown
         default: {return "Unknown RegEx error."; break;}
     }
