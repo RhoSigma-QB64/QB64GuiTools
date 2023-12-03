@@ -212,7 +212,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 1024, 768, 0
-appCR$ = "The GuiTools Framework v0.16, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.17, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------
@@ -1451,7 +1451,7 @@ WEND
 '--- Who did it? ---
 IF BoolTagTrue%(abou$, "CHECKED") THEN
     dummy$ = MessageBox$("", "About",_
-                         "The GuiTools Framework v0.16|" +_
+                         "The GuiTools Framework v0.17|" +_
                          "Done by RhoSigma, Roland Heyder|~" +_
                          "Thanx for your interest in my work.",_
                          "{SYM RhoSigma * 10 * 2}It's been a pleasure!")
@@ -1492,21 +1492,21 @@ dummy$ = GenC$("KILL", RedCrossSym$) 'no longer needed
 RETURN
 '----------
 RefreshSizeGaugePage3:
-widt% = VAL(GetTagData$(GenC$("GET", EndingSlider1$ + NewTag$("TAGNAMES", "LEVEL")), "LEVEL", "250"))
-heig% = VAL(GetTagData$(GenC$("GET", EndingSlider2$ + NewTag$("TAGNAMES", "LEVEL")), "LEVEL", "175"))
+widt% = VAL(GetObjTagData$(EndingSlider1$, "LEVEL", "250"))
+heig% = VAL(GetObjTagData$(EndingSlider2$, "LEVEL", "175"))
 perc% = 100 / (250 * 175) * (widt% * heig%)
 dummy$ = GenC$("SET", EndingGauge$ + NewTag$("LEVEL", LTRIM$(STR$(perc%))))
 RETURN
 '----------
 RefreshColorGaugePage5:
-pRed% = VAL(GetTagData$(GenC$("GET", PalRGBSliderR$ + NewTag$("TAGNAMES", "LEVEL")), "LEVEL", "0"))
-pGre% = VAL(GetTagData$(GenC$("GET", PalRGBSliderG$ + NewTag$("TAGNAMES", "LEVEL")), "LEVEL", "0"))
-pBlu% = VAL(GetTagData$(GenC$("GET", PalRGBSliderB$ + NewTag$("TAGNAMES", "LEVEL")), "LEVEL", "0"))
+pRed% = VAL(GetObjTagData$(PalRGBSliderR$, "LEVEL", "0"))
+pGre% = VAL(GetObjTagData$(PalRGBSliderG$, "LEVEL", "0"))
+pBlu% = VAL(GetObjTagData$(PalRGBSliderB$, "LEVEL", "0"))
 _PALETTECOLOR 255, _RGB32(pRed%, pGre%, pBlu%)
 RETURN
 '----------
 RefreshScrollImagePage6:
-IF BoolTagTrue%(GenC$("GET", Page6$ + NewTag$("TAGNAMES", "ACTIVE")), "ACTIVE") THEN
+IF BoolTagTrue%(GenC$("GET", Page6$), "ACTIVE") THEN
     IF guiViews$(0) = "" THEN
         COLOR guiTextPen%, guiBackPen%
         _PRINTSTRING (620, 615), "+---------------------------------+"
@@ -1515,20 +1515,20 @@ IF BoolTagTrue%(GenC$("GET", Page6$ + NewTag$("TAGNAMES", "ACTIVE")), "ACTIVE") 
         dummy$ = GenC$("SET", ScrImgScrollerH$ + NewTag$("TOTALNUM", "0"))
         dummy$ = GenC$("SET", ScrImgScrollerV$ + NewTag$("TOTALNUM", "0"))
     ELSE
-        imag& = VAL(GetTagData$(GenC$("GET", ObjectTag$(guiViews$(0), "BGIMG") + NewTag$("TAGNAMES", "RHANDLE")), "RHANDLE", "-1"))
+        imag& = VAL(GetObjTagData$(ObjectTag$(guiViews$(0), "BGIMG"), "RHANDLE", "-1"))
         dummy$ = GenC$("SET", ScrImgScrollerH$ + NewTag$("TOTALNUM", LTRIM$(STR$(_WIDTH(imag&)))))
         dummy$ = GenC$("SET", ScrImgScrollerV$ + NewTag$("TOTALNUM", LTRIM$(STR$(_HEIGHT(imag&)))))
-        htop% = VAL(GetTagData$(GenC$("GET", ScrImgScrollerH$ + NewTag$("TAGNAMES", "TOPNUM")), "TOPNUM", "0"))
-        vtop% = VAL(GetTagData$(GenC$("GET", ScrImgScrollerV$ + NewTag$("TAGNAMES", "TOPNUM")), "TOPNUM", "0"))
+        htop% = VAL(GetObjTagData$(ScrImgScrollerH$, "TOPNUM", "0"))
+        vtop% = VAL(GetObjTagData$(ScrImgScrollerV$, "TOPNUM", "0"))
         _PUTIMAGE (548, 559), imag&, _DEST, (htop%, vtop%)-(419 + htop% - 1, 164 + vtop% - 1)
     END IF
 END IF
 RETURN
 '----------
 RefreshSelectionDisplaysPage7:
-lv1$ = GetTagData$(GenC$("GET", MultiLVwithIMG$ + NewTag$("TAGNAMES", "DATA")), "DATA", "")
-lv2$ = GetTagData$(GenC$("GET", MultiLVPlain$ + NewTag$("TAGNAMES", "DATA")), "DATA", "")
-ra1$ = GetTagData$(GenC$("GET", MultiRadio1$ + NewTag$("TAGNAMES", "DATA")), "DATA", "")
+lv1$ = GetObjTagData$(MultiLVwithIMG$, "DATA", "")
+lv2$ = GetObjTagData$(MultiLVPlain$, "DATA", "")
+ra1$ = GetObjTagData$(MultiRadio1$, "DATA", "")
 dummy$ = GenC$("SET", MultiTextLVI$ + NewTag$("TEXT", lv1$))
 dummy$ = GenC$("SET", MultiTextLVP$ + NewTag$("TEXT", lv2$))
 dummy$ = GenC$("SET", MultiTextRAD$ + NewTag$("TEXT", ra1$))
@@ -1562,6 +1562,11 @@ IF UCASE$(ShowErrSwitch$) = "ON" THEN
                              "{IMG Problem16px.png 39}Ok, got it...")
     END IF
 END IF
+END FUNCTION
+'--- Function to define/return the program's version string.
+'-----
+FUNCTION VersionGuiAppDemo$
+VersionGuiAppDemo$ = MID$("$VER: GuiAppDemo 4.0 (06-Apr-2018) by RhoSigma :END$", 7, 40)
 END FUNCTION
 '~~~~~
 '=====================================================================
@@ -1648,7 +1653,7 @@ _SCREENHIDE
 IF appIcon& < -1 THEN _FREEIMAGE appIcon&: appIcon& = -1
 '--- free the font (if any) and invalidate its handle ---
 _FONT 16
-IF appFont& > 0 THEN _FREEFONT appFont&: appFont& = 0
+IF appFont& > 0 AND guiPGVCount% = 0 THEN _FREEFONT appFont&: appFont& = 0
 '--- free the screen and invalidate its handle ---
 SCREEN 0
 IF appScreen& < -1 THEN _FREEIMAGE appScreen&: appScreen& = -1

@@ -53,6 +53,17 @@ static const uint8_t UkFlagImgB[] = {
     0x59,0xE4,0x9C,0x74,0xD6,0x69,0xE7,0x9D,0x75,0x06,0x04,0x00,0x3B
 };
 
+// --- Function to copy the array(s) into the provided string buffer.
+// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient.
+// ---------------------------------------------------------------------
+void ReadUkFlagImgData(char *Buffer)
+{
+    memcpy(Buffer, &UkFlagImgL0[1], UkFlagImgL0[0] << 2);
+    Buffer += (UkFlagImgL0[0] << 2);
+
+    memcpy(Buffer, &UkFlagImgB[1], UkFlagImgB[0]);
+}
+
 // --- Saved full qualified output path and filename, so we've no troubles
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.

@@ -472,6 +472,17 @@ static const uint8_t MarbleImgB[] = {
     0x24,0xDB,0x2D,0x36,0xF5,0x3D,0xB7,0x60,0xFF,0xD9
 };
 
+// --- Function to copy the array(s) into the provided string buffer.
+// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient.
+// ---------------------------------------------------------------------
+void ReadMarbleImgData(char *Buffer)
+{
+    memcpy(Buffer, &MarbleImgL0[1], MarbleImgL0[0] << 2);
+    Buffer += (MarbleImgL0[0] << 2);
+
+    memcpy(Buffer, &MarbleImgB[1], MarbleImgB[0]);
+}
+
 // --- Saved full qualified output path and filename, so we've no troubles
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.

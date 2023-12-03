@@ -209,7 +209,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 460, 345, 0
-appCR$ = "The GuiTools Framework v0.16, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.17, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------
@@ -513,6 +513,11 @@ IF UCASE$(ShowErrSwitch$) = "ON" THEN
     END IF
 END IF
 END FUNCTION
+'--- Function to define/return the program's version string.
+'-----
+FUNCTION VersionMultiWinDemo$
+VersionMultiWinDemo$ = MID$("$VER: MultiWinDemo 1.0 (28-May-2020) by RhoSigma :END$", 7, 42)
+END FUNCTION
 '~~~~~
 '=====================================================================
 '=============== END OF USER GOSUB/SUB/FUNCTION AREA =================
@@ -598,7 +603,7 @@ _SCREENHIDE
 IF appIcon& < -1 THEN _FREEIMAGE appIcon&: appIcon& = -1
 '--- free the font (if any) and invalidate its handle ---
 _FONT 16
-IF appFont& > 0 THEN _FREEFONT appFont&: appFont& = 0
+IF appFont& > 0 AND guiPGVCount% = 0 THEN _FREEFONT appFont&: appFont& = 0
 '--- free the screen and invalidate its handle ---
 SCREEN 0
 IF appScreen& < -1 THEN _FREEIMAGE appScreen&: appScreen& = -1

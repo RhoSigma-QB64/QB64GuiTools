@@ -88,6 +88,17 @@ static const uint8_t GuiAppIconB[] = {
     0x4E,0x44,0xAE,0x42,0x60,0x82
 };
 
+// --- Function to copy the array(s) into the provided string buffer.
+// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient.
+// ---------------------------------------------------------------------
+void ReadGuiAppIconData(char *Buffer)
+{
+    memcpy(Buffer, &GuiAppIconL0[1], GuiAppIconL0[0] << 2);
+    Buffer += (GuiAppIconL0[0] << 2);
+
+    memcpy(Buffer, &GuiAppIconB[1], GuiAppIconB[0]);
+}
+
 // --- Saved full qualified output path and filename, so we've no troubles
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.

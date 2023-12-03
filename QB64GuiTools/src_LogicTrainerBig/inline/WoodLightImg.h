@@ -116,6 +116,17 @@ static const uint8_t WoodLightImgB[] = {
     0xD9
 };
 
+// --- Function to copy the array(s) into the provided string buffer.
+// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient.
+// ---------------------------------------------------------------------
+void ReadWoodLightImgData(char *Buffer)
+{
+    memcpy(Buffer, &WoodLightImgL0[1], WoodLightImgL0[0] << 2);
+    Buffer += (WoodLightImgL0[0] << 2);
+
+    memcpy(Buffer, &WoodLightImgB[1], WoodLightImgB[0]);
+}
+
 // --- Saved full qualified output path and filename, so we've no troubles
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.

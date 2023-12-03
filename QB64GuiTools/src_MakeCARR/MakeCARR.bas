@@ -20,14 +20,15 @@
 '| === MakeCARR.bas ===                                              |
 '|                                                                   |
 '| == Create a C/C++ array out of the given file, so you can embed   |
-'| == it in your program and write it back when needed.              |
+'| == it into your program and read it or write it back when needed. |
 '|                                                                   |
 '| == Two files are created, the .h file, which contains the array(s)|
 '| == and some functions, and a respective .bm file which needs to   |
-'| == be $INCLUDEd with your program and does provide the FUNCTION   |
-'| == to write back the array(s) into any file. All used functions   |
-'| == are standard library calls, no API calls are involved, so the  |
-'| == writeback should work on all QB64 supported platforms.         |
+'| == be $INCLUDEd with your program and does provide the FUNCTIONs  |
+'| == to read the array(s) into a string or write them back into any |
+'| == file. All used functions are standard library calls, no API    |
+'| == calls are involved, so the read and writeback should work on   |
+'| == all QB64 supported platforms.                                  |
 '|                                                                   |
 '| == Make sure to adjust the path for the .h file for your personal |
 '| == needs in the created .bm files (DECLARE LIBRARY), if required. |
@@ -223,7 +224,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 480, 313, 0
-appCR$ = "Convert File to C-Array v1.1, Done by RhoSigma, Roland Heyder"
+appCR$ = "Convert File to C-Array v2.0, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - " + appCR$
 
 '------------------------------
@@ -352,7 +353,7 @@ InputRatio$ = SliderC$("INIT",_
         NewTag$("IMAGEFILE", "PaperGray.jpg") +_
         NewTag$("AREA", "on") +_
         NewTag$("DISABLED", LTRIM$(STR$(NOT use%))) +_
-        NewTag$("TOOLTIP", "If packing gives less ratio than this, then|convert it unpacked and rather save the|time required for unpacking at writeback."))
+        NewTag$("TOOLTIP", "If packing gives less ratio than this,|then convert it unpacked, so you can|rather save the time for unpacking."))
 UseLzw$ = CheckboxC$("INIT",_
         NewTag$("LEFT", "434") +_
         NewTag$("TOP", "150") +_
@@ -534,6 +535,11 @@ IF UCASE$(ShowErrSwitch$) = "ON" THEN
     END IF
 END IF
 END FUNCTION
+'--- Function to define/return the program's version string.
+'-----
+FUNCTION VersionMakeCARR$
+VersionMakeCARR$ = MID$("$VER: MakeCARR 2.0 (26-Oct-2023) by RhoSigma :END$", 7, 38)
+END FUNCTION
 '---------------------------------------------------------------------
 'Convert the selected file into a C-Array, the return value indicates
 'whether to auto-reset the file input fields after the call or not.
@@ -693,6 +699,23 @@ IF cntB& > 0 THEN
     PRINT #2, ""
 END IF
 '--- some functions ---
+PRINT #2, "// --- Function to copy the array(s) into the provided string buffer."
+PRINT #2, "// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient."
+PRINT #2, "// ---------------------------------------------------------------------"
+PRINT #2, "void Read"; hdrName$; "Data(char *Buffer)"
+PRINT #2, "{"
+FOR vc& = 0 TO cntV&
+    PRINT #2, "    memcpy(Buffer, &"; hdrName$; "L"; LTRIM$(STR$(vc&)); "[1], "; hdrName$; "L"; LTRIM$(STR$(vc&)); "[0] << 2);"
+    IF vc& < cntV& OR cntB& > 0 THEN
+        PRINT #2, "    Buffer += ("; hdrName$; "L"; LTRIM$(STR$(vc&)); "[0] << 2);"
+        PRINT #2, ""
+    END IF
+NEXT vc&
+IF cntB& > 0 THEN
+    PRINT #2, "    memcpy(Buffer, &"; hdrName$; "B[1], "; hdrName$; "B[0]);"
+END IF
+PRINT #2, "}"
+PRINT #2, ""
 PRINT #2, "// --- Saved full qualified output path and filename, so we've no troubles"
 PRINT #2, "// --- when cleaning up, even if the current working folder was changed"
 PRINT #2, "// --- during program runtime."
@@ -766,6 +789,48 @@ PRINT #2, "' statement below does match the actual .h file location. It's best t
 PRINT #2, "' specify a relative path assuming your QB64 installation folder as root."
 PRINT #2, "'---------------------------------------------------------------------"
 PRINT #2, ""
+PRINT #2, "'--- declare C/C++ functions ---"
+tmp$ = hdrPath$ + FileNamePart$(hdr$)
+IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
+    IF LEFT$(tmp$, LEN(CurrDIR$)) = CurrDIR$ THEN tmp$ = MID$(tmp$, LEN(CurrDIR$) + 2)
+END IF
+PRINT #2, "DECLARE LIBRARY "; CHR$(34); tmp$; CHR$(34); " 'Do not add .h here !!"
+PRINT #2, "    SUB Read"; hdrName$; "Data (StrBuf$)"
+PRINT #2, "    FUNCTION Write"; hdrName$; "Data$ (FileName$, BYVAL AutoClean%)"
+PRINT #2, "END DECLARE"
+PRINT #2, ""
+'--- read function ---
+PRINT #2, "'"; STRING$(LEN(tarName$) + 18, "-")
+PRINT #2, "'--- Read"; tarName$; "Array$ ---"
+PRINT #2, "'"; STRING$(LEN(tarName$) + 18, "-")
+PRINT #2, "' This function will read the array(s) you've created with MakeCARR.bas"
+PRINT #2, "' into a string, no data will be written to disk. If you rather wanna"
+PRINT #2, "' rebuild the original file on disk, then use the write function below."
+PRINT #2, "'"
+PRINT #2, "' You may directly pass the returned string to _SNDOPEN, _LOADIMAGE or"
+PRINT #2, "' _LOADFONT when using the memory load capabilities of these commands."
+PRINT #2, "'----------"
+PRINT #2, "' SYNTAX:"
+PRINT #2, "'   arrData$ = Read"; tarName$; "Array$"
+PRINT #2, "'----------"
+PRINT #2, "' RESULT:"
+PRINT #2, "'   --- arrData$ ---"
+PRINT #2, "'    The data of the embedded file. This is in fact the same as if you"
+PRINT #2, "'    had opend the file and read its entire content into a single string."
+PRINT #2, "'---------------------------------------------------------------------"
+PRINT #2, "FUNCTION Read"; tarName$; "Array$"
+PRINT #2, "'--- option _explicit requirements ---"
+PRINT #2, "DIM temp$"
+PRINT #2, "'--- get array & set result ---"
+PRINT #2, "temp$ = SPACE$("; LTRIM$(STR$(fl&)); ") 'Do not change this number !!"
+PRINT #2, "Read"; hdrName$; "Data temp$"
+IF NOT packed% THEN
+    PRINT #2, "Read"; tarName$; "Array$ = temp$"
+ELSE
+    PRINT #2, "Read"; tarName$; "Array$ = LzwUnpack$(temp$)"
+END IF
+PRINT #2, "END FUNCTION"
+PRINT #2, ""
 '--- writeback function ---
 PRINT #2, "'"; STRING$(LEN(tarName$) + 19, "-")
 PRINT #2, "'--- Write"; tarName$; "Array$ ---"
@@ -804,14 +869,6 @@ PRINT #2, "'    - On failure (write/access) this will be an empty string, so you
 PRINT #2, "'      should check for this before trying to access/open the file."
 PRINT #2, "'---------------------------------------------------------------------"
 PRINT #2, "FUNCTION Write"; tarName$; "Array$ (file$, clean%)"
-PRINT #2, "'--- declare C/C++ function ---"
-tmp$ = hdrPath$ + FileNamePart$(hdr$)
-IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
-    IF LEFT$(tmp$, LEN(CurrDIR$)) = CurrDIR$ THEN tmp$ = MID$(tmp$, LEN(CurrDIR$) + 2)
-END IF
-PRINT #2, "DECLARE LIBRARY "; CHR$(34); tmp$; CHR$(34); " 'Do not add .h here !!"
-PRINT #2, "    FUNCTION Write"; hdrName$; "Data$ (FileName$, BYVAL AutoClean%)"
-PRINT #2, "END DECLARE"
 PRINT #2, "'--- option _explicit requirements ---"
 PRINT #2, "DIM po%, body$, ext$, num%";
 IF packed% THEN PRINT #2, ", real$, ff%, rawdata$, filedata$": ELSE PRINT #2, ""
@@ -870,7 +927,7 @@ ELSE
 END IF
 ok$ = MessageBox$("Info16px.png", "Information !!", tmp$ +_
      IndexFormat$("Have a look into the created file (0{&})|", tar$, CHR$(0)) +_
-                  "to learn how to write the Array back into a file.",_
+                  "to learn about the available options to read or write|back the embedded data.",_
                   "{SYM Checkmark * * * *}")
 END FUNCTION
 '~~~~~
@@ -958,7 +1015,7 @@ _SCREENHIDE
 IF appIcon& < -1 THEN _FREEIMAGE appIcon&: appIcon& = -1
 '--- free the font (if any) and invalidate its handle ---
 _FONT 16
-IF appFont& > 0 THEN _FREEFONT appFont&: appFont& = 0
+IF appFont& > 0 AND guiPGVCount% = 0 THEN _FREEFONT appFont&: appFont& = 0
 '--- free the screen and invalidate its handle ---
 SCREEN 0
 IF appScreen& < -1 THEN _FREEIMAGE appScreen&: appScreen& = -1

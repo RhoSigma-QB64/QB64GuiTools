@@ -595,6 +595,11 @@ IF UCASE$(ShowErrSwitch$) = "ON" THEN
     END IF
 END IF
 END FUNCTION
+'--- Function to define/return the program's version string.
+'-----
+FUNCTION VersionLogicTrainer$
+VersionLogicTrainer$ = MID$("$VER: LogicTrainer 1.0 (16-Sep-2019) by RhoSigma :END$", 7, 42)
+END FUNCTION
 '-----
 FUNCTION RangeRand% (low%, high%)
 RangeRand% = INT(RND(1) * (high% - low% + 1)) + low%
@@ -684,7 +689,7 @@ _SCREENHIDE
 IF appIcon& < -1 THEN _FREEIMAGE appIcon&: appIcon& = -1
 '--- free the font (if any) and invalidate its handle ---
 _FONT 16
-IF appFont& > 0 THEN _FREEFONT appFont&: appFont& = 0
+IF appFont& > 0 AND guiPGVCount% = 0 THEN _FREEFONT appFont&: appFont& = 0
 '--- free the screen and invalidate its handle ---
 SCREEN 0
 IF appScreen& < -1 THEN _FREEIMAGE appScreen&: appScreen& = -1

@@ -20,11 +20,11 @@
 '| === MakeDATA.bas ===                                              |
 '|                                                                   |
 '| == Create a DATA block out of the given file, so you can embed it |
-'| == in your program and write it back when needed.                 |
+'| == into your program and read it or write it back when needed.    |
 '|                                                                   |
-'| == The DATAs are written into a .bm file together with a ready to |
-'| == use write back FUNCTION. You just $INCLUDE this .bm file into  |
-'| == your program and call the write back FUNCTION somewhere.       |
+'| == The DATAs are written into a .bm file together with ready to   |
+'| == use read and write back FUNCTIONs. You just $INCLUDE this .bm  |
+'| == file into your program and call the desired FUNCTION somewhere.|
 '|                                                                   |
 '+-------------------------------------------------------------------+
 '| Done by RhoSigma, R.Heyder, provided AS IS, use at your own risk. |
@@ -217,7 +217,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 480, 273, 0
-appCR$ = "Convert File to DATAs v1.1, Done by RhoSigma, Roland Heyder"
+appCR$ = "Convert File to DATAs v2.0, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - " + appCR$
 
 '------------------------------
@@ -323,7 +323,7 @@ InputRatio$ = SliderC$("INIT",_
         NewTag$("IMAGEFILE", "PaperGray.jpg") +_
         NewTag$("AREA", "on") +_
         NewTag$("DISABLED", LTRIM$(STR$(NOT use%))) +_
-        NewTag$("TOOLTIP", "If packing gives less ratio than this, then|convert it unpacked and rather save the|time required for unpacking at writeback."))
+        NewTag$("TOOLTIP", "If packing gives less ratio than this,|then convert it unpacked, so you can|rather save the time for unpacking."))
 UseLzw$ = CheckboxC$("INIT",_
         NewTag$("LEFT", "434") +_
         NewTag$("TOP", "110") +_
@@ -505,6 +505,11 @@ IF UCASE$(ShowErrSwitch$) = "ON" THEN
     END IF
 END IF
 END FUNCTION
+'--- Function to define/return the program's version string.
+'-----
+FUNCTION VersionMakeDATA$
+VersionMakeDATA$ = MID$("$VER: MakeDATA 2.0 (26-Oct-2023) by RhoSigma :END$", 7, 38)
+END FUNCTION
 '---------------------------------------------------------------------
 'Convert the selected file into DATAs, the return value indicates
 'whether to auto-reset the file input fields after the call or not.
@@ -584,6 +589,50 @@ IF packed% THEN
     PRINT #2, "'=== http://qb64phoenix.com/forum/forumdisplay.php?fid=23 ==="
 END IF
 PRINT #2, "'============================================================"
+PRINT #2, ""
+'--- read function ---
+PRINT #2, "'"; STRING$(LEN(tarName$) + 17, "-")
+PRINT #2, "'--- Read"; tarName$; "Data$ ---"
+PRINT #2, "'"; STRING$(LEN(tarName$) + 17, "-")
+PRINT #2, "' This function will read the DATAs you've created with MakeDATA.bas"
+PRINT #2, "' into a string, no data will be written to disk. If you rather wanna"
+PRINT #2, "' rebuild the original file on disk, then use the write function below."
+PRINT #2, "'"
+PRINT #2, "' You may directly pass the returned string to _SNDOPEN, _LOADIMAGE or"
+PRINT #2, "' _LOADFONT when using the memory load capabilities of these commands."
+PRINT #2, "'----------"
+PRINT #2, "' SYNTAX:"
+PRINT #2, "'   dataStr$ = Read"; tarName$; "Data$"
+PRINT #2, "'----------"
+PRINT #2, "' RESULT:"
+PRINT #2, "'   --- dataStr$ ---"
+PRINT #2, "'    The data of the embedded file. This is in fact the same as if you"
+PRINT #2, "'    had opend the file and read its entire content into a single string."
+PRINT #2, "'---------------------------------------------------------------------"
+PRINT #2, "FUNCTION Read"; tarName$; "Data$"
+PRINT #2, "'--- option _explicit requirements ---"
+PRINT #2, "DIM numL&, numB&, rawdata$, stroffs&, i&, dat&"
+PRINT #2, "'--- read DATAs ---"
+PRINT #2, "RESTORE "; tarName$
+PRINT #2, "READ numL&, numB&"
+PRINT #2, "rawdata$ = SPACE$((numL& * 4) + numB&)"
+PRINT #2, "stroffs& = 1"
+PRINT #2, "FOR i& = 1 TO numL&"
+PRINT #2, "    READ dat&"
+PRINT #2, "    MID$(rawdata$, stroffs&, 4) = MKL$(dat&)"
+PRINT #2, "    stroffs& = stroffs& + 4"
+PRINT #2, "NEXT i&"
+PRINT #2, "IF numB& > 0 THEN"
+PRINT #2, "    FOR i& = 1 TO numB&"
+PRINT #2, "        READ dat&"
+PRINT #2, "        MID$(rawdata$, stroffs&, 1) = CHR$(dat&)"
+PRINT #2, "        stroffs& = stroffs& + 1"
+PRINT #2, "    NEXT i&"
+PRINT #2, "END IF"
+PRINT #2, "'--- set result ---"
+PRINT #2, "Read"; tarName$; "Data$ = ";
+IF packed% THEN PRINT #2, "LzwUnpack$(rawdata$)": ELSE PRINT #2, "rawdata$"
+PRINT #2, "END FUNCTION"
 PRINT #2, ""
 '--- writeback function ---
 PRINT #2, "'"; STRING$(LEN(tarName$) + 18, "-")
@@ -731,7 +780,7 @@ ELSE
 END IF
 ok$ = MessageBox$("Info16px.png", "Information !!", tmp$ +_
      IndexFormat$("Have a look into the created file (0{&})|", tar$, CHR$(0)) +_
-                  "to learn how to write the DATAs back into a file.",_
+                  "to learn about the available options to read or write|back the embedded data.",_
                   "{SYM Checkmark * * * *}")
 END FUNCTION
 '~~~~~
@@ -819,7 +868,7 @@ _SCREENHIDE
 IF appIcon& < -1 THEN _FREEIMAGE appIcon&: appIcon& = -1
 '--- free the font (if any) and invalidate its handle ---
 _FONT 16
-IF appFont& > 0 THEN _FREEFONT appFont&: appFont& = 0
+IF appFont& > 0 AND guiPGVCount% = 0 THEN _FREEFONT appFont&: appFont& = 0
 '--- free the screen and invalidate its handle ---
 SCREEN 0
 IF appScreen& < -1 THEN _FREEIMAGE appScreen&: appScreen& = -1

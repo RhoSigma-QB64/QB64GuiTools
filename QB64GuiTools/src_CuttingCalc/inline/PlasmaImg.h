@@ -49,6 +49,17 @@ static const uint8_t PlasmaImgB[] = {
     0x3F,0x0F,0xBE,0x08,0xB0,0xFF,0xD9
 };
 
+// --- Function to copy the array(s) into the provided string buffer.
+// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient.
+// ---------------------------------------------------------------------
+void ReadPlasmaImgData(char *Buffer)
+{
+    memcpy(Buffer, &PlasmaImgL0[1], PlasmaImgL0[0] << 2);
+    Buffer += (PlasmaImgL0[0] << 2);
+
+    memcpy(Buffer, &PlasmaImgB[1], PlasmaImgB[0]);
+}
+
 // --- Saved full qualified output path and filename, so we've no troubles
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.

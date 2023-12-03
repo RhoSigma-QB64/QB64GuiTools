@@ -1073,16 +1073,16 @@ res$ = GenC$("KILL", SectLView$): SectLView$ = ""
 RETURN
 '----------------------------------
 ChangePalette:
-col% = VAL(GetTagData$(GenC$("GET", PalColor$ + NewTag$("TAGNAMES", "LEVEL")), "LEVEL", "0"))
-red% = VAL(GetTagData$(GenC$("GET", PalRGBSliderR$ + NewTag$("TAGNAMES", "LEVEL")), "LEVEL", "0"))
-gre% = VAL(GetTagData$(GenC$("GET", PalRGBSliderG$ + NewTag$("TAGNAMES", "LEVEL")), "LEVEL", "0"))
-blu% = VAL(GetTagData$(GenC$("GET", PalRGBSliderB$ + NewTag$("TAGNAMES", "LEVEL")), "LEVEL", "0"))
+col% = VAL(GetObjTagData$(PalColor$, "LEVEL", "0"))
+red% = VAL(GetObjTagData$(PalRGBSliderR$, "LEVEL", "0"))
+gre% = VAL(GetObjTagData$(PalRGBSliderG$, "LEVEL", "0"))
+blu% = VAL(GetObjTagData$(PalRGBSliderB$, "LEVEL", "0"))
 _PALETTECOLOR col%, _RGB32(red%, gre%, blu%)
 RETURN
 '----------------------------------
 UpdatePaletteTool:
 IF section$ = "Global.Colors" THEN
-    pen$ = GetTagData$(GenC$("GET", PalColor$ + NewTag$("TAGNAMES", "LEVEL")), "LEVEL", "0")
+    pen$ = GetObjTagData$(PalColor$, "LEVEL", "0")
     res$ = GenC$("SET", PalGauge$ + NewTag$("SHINEPEN", pen$)): actCol% = VAL(pen$)
     res$ = GenC$("SET", PalRGBSliderR$ + NewTag$("LEVEL", LTRIM$(STR$(_RED(VAL(pen$))))))
     res$ = GenC$("SET", PalRGBSliderG$ + NewTag$("LEVEL", LTRIM$(STR$(_GREEN(VAL(pen$))))))
@@ -1158,6 +1158,11 @@ IF UCASE$(ShowErrSwitch$) = "ON" THEN
                              "{IMG Problem16px.png 39}Ok, got it...")
     END IF
 END IF
+END FUNCTION
+'--- Function to define/return the program's version string.
+'-----
+FUNCTION VersionGTPrefsEditor$
+VersionGTPrefsEditor$ = MID$("$VER: GTPrefsEditor 1.0 (15-Nov-2018) by RhoSigma :END$", 7, 43)
 END FUNCTION
 '----------------------------------
 SUB GetPrefs (sect$, opts AS ChunkCSET)
@@ -1344,7 +1349,7 @@ _SCREENHIDE
 IF appIcon& < -1 THEN _FREEIMAGE appIcon&: appIcon& = -1
 '--- free the font (if any) and invalidate its handle ---
 _FONT 16
-IF appFont& > 0 THEN _FREEFONT appFont&: appFont& = 0
+IF appFont& > 0 AND guiPGVCount% = 0 THEN _FREEFONT appFont&: appFont& = 0
 '--- free the screen and invalidate its handle ---
 SCREEN 0
 IF appScreen& < -1 THEN _FREEIMAGE appScreen&: appScreen& = -1

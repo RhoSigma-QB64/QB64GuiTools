@@ -22,6 +22,9 @@ TODO:
 -----
 - add a new GUI class to allow any GuiViews to be placed as part of other
   forms (like an <iframe> in HTML) in alternative for multiple windows
+- improve ListviewC class to allow multiple columns in a list
+- add a new GUI class providing some kind of multi-line or text editor
+  like input fields
 - continue work on the GuiTools Framwork documentation
   - if you have questions about anything what's not yet documented in any
     source, HTML or PDF file, then please don't hesitate to ask for help
@@ -32,6 +35,25 @@ TODO:
 
 HISTORY:
 --------
+>> 12/02/2023 v0.17
+   - the StringC class now allows the NOSHOW tag to make a password field,
+     also pressing <Esc> will now deselect any active string field and also
+     fires the GADGETUP event according to the PASSIVE tag and change state
+   - in the ListviewC class, when the mouse hovers an overlong (clipped)
+     list entry, then the full entry is now displayed as tooltip
+   - fixed a bug in the GuiViews API, the additional Views were not using
+     the designated font as set in the SetupScreen() routine
+   - added the convenience function GetObjTagData$() in GuiClasses.bm to
+     simplify data retrieval from GUI objects, all sources adapted to it
+   - updated MakeDATA/MakeCARR applications to create a read to string
+     function additional to the write to disk function, the result of the
+     new read function can be passed to _LOADFONT, _LOADIMAGE or _SNDOPEN
+     when using the new memory load capabilities of these commands
+   - added version strings in all apps and in the framework base library,
+     see also dev_storage\FindVersions.bas for more informations
+   - removed obsolete file docs\KnownIssues.txt, issues have been either
+     fixed or successfully worked around
+
 >> 12/07/2022 v0.16 [silent release]
    - adjustments for QB64 Phoenix Edition v3.0.0 and up (Phoenix rebranding)
    - further speed and safety improvements in BufferSupport.bi/.bm library

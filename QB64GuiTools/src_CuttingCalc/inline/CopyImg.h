@@ -54,6 +54,17 @@ static const uint8_t CopyImgB[] = {
     0x42,0x60,0x82
 };
 
+// --- Function to copy the array(s) into the provided string buffer.
+// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient.
+// ---------------------------------------------------------------------
+void ReadCopyImgData(char *Buffer)
+{
+    memcpy(Buffer, &CopyImgL0[1], CopyImgL0[0] << 2);
+    Buffer += (CopyImgL0[0] << 2);
+
+    memcpy(Buffer, &CopyImgB[1], CopyImgB[0]);
+}
+
 // --- Saved full qualified output path and filename, so we've no troubles
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.

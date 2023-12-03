@@ -89,6 +89,14 @@ static const uint32_t HelpImgL0[] = {
     0x718FC518,0xE32CBFBA,0x017FC7A7,0x2243B354,0x59833B52,0x00000000,0x444E4549,0x826042AE
 };
 
+// --- Function to copy the array(s) into the provided string buffer.
+// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient.
+// ---------------------------------------------------------------------
+void ReadHelpImgData(char *Buffer)
+{
+    memcpy(Buffer, &HelpImgL0[1], HelpImgL0[0] << 2);
+}
+
 // --- Saved full qualified output path and filename, so we've no troubles
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.

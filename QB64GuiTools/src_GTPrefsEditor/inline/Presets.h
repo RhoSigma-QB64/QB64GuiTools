@@ -34,6 +34,17 @@ static const uint8_t PresetsB[] = {
     0x30,0x05
 };
 
+// --- Function to copy the array(s) into the provided string buffer.
+// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient.
+// ---------------------------------------------------------------------
+void ReadPresetsData(char *Buffer)
+{
+    memcpy(Buffer, &PresetsL0[1], PresetsL0[0] << 2);
+    Buffer += (PresetsL0[0] << 2);
+
+    memcpy(Buffer, &PresetsB[1], PresetsB[0]);
+}
+
 // --- Saved full qualified output path and filename, so we've no troubles
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.

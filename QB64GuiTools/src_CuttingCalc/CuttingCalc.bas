@@ -226,8 +226,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 416, 375, 0
-appCR$ = "(c) RhoSigma, Roland Heyder"
-_TITLE appExeName$ + " - " + appCR$
+_TITLE VersionCuttingCalc$
 
 '------------------------------
 '--- Early required Globals ---
@@ -728,6 +727,11 @@ IF UCASE$(ShowErrSwitch$) = "ON" THEN
     END IF
 END IF
 END FUNCTION
+'--- Function to define/return the program's version string.
+'-----
+FUNCTION VersionCuttingCalc$
+VersionCuttingCalc$ = MID$("$VER: CuttingCalc 1.2 (14-Oct-2017) by RhoSigma :END$", 7, 41)
+END FUNCTION
 '~~~~~
 '=====================================================================
 '=============== END OF USER GOSUB/SUB/FUNCTION AREA =================
@@ -813,7 +817,7 @@ _SCREENHIDE
 IF appIcon& < -1 THEN _FREEIMAGE appIcon&: appIcon& = -1
 '--- free the font (if any) and invalidate its handle ---
 _FONT 16
-IF appFont& > 0 THEN _FREEFONT appFont&: appFont& = 0
+IF appFont& > 0 AND guiPGVCount% = 0 THEN _FREEFONT appFont&: appFont& = 0
 '--- free the screen and invalidate its handle ---
 SCREEN 0
 IF appScreen& < -1 THEN _FREEIMAGE appScreen&: appScreen& = -1

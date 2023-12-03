@@ -35,6 +35,17 @@ static const uint8_t DeFlagImgB[] = {
     0x1D,0x4B,0xB6,0x6C,0x59,0x71,0x68,0xD3,0x06,0x02,0x00,0x3B
 };
 
+// --- Function to copy the array(s) into the provided string buffer.
+// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient.
+// ---------------------------------------------------------------------
+void ReadDeFlagImgData(char *Buffer)
+{
+    memcpy(Buffer, &DeFlagImgL0[1], DeFlagImgL0[0] << 2);
+    Buffer += (DeFlagImgL0[0] << 2);
+
+    memcpy(Buffer, &DeFlagImgB[1], DeFlagImgB[0]);
+}
+
 // --- Saved full qualified output path and filename, so we've no troubles
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.

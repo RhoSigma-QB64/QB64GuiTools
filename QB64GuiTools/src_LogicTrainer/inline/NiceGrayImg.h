@@ -84,6 +84,17 @@ static const uint8_t NiceGrayImgB[] = {
     0xB8,0x90,0x7F,0xFF,0xD9
 };
 
+// --- Function to copy the array(s) into the provided string buffer.
+// --- Buffer size is not checked, as MakeCARR makes sure it's sufficient.
+// ---------------------------------------------------------------------
+void ReadNiceGrayImgData(char *Buffer)
+{
+    memcpy(Buffer, &NiceGrayImgL0[1], NiceGrayImgL0[0] << 2);
+    Buffer += (NiceGrayImgL0[0] << 2);
+
+    memcpy(Buffer, &NiceGrayImgB[1], NiceGrayImgB[0]);
+}
+
 // --- Saved full qualified output path and filename, so we've no troubles
 // --- when cleaning up, even if the current working folder was changed
 // --- during program runtime.

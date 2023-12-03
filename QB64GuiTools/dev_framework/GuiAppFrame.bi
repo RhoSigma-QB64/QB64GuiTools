@@ -234,6 +234,8 @@ DIM SHARED appFont& 'default font handle
 REDIM SHARED guiViews$(0)
 DIM SHARED guiAGVIndex& 'active GuiView index
 guiAGVIndex& = 0
+DIM SHARED guiPGVCount% 'pending GuiViews counter
+guiPGVCount% = 0
 DIM SHARED guiWinX%, guiWinY% 'current window (GuiView) position
 '--- colorspace (ImageClass) ---
 'This array must be cleared, if the screen palette changes during runtime.
@@ -354,11 +356,12 @@ CLOSE
 '--- cleanup views & shared memory ---
 FOR i& = 1 TO UBOUND(guiViews$)
     temp& = VAL(GetTagData$(guiViews$(i&), "IHANDLE", "-1"))
-    IF temp& < -1 THEN _FREEIMAGE temp&
+    IF temp& < -1 THEN _FONT 16, temp&: _FREEIMAGE temp&
     RemoveSMObject VAL(GetTagData$(guiViews$(i&), "SMOBJ", "0"))
     RemoveMutex VAL(GetTagData$(guiViews$(i&), "ISOPEN", "0"))
 NEXT i&
 RemoveSMObject appSMObj%&
+IF appFont& > 0 THEN _FREEFONT appFont&
 
 '--- cleanup temporary data ---
 InternalErrHandler
