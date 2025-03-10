@@ -129,7 +129,7 @@ ELSE
             NEXT sa!
         NEXT hu!
         _DEST d&
-        imag$ = ImageC$("INIT", NewTag$("IMAGEHANDLE", LTRIM$(STR$(cwim&))) + NewTag$("LEFT", "2") + NewTag$("TOP", "2") + NewTag$("WIDTH", LTRIM$(STR$(widt% - 4))) + NewTag$("HEIGHT", LTRIM$(STR$(widt% - 4))) + NewTag$("CLEARCOLOR", "39"))
+        imag$ = ImageC$("INIT", NewTag$("IMAGEHANDLE", LTRIM$(STR$(cwim&))) + NewTag$("LEFT", "2") + NewTag$("TOP", "2") + NewTag$("WIDTH", LTRIM$(STR$(widt% - 4))) + NewTag$("HEIGHT", LTRIM$(STR$(widt% - 4))) + NewTag$("CLEARCOLOR", "0"))
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("IMG0", imag$)
         symb$ = SymbolC$("INIT", NewTag$("WHICH", "tapeRecord") + NewTag$("LEFT", LTRIM$(STR$((widt% / 2) - 5))) + NewTag$("TOP", LTRIM$(STR$((widt% / 2) - 5))) + NewTag$("WIDTH", "10") + NewTag$("HEIGHT", "10"))
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("SYM0", symb$)

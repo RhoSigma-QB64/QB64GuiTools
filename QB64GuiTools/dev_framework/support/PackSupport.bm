@@ -604,11 +604,14 @@ END FUNCTION
 '--- docs\doc_PackSupport.bm\GetCRC32.html
 '---------------------------------------------------------------------
 FUNCTION GetCRC32& (MsgData$)
-'--- init lookup table ---
-REDIM lut~&(0 TO 255)
-RESTORE GetCRC32_LookupTable
+STATIC lut~&()
+'--- init lookup table on first call ---
 $CHECKING:OFF
-FOR i% = 0 TO 255: READ lut~&(i%): NEXT i%
+REDIM _PRESERVE lut~&(0 TO 255)
+IF lut~&(1) = 0 THEN
+    RESTORE GetCRC32_LookupTable
+    FOR i% = 0 TO 255: READ lut~&(i%): NEXT i%
+END IF
 '--- compute CRC32 ---
 crc~& = &HFFFFFFFF
 FOR i& = 1 TO LEN(MsgData$)
@@ -617,7 +620,6 @@ NEXT i&
 $CHECKING:ON
 '--- set result & cleanup ---
 GetCRC32& = (crc~& XOR &HFFFFFFFF)
-ERASE lut~&
 EXIT FUNCTION
 '--------------------
 GetCRC32_LookupTable:

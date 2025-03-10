@@ -237,10 +237,8 @@ guiAGVIndex& = 0
 DIM SHARED guiPGVCount% 'pending GuiViews counter
 guiPGVCount% = 0
 DIM SHARED guiWinX%, guiWinY% 'current window (GuiView) position
-'--- colorspace (ImageClass) ---
-'This array must be cleared, if the screen palette changes during runtime.
-'It's normally done by calling the "NEWPAL" method of the "ImageC" class.
-REDIM SHARED fsNearCol%(&HFFFFFF)
+'--- colorspace (helper array for RemapImageFS&()) ---
+REDIM SHARED fsNearCol~%%(&HFFFFFF)
 '--- objects control ---
 CONST objData% = 0, objType% = 1, objFlags% = 2, objConn% = 3 '1st dimension IDs
 REDIM SHARED guiObjects$(3, 0)
@@ -261,7 +259,7 @@ guiATTProps$ = ""
 
 '--- check/parse shell command line ---
 temp$ = COMMAND$
-IF INSTR(temp$, "IUGNEPO") = 0 AND INSTR(temp$, "XOBEGASSEM") = 0 AND INSTR(temp$, "TCELESELIF") = 0 AND INSTR(temp$, "WEIVEDIUG") = 0 THEN
+IF INSTR(temp$, "IUGNEPO") = 0 AND INSTR(temp$, "XOBEGASSEM") = 0 AND INSTR(temp$, "TCELESELIF") = 0 THEN
     'NOTE: GuiTools internal command names are spelled in reverse order to
     '      avoid faulty detection in regular command lines given by the user.
     temp$ = "NWONKNU" 'regular user given command line
@@ -307,13 +305,13 @@ appSMObj%& = CreateSMObject%&("RhoSigma-GuiApp-MainInpSM-" + appProgID$ + CHR$(0
 GOSUB UserInitHandler
 SELECT CASE cmdArgs$(0)
     CASE "IUGNEPO"
-        '====================================================================
-        'Every program can have several independent GuiViews which appear in
-        'its own detached windows (see SUB OpenGuiView()). The program simply
-        'calls itself given the appropriate command line options.
-        '--------------------------------------------------------------------
+        '================================================================
+        'Every program can have several independent GuiViews which appear
+        'in its own detached windows (see SUB OpenGuiView()). The program
+        'simply calls itself given the appropriate command line options.
+        '----------------------------------------------------------------
         OpenGuiView cmdArgs$(1), "*** RhoSigma-OpenGuiView-HandlerCall ***", VAL(cmdArgs$(2))
-        '====================================================================
+        '================================================================
     CASE "XOBEGASSEM"
         '================================================================
         'Programs also deliver its own detached Message Box viewer, which
@@ -323,29 +321,20 @@ SELECT CASE cmdArgs$(0)
                              cmdArgs$(2), cmdArgs$(3))
         '================================================================
     CASE "TCELESELIF"
-        '==================================================================
+        '================================================================
         'Similar to the above, there's also an detached File Select viewer,
         'which is called by the FUNCTION FileSelect$().
-        '------------------------------------------------------------------
+        '----------------------------------------------------------------
         dummy$ = FileSelect$(cmdArgs$(1), "*** RhoSigma-FileSelect-HandlerCall ***",_
                              VAL(cmdArgs$(2)), cmdArgs$(3), cmdArgs$(4))
-        '==================================================================
-    CASE "WEIVEDIUG"
-        '=======================================================================
-        'Also every program has its own detached Guide Viewer, which is called
-        'by the SUB Guide(), if the asyncron flag is set or if it must follow an
-        'ALINK in any guide database.
-        '-----------------------------------------------------------------------
-        _TITLE "GuideView"
-        '--- not yet implemented ---
-        '=======================================================================
+        '================================================================
     CASE ELSE
-        '===============================================================
-        'If no OPENGUI, MESSAGEBOX, FILESELECT or GUIDEVIEW command line
-        'is detected, then it's considered a regular program start.
-        '---------------------------------------------------------------
+        '=======================================================
+        'If no OPENGUI, MESSAGEBOX or FILESELECT command line is
+        'detected, then it's considered a regular program start.
+        '-------------------------------------------------------
         GOSUB UserMain 'call user's main program
-        '===============================================================
+        '=======================================================
 END SELECT
 emergencyExit:
 LastPosUpdate -1 'save last known win pos

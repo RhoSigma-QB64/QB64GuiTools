@@ -151,7 +151,7 @@ IF appErrCnt% >= appErrMax% THEN
                          "recursive Errors !!|~" +_
                          "Program will cleanup and terminate|" +_
                          "via internal emergency exit.",_
-                         "{IMG Error16px.png 39}Ok, got it...")
+                         "{IMG Error16px.png 0}Ok, got it...")
     RESUME emergencyExit
 END IF
 
@@ -195,7 +195,7 @@ SELECT CASE appLastErr%
         uehText$ = uehText$ + " occurred|in source file line" + STR$(appErrorArr%(appErrCnt%, 1))
         uehText$ = uehText$ + " !!|~Program will cleanup and terminate|via internal emergency exit."
         dummy$ = MessageBox$("Error16px.png", appExeName$, uehText$,_
-                             "{IMG Error16px.png 39}Ok, got it...")
+                             "{IMG Error16px.png 0}Ok, got it...")
         uehResType% = uehEXIT%
 END SELECT
 QB64ErrorOn
@@ -270,7 +270,7 @@ TopRuler$ = RulerC$("INIT",_
 '--- init attention string image ---
 StringImageAttn$ = ImageC$("INIT",_
         NewTag$("IMAGEFILE", "Problem32px.png") +_
-        NewTag$("CLEARCOLOR", "39") +_
+        NewTag$("CLEARCOLOR", "0") +_
         NewTag$("LEFT", "80") +_
         NewTag$("TOP", "4") +_
         NewTag$("WIDTH", "22") +_
@@ -283,7 +283,7 @@ BottomRuler$ = RulerC$("INIT",_
 '--- init quit button image ---
 ButtonImageQuit$ = ImageC$("INIT",_
         NewTag$("IMAGEFILE", "Exit32px.png") +_
-        NewTag$("CLEARCOLOR", "39") +_
+        NewTag$("CLEARCOLOR", "0") +_
         NewTag$("LEFT", "5") +_
         NewTag$("TOP", "5") +_
         NewTag$("WIDTH", "24") +_
@@ -291,7 +291,7 @@ ButtonImageQuit$ = ImageC$("INIT",_
 '--- init help button image ---
 ButtonImageHelp$ = ImageC$("INIT",_
         NewTag$("IMAGEFILE", "Help32px.png") +_
-        NewTag$("CLEARCOLOR", "39") +_
+        NewTag$("CLEARCOLOR", "0") +_
         NewTag$("LEFT", "5") +_
         NewTag$("TOP", "5") +_
         NewTag$("WIDTH", "24") +_
@@ -306,7 +306,7 @@ ButtonHelp$ = ButtonC$("INIT",_
 '--- init copy button image ---
 ButtonImageCopy$ = ImageC$("INIT",_
         NewTag$("IMAGEFILE", "Copy32px.png") +_
-        NewTag$("CLEARCOLOR", "39") +_
+        NewTag$("CLEARCOLOR", "0") +_
         NewTag$("LEFT", "5") +_
         NewTag$("TOP", "5") +_
         NewTag$("WIDTH", "24") +_
@@ -719,11 +719,11 @@ IF UCASE$(ShowErrSwitch$) = "ON" THEN
     IF ValidateTags%(tagString$, "ERROR", -1) THEN
         dummy$ = MessageBox$("Error16px.png", "Error Tag",_
                              GetTagData$(tagString$, "ERROR", "empty"),_
-                             "{IMG Error16px.png 39}Ok, got it...")
+                             "{IMG Error16px.png 0}Ok, got it...")
     ELSEIF ValidateTags%(tagString$, "WARNING", -1) THEN
         dummy$ = MessageBox$("Problem16px.png", "Warning Tag",_
                              GetTagData$(tagString$, "WARNING", "empty"),_
-                             "{IMG Problem16px.png 39}Ok, got it...")
+                             "{IMG Problem16px.png 0}Ok, got it...")
     END IF
 END IF
 END FUNCTION

@@ -35,6 +35,16 @@ TODO:
 
 HISTORY:
 --------
+>> 03/10/2025 v0.18 [silent release]
+   - added an option to easily ignore the current GuiTools preferences
+     (appLocalDir$ + "gtprefs.bin") for development purposes, just place
+     a dummy file named "ignore-gtprefs.bin" into the EXE's folder
+   - removed some unused code (dropped "GuideView" idea)
+   - removed more unused code (ImageC "NewPal" method)
+   - improved image remapping with optional alpha blending for better
+     display of the provided toolbar icons (use tag CLEARCOLOR = 0)
+   - some more minor program flow optimizations under the hood
+
 >> 12/02/2023 v0.17
    - the StringC class now allows the NOSHOW tag to make a password field,
      also pressing <Esc> will now deselect any active string field and also

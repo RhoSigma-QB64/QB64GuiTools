@@ -344,9 +344,8 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
                              should have a palette entry set up to match the
                              respective color perfectly. Otherwise it could
                              happen that your transparent color is compromised
-                             when the image is remapped. Full alpha transparency
-                             usually results into full black in the remapped
-                             image, which is pen 39 in GuiTools its palette.
+                             when the image is remapped. For images with a real
+                             alpha channel (as the provided icons) use number 0.
 (BOOL) BACKFILL         pub: If true, then the image is installed as background
                              for the program screen/window. Note there can be
                              only one background image (per GUIVIEW) at a time,

@@ -268,7 +268,7 @@ int16_t RegexIsActive(void) {
 // Z-Order and activate it for input. Call this after a short _DELAY
 // of 0.05 to 0.1 seconds to allow Windows to finish its setup first.
 //--------------------------------------------------------------------
-void UntitledToTop (void) {
+void UntitledToTop(void) {
     HWND win = FindWindowA(NULL, "Untitled");
     if (win) {
         BringWindowToTop(win); Sleep(50);
@@ -284,8 +284,7 @@ void UntitledToTop (void) {
 //--------------------------------------------------------------------
 extern img_struct *img; // fwd reference
 uint32_t FindColor(int32_t r, int32_t g, int32_t b, int32_t i, int32_t mi, int32_t ma) {
-    static   int32_t v, v2, n1, n2, best, c, d1, d2, d3;
-    register int32_t *p, n, t;
+    static int32_t best, c, d1, d2, d3, n, n1, n2, *p, t, v, v2;
     // initializing
     if (r < 0) r = 0; if (r > 255) r = 255;
     if (g < 0) g = 0; if (g > 255) g = 255;
@@ -342,10 +341,10 @@ struct smObject {
 ptrszint CreateSMObject(const char *smName, int32_t smSize) {
     if (smName && smName[0] != '\0' && smSize > 0) {
         struct smObject *sm = 0;
-        if (sm = (struct smObject*) malloc(sizeof(struct smObject))) {
+        if ((sm = (struct smObject*) malloc(sizeof(struct smObject)))) {
             sm -> memSize = smSize;
-            if (sm -> mapHandle = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, smSize + 1, smName)) {
-                if (sm -> vBuffer = MapViewOfFile(sm -> mapHandle, FILE_MAP_ALL_ACCESS, 0, 0, smSize + 1)) {
+            if ((sm -> mapHandle = CreateFileMapping(INVALID_HANDLE_VALUE, 0, PAGE_READWRITE, 0, smSize + 1, smName))) {
+                if ((sm -> vBuffer = MapViewOfFile(sm -> mapHandle, FILE_MAP_ALL_ACCESS, 0, 0, smSize + 1))) {
                     sm -> vFilled = (int8_t*) sm -> vBuffer + smSize;
                     *(sm -> vFilled) = 0; // mark buffer content as obsolete
                     return (ptrszint) sm;
@@ -385,10 +384,10 @@ void RemoveSMObject(ptrszint smObj) {
 ptrszint OpenSMObject(const char *smName, int32_t smSize) {
     if (smName && smName[0] != '\0' && smSize > 0) {
         struct smObject *sm = 0;
-        if (sm = (struct smObject*) malloc(sizeof(struct smObject))) {
+        if ((sm = (struct smObject*) malloc(sizeof(struct smObject)))) {
             sm -> memSize = smSize;
-            if (sm -> mapHandle = OpenFileMapping(FILE_MAP_ALL_ACCESS, 0, smName)) {
-                if (sm -> vBuffer = MapViewOfFile(sm -> mapHandle, FILE_MAP_ALL_ACCESS, 0, 0, smSize + 1)) {
+            if ((sm -> mapHandle = OpenFileMapping(FILE_MAP_ALL_ACCESS, 0, smName))) {
+                if ((sm -> vBuffer = MapViewOfFile(sm -> mapHandle, FILE_MAP_ALL_ACCESS, 0, 0, smSize + 1))) {
                     sm -> vFilled = (int8_t*) sm -> vBuffer + smSize;
                     *(sm -> vFilled) = 0; // mark buffer content as obsolete
                     return (ptrszint) sm;
@@ -450,7 +449,7 @@ void ImageToSM(ptrszint smObj, int32_t i) {
         i = -i; int32_t pSize = img[i].width * img[i].height;
         if ((!*(sm -> vFilled)) && ((pSize + 1024) <= sm -> memSize)) {
             memcpy(sm -> vBuffer, img[i].pal, 1024);
-            memcpy(sm -> vBuffer + 1024, img[i].offset, pSize);
+            memcpy((int8_t*) sm -> vBuffer + 1024, img[i].offset, pSize);
             *(sm -> vFilled) = -1; // data written, mark buffer content as new
         }
     }
@@ -462,7 +461,7 @@ void SMToImage(ptrszint smObj, int32_t i) {
         i = -i; int32_t pSize = img[i].width * img[i].height;
         if ((*(sm -> vFilled)) && ((pSize + 1024) <= sm -> memSize)) {
             memcpy(img[i].pal, sm -> vBuffer, 1024);
-            memcpy(img[i].offset, sm -> vBuffer + 1024, pSize);
+            memcpy(img[i].offset, (int8_t*) sm -> vBuffer + 1024, pSize);
             *(sm -> vFilled) = 0; // data read, mark buffer content as obsolete
         }
     }

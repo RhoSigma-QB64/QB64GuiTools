@@ -392,6 +392,16 @@ SetTag guiObjects$(0, 0), "EGRFLAG", "true"
 FOR oix& = 1 TO UBOUND(guiObjects$, 2)
     objTag$ = NewTag$("OBJECT", LTRIM$(STR$(oix&)))
     IF LEFT$(guiObjects$(objFlags%, oix&), 2) = "d-" THEN
+        IF guiObjects$(objType%, oix&) = "ImageC" THEN
+            ccol$ = GetTagData$(guiObjects$(objData%, oix&), "CLEARCOLOR", "n/a")
+            IF ccol$ <> "n/a" AND VAL(ccol$) = 0 THEN
+                'discard all remapped and alpha blended images in
+                'order to adapt them to maybe changed backgrounds
+                rhan& = VAL(GetTagData$(guiObjects$(objData%, oix&), "RHANDLE", "0"))
+                IF rhan& < -1 THEN _FREEIMAGE rhan&
+                RemTag guiObjects$(objData%, oix&), "RHANDLE"
+            END IF
+        END IF
         dummy$ = GenC$("DRAW", objTag$)
     END IF
     IF oix& >= guiALBIndex& THEN
@@ -1466,6 +1476,7 @@ END FUNCTION
 ' Result: adjusted tagsID$ (intended side effect)
 '---------------------------------------------------------------------
 SUB ApplyPrefs (classID$, tagsID$)
+IF _FILEEXISTS(appHomePath$ + "ignore-gtprefs.bin") THEN EXIT SUB
 REDIM cset(0) AS ChunkCSET
 '--- exclusivly search prefs ---
 mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-gtprefs.bin" + CHR$(0))
@@ -1934,7 +1945,7 @@ IF NOT ValidateTags%(guiObjects$(objData%, this&), "BBGIMG", -1) THEN
         guiObjects$(objData%, this&) = guiObjects$(objData%, this&) + ChildTag$("BBGIMG", imag$)
         EndChildInit
     ELSE
-        fimg& = RemapImageFS&(brig&, _DEST): _FREEIMAGE brig&
+        fimg& = RemapImageFS&(brig&, -1, _DEST): _FREEIMAGE brig&
         IF fimg& < -1 THEN _PUTIMAGE (left%, topp%), fimg&, _DEST: _FREEIMAGE fimg&
         EXIT SUB
     END IF
@@ -2109,7 +2120,7 @@ ELSE
         grad& = ModifyContrast&(rem6&, -0.5, 0, 0, widt% - 1, heig% - 1, -1): _FREEIMAGE rem6&
         gray& = MakeGrayscale&(grad&, 0, 0, widt% - 1, heig% - 1, -1): _FREEIMAGE grad&
         filt& = ApplyFilter&(gray&, "gauss8", 0, 0, 0, 0, widt% + 10, heig% + 10, -1): _FREEIMAGE gray&
-        shad& = RemapImageFS&(filt&, _DEST): _FREEIMAGE filt&
+        shad& = RemapImageFS&(filt&, -1, _DEST): _FREEIMAGE filt&
         '--- do corner corrections, because I insisted on rounded corners ---
         sx% = left%: sy% = topp%: dx% = 0: dy% = 0
         _PUTIMAGE (dx%, dy%), _SOURCE, shad&, (sx%, sy%)-(sx% + 7, sy%)

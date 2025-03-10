@@ -134,7 +134,7 @@ IF appErrCnt% >= appErrMax% THEN
                          "recursive Errors !!|~" +_
                          "Program will cleanup and terminate|" +_
                          "via internal emergency exit.",_
-                         "{IMG Error16px.png 39}Ok, got it...")
+                         "{IMG Error16px.png 0}Ok, got it...")
     RESUME emergencyExit
 END IF
 
@@ -178,7 +178,7 @@ SELECT CASE appLastErr%
         uehText$ = uehText$ + " occurred|in source file line" + STR$(appErrorArr%(appErrCnt%, 1))
         uehText$ = uehText$ + " !!|~Program will cleanup and terminate|via internal emergency exit."
         dummy$ = MessageBox$("Error16px.png", appExeName$, uehText$,_
-                             "{IMG Error16px.png 39}Ok, got it...")
+                             "{IMG Error16px.png 0}Ok, got it...")
         uehResType% = uehEXIT%
 END SELECT
 QB64ErrorOn
@@ -209,7 +209,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 460, 345, 0
-appCR$ = "The GuiTools Framework v0.17, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.18, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------
@@ -505,11 +505,11 @@ IF UCASE$(ShowErrSwitch$) = "ON" THEN
     IF ValidateTags%(tagString$, "ERROR", -1) THEN
         dummy$ = MessageBox$("Error16px.png", "Error Tag",_
                              GetTagData$(tagString$, "ERROR", "empty"),_
-                             "{IMG Error16px.png 39}Ok, got it...")
+                             "{IMG Error16px.png 0}Ok, got it...")
     ELSEIF ValidateTags%(tagString$, "WARNING", -1) THEN
         dummy$ = MessageBox$("Problem16px.png", "Warning Tag",_
                              GetTagData$(tagString$, "WARNING", "empty"),_
-                             "{IMG Problem16px.png 39}Ok, got it...")
+                             "{IMG Problem16px.png 0}Ok, got it...")
     END IF
 END IF
 END FUNCTION

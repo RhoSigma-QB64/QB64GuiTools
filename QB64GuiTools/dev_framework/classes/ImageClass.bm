@@ -117,11 +117,6 @@ SELECT CASE methodID$
         tagsOpt$ = ""
         GOSUB meKill
         'Result Tags: ERROR/WARNING or empty
-    CASE "Newpal"
-        tagsReq$ = ""
-        tagsOpt$ = ""
-        GOSUB meNewpal
-        'Result Tags: empty
     CASE "Draw"
         tagsReq$ = "OBJECT,"
         tagsOpt$ = "LEFT,TOP," 'properties of parent object
@@ -311,43 +306,40 @@ IF ValidObject%(this&, thisTag$, ImageRes$, classID$, methodID$, tagsID$) THEN
 END IF
 RETURN
 '---------------------------------------------------------------------
-meNewpal:
-'--- discard all remapped images ----
-FOR oix& = 1 TO UBOUND(guiObjects$, 2)
-    IF guiObjects$(objType%, oix&) = classID$ THEN
-        rhan& = VAL(GetTagData$(guiObjects$(objData%, oix&), "RHANDLE", "0"))
-        IF rhan& < -1 THEN _FREEIMAGE rhan&
-        RemTag guiObjects$(objData%, oix&), "RHANDLE"
-    END IF
-NEXT oix&
-'--- clear near color array and schedule gui refresh ---
-REDIM fsNearCol%(&HFFFFFF)
-SetTag guiObjects$(0, 0), "GUIREFRESH", "true"
-RETURN
-'---------------------------------------------------------------------
 meDraw:
 IF ValidObject%(this&, thisTag$, ImageRes$, classID$, methodID$, tagsID$) THEN
     '--- don't draw, if unassigned and not standalone ---
     IF MID$(guiObjects$(objFlags%, this&), 2, 1) = "-" AND _
         NOT BoolTagTrue%(guiObjects$(objData%, this&), "STANDALONE") THEN RETURN
+    '--- get parent's position ---
+    plft% = VAL(GetTagData$(tagsID$, "LEFT", "0"))
+    ptop% = VAL(GetTagData$(tagsID$, "TOP", "0"))
+    '--- get object's properties ---
+    left% = plft% + VAL(GetTagData$(guiObjects$(objData%, this&), "LEFT", "0"))
+    topp% = ptop% + VAL(GetTagData$(guiObjects$(objData%, this&), "TOP", "0"))
+    widt% = VAL(GetTagData$(guiObjects$(objData%, this&), "WIDTH", "0"))
+    heig% = VAL(GetTagData$(guiObjects$(objData%, this&), "HEIGHT", "0"))
+    ccol$ = GetTagData$(guiObjects$(objData%, this&), "CLEARCOLOR", "n/a")
     '--- check for remapped image ---
     ihan& = VAL(GetTagData$(guiObjects$(objData%, this&), "IHANDLE", "0"))
     rhan& = VAL(GetTagData$(guiObjects$(objData%, this&), "RHANDLE", "0"))
-    IF rhan& >= -1 THEN rhan& = RemapImageFS&(ihan&, _DEST)
+    IF rhan& >= -1 THEN
+        bhan& = -1
+        IF ccol$ <> "n/a" AND VAL(ccol$) = 0 THEN 'get BG for alpha blending
+            IF (NOT BoolTagTrue%(guiObjects$(objData%, this&), "AREA")) AND _
+               (NOT BoolTagTrue%(guiObjects$(objData%, this&), "BACKFILL")) THEN
+                bhan& = _NEWIMAGE(ABS(widt%), ABS(heig%), 256)
+                IF bhan& < -1 THEN _PUTIMAGE , _SOURCE, bhan&, (left%, topp%)-(left% + widt% - 1, topp% + heig% - 1)
+            END IF
+        END IF
+        rhan& = RemapImageFS&(ihan&, bhan&, _DEST)
+        IF bhan& < -1 THEN _FREEIMAGE bhan&
+    END IF
     IF rhan& >= -1 THEN
         SetTag ImageRes$, "ERROR", classID$ + "::" + methodID$ + " -> cannot remap image"
     ELSE
         SetTag guiObjects$(objData%, this&), "RHANDLE", LTRIM$(STR$(rhan&))
-        ccol$ = GetTagData$(guiObjects$(objData%, this&), "CLEARCOLOR", "n/a")
         IF ccol$ <> "n/a" THEN _CLEARCOLOR VAL(ccol$), rhan&
-        '--- get parent's position ---
-        plft% = VAL(GetTagData$(tagsID$, "LEFT", "0"))
-        ptop% = VAL(GetTagData$(tagsID$, "TOP", "0"))
-        '--- get object's properties ---
-        left% = plft% + VAL(GetTagData$(guiObjects$(objData%, this&), "LEFT", "0"))
-        topp% = ptop% + VAL(GetTagData$(guiObjects$(objData%, this&), "TOP", "0"))
-        widt% = VAL(GetTagData$(guiObjects$(objData%, this&), "WIDTH", "0"))
-        heig% = VAL(GetTagData$(guiObjects$(objData%, this&), "HEIGHT", "0"))
         '--- do flip corrections (_PUTIMAGE bug workaround) ---
         IF widt% < 0 THEN left% = left% - 1: widt% = widt% + 2
         IF heig% < 0 THEN topp% = topp% - 1: heig% = heig% + 2

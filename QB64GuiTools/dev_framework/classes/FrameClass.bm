@@ -256,7 +256,7 @@ rem6& = ModifyBrightness&(rem5&, -0.16, 0, 10, 9, heig% - 1, -1): _FREEIMAGE rem
 grad& = ModifyContrast&(rem6&, -0.5, 0, 0, widt% - 1, heig% - 1, -1): _FREEIMAGE rem6&
 gray& = MakeGrayscale&(grad&, 0, 0, widt% - 1, heig% - 1, -1): _FREEIMAGE grad&
 filt& = ApplyFilter&(gray&, "gauss8", 0, 0, 0, 0, widt% + 10, heig% + 10, -1): _FREEIMAGE gray&
-shad& = RemapImageFS&(filt&, _DEST): _FREEIMAGE filt&
+shad& = RemapImageFS&(filt&, -1, _DEST): _FREEIMAGE filt&
 _PUTIMAGE (left%, topp%), shad&, _DEST: _FREEIMAGE shad&
 RETURN
 END FUNCTION

@@ -24,7 +24,7 @@ DECLARE LIBRARY "QB64GuiTools\dev_framework\GuiAppFrame" 'Do not add .h here !!
     '(256 colors) images only and needs a valid image. It can limit the
     'number of pens to search and uses a better color matching algorithm.
 END DECLARE
-REDIM SHARED fsNearCol%(&HFFFFFF)
+REDIM SHARED fsNearCol~%%(&HFFFFFF)
 
 IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
     path$ = "QB64GuiTools\dev_storage\" 'compiled to qb64 folder
@@ -63,21 +63,21 @@ ihan& = _LOADIMAGE(path$ + file$, 32)
 IF ihan& < -1 THEN
     wi% = _WIDTH(ihan&): he% = _HEIGHT(ihan&)
     pix& = wi% * he%
-    '--- 1st run is slower, as fsNearCol%() is not populated yet ---
+    '--- 1st run is slower, as fsNearCol~%%() is not populated yet ---
     PRINT "X";
-    img&(0, 0) = RemapImageFS&(ihan&, appScreen&, 0)
+    img&(0, 0) = RemapImageFS&(ihan&, -1, appScreen&, 0)
     tim#(0, 0) = (en# - st#)
     IF img&(0, 0) < -1 THEN _FREEIMAGE img&(0, 0)
-    REDIM SHARED fsNearCol%(&HFFFFFF) 'destroy it once again
-    img&(0, 1) = RemapImageFS&(ihan&, appScreen&, -1)
+    REDIM SHARED fsNearCol~%%(&HFFFFFF) 'destroy it once again
+    img&(0, 1) = RemapImageFS&(ihan&, -1, appScreen&, -1)
     tim#(0, 1) = (en# - st#)
     IF img&(0, 1) < -1 THEN _FREEIMAGE img&(0, 1)
     '--- do some loops to catch enough best/worst case scenarios ---
     FOR i% = 1 TO loops%
         PRINT "X";
-        img&(i%, 0) = RemapImageFS&(ihan&, appScreen&, 0)
+        img&(i%, 0) = RemapImageFS&(ihan&, -1, appScreen&, 0)
         tim#(i%, 0) = (en# - st#)
-        img&(i%, 1) = RemapImageFS&(ihan&, appScreen&, -1)
+        img&(i%, 1) = RemapImageFS&(ihan&, -1, appScreen&, -1)
         tim#(i%, 1) = (en# - st#)
     NEXT i%
     '--- calculate average timings & free new images ---
@@ -92,9 +92,9 @@ IF ihan& < -1 THEN
     avr#(1) = sum#(1) / loops%
     '--- now for display, one w/o FS and one w/ FS ---
     PRINT "X";
-    fsoff& = RemapImageFS&(ihan&, appScreen&, 0)
+    fsoff& = RemapImageFS&(ihan&, -1, appScreen&, 0)
     PRINT "X";
-    fson& = RemapImageFS&(ihan&, appScreen&, -1)
+    fson& = RemapImageFS&(ihan&, -1, appScreen&, -1)
     '--- display results ---
     fss$ = "Floyd-Steinberg remapped"
     IF fson& < -1 AND fsoff& < -1 THEN
@@ -109,21 +109,21 @@ IF ihan& < -1 THEN
             PRINT
             PRINT "Remap timings without FS processing:"
             PRINT "------------------------------------"
-            PRINT "Timings w/o populated fsNearCol%() array:"
+            PRINT "Timings w/o populated fsNearCol~%%() array:"
             PRINT USING "1st Run Time for Image: #.######## sec."; tim#(0, 0)
             PRINT USING "1st Run Time per Pixel: #.######## sec."; tim#(0, 0) / pix&
             PRINT
-            PRINT "Timings w/ populated fsNearCol%() array:"
+            PRINT "Timings w/ populated fsNearCol~%%() array:"
             PRINT USING "Average Time for Image: #.######## sec."; avr#(0)
             PRINT USING "Average Time per Pixel: #.######## sec."; avr#(0) / pix&
             PRINT
             PRINT "Remap Timings with FS processing:"
             PRINT "---------------------------------"
-            PRINT "Timings w/o populated fsNearCol%() array:"
+            PRINT "Timings w/o populated fsNearCol~%%() array:"
             PRINT USING "1st Run Time for Image: #.######## sec."; tim#(0, 1)
             PRINT USING "1st Run Time per Pixel: #.######## sec."; tim#(0, 1) / pix&
             PRINT
-            PRINT "Timings w/ populated fsNearCol%() array:"
+            PRINT "Timings w/ populated fsNearCol~%%() array:"
             PRINT USING "Average Time for Image: #.######## sec."; avr#(1)
             PRINT USING "Average Time per Pixel: #.######## sec."; avr#(1) / pix&
             PRINT
@@ -144,7 +144,7 @@ IF ihan& < -1 THEN
     _FREEIMAGE ihan&
 END IF
 
-ERASE fsNearCol%
+ERASE fsNearCol~%%
 SYSTEM
 
 '=== RS:COPYFROM:GuiAppFrame.bm/FillRectImage (original) =============
@@ -164,7 +164,7 @@ END IF
 END SUB
 
 '=== RS:COPYFROM:GuiAppFrame.bm/RemapImageRS& (++RS:CHG) =============
-FUNCTION RemapImageFS& (ohan&, dhan&, fs%) 'RS:CHG fs% added
+FUNCTION RemapImageFS& (ohan&, back&, dhan&, fs%) 'RS:CHG fs% added
 RemapImageFS& = -1 'so far return invalid handle
 shan& = ohan& 'avoid side effect on given argument
 IF shan& < -1 THEN
@@ -198,6 +198,9 @@ IF shan& < -1 THEN
         _COPYPALETTE dhan&, nhan& 'dest palette to new image
         '--- for speed we do direct memory access ---
         DIM sbuf AS _MEM: sbuf = _MEMIMAGE(shan&): soff%& = sbuf.OFFSET
+        IF back& < -1 THEN
+            DIM dbuf AS _MEM: dbuf = _MEMIMAGE(back&): doff%& = dbuf.OFFSET
+        END IF
         DIM nbuf AS _MEM: nbuf = _MEMIMAGE(nhan&): noff%& = nbuf.OFFSET
         DIM rbuf AS _MEM: rbuf = _MEMIMAGE(rhan&): roff%& = rbuf.OFFSET
         DIM gbuf AS _MEM: gbuf = _MEMIMAGE(ghan&): goff%& = gbuf.OFFSET
@@ -210,25 +213,48 @@ IF shan& < -1 THEN
                 cpo% = x% * 4: ppo% = cpo% - 4: npo% = cpo% + 4
                 '--- get pixel ARGB value from source ---
                 srgb~& = _MEMGET(sbuf, soff%&, _UNSIGNED LONG)
-                '--- add distributed error, shrink by 16384, clear error ---
+                '--- and respective back pixel color (if blending is done) ---
+                IF back& < -1 THEN
+                    drgb~& = _PALETTECOLOR(_MEMGET(dbuf, doff%&, _UNSIGNED _BYTE), dhan&)
+                    dr% = (drgb~& AND &HFF0000~&) \ 65536
+                    dg% = (drgb~& AND &HFF00~&) \ 256
+                    db% = (drgb~& AND &HFF~&)
+                    doff%& = doff%& + 1 'next back pixel
+                END IF
+                '--- check/adjust alpha pixels, add distributed error (shrink by 16384) ---
                 '--- current pixel X+0, Y+0 (= cro% (current row offset)) ---
                 poff% = cro% + cpo% 'pre-calc full pixel offset
-                sr% = ((srgb~& AND &HFF0000~&) \ 65536) + (_MEMGET(rbuf, roff%& + poff%, LONG) \ 16384) 'red
-                sg% = ((srgb~& AND &HFF00~&) \ 256) + (_MEMGET(gbuf, goff%& + poff%, LONG) \ 16384) 'green
-                sb% = (srgb~& AND &HFF~&) + (_MEMGET(bbuf, boff%& + poff%, LONG) \ 16384) 'blue
-                _MEMPUT rbuf, roff%& + poff%, 0 AS LONG 'clearing each single pixel error using _MEMPUT
-                _MEMPUT gbuf, goff%& + poff%, 0 AS LONG 'turns out even faster than clearing the entire
-                _MEMPUT bbuf, boff%& + poff%, 0 AS LONG 'pixel row using _MEMFILL at the end of the loop
-                '--- find nearest color ---
-                crgb~& = _RGBA32(sr%, sg%, sb%, 0) 'used for fast value clipping + channel merge
-                IF fsNearCol%(crgb~&) > 0 THEN
-                    npen% = fsNearCol%(crgb~&) - 1 'already known
-                ELSE
-                    npen% = FindColor&(sr%, sg%, sb%, nhan&, -1, -1) 'RS:CHG -1, -1 ('not known, find one)
-                    fsNearCol%(crgb~&) = npen% + 1 'save for later use
+                sa# = ((srgb~& AND &HFF000000~&) \ 16777216) / 255.0#: npen% = 0 'source alpha [0,1] : std pen for fully transparent pixels
+                IF back& >= -1 THEN sa# = 1.0# 'ignore alpha w/o background
+                IF sa# > 0.0# THEN 'do visible pixels only (speed boost)
+                    ra# = 1.0# - sa# 'reverse alpha to factorize background for blending
+                    IF ra# > 0.0# THEN 'do blending for non-opaque pixels only (more speed boost)
+                        sr% = CINT(((srgb~& AND &HFF0000~&) \ 65536) * sa#) + CINT(dr% * ra#) + (_MEMGET(rbuf, roff%& + poff%, LONG) \ 16384) 'red
+                        sg% = CINT(((srgb~& AND &HFF00~&) \ 256) * sa#) + CINT(dg% * ra#) + (_MEMGET(gbuf, goff%& + poff%, LONG) \ 16384) 'green
+                        sb% = CINT((srgb~& AND &HFF~&) * sa#) + CINT(db% * ra#) + (_MEMGET(bbuf, boff%& + poff%, LONG) \ 16384) 'blue
+                    ELSE
+                        sr% = ((srgb~& AND &HFF0000~&) \ 65536) + (_MEMGET(rbuf, roff%& + poff%, LONG) \ 16384) 'red
+                        sg% = ((srgb~& AND &HFF00~&) \ 256) + (_MEMGET(gbuf, goff%& + poff%, LONG) \ 16384) 'green
+                        sb% = (srgb~& AND &HFF~&) + (_MEMGET(bbuf, boff%& + poff%, LONG) \ 16384) 'blue
+                    END IF
+                    crgb~& = _RGBA32(sr%, sg%, sb%, 0) 'build new 32-bit color
+                    '--- find best match in palette ---
+                    npen% = fsNearCol~%%(crgb~&)
+                    IF npen% < 24 THEN 'invalid (we use 24-255 only), recheck
+                        npen% = FindColor&(sr%, sg%, sb%, nhan&, 24, 255) 'RS:CHG removed -guiReservedPens%
+                        fsNearCol~%%(crgb~&) = npen% 'save for later use
+                    END IF
                 END IF
                 '--- put colormapped pixel to dest ---
                 _MEMPUT nbuf, noff%&, npen% AS _UNSIGNED _BYTE
+                '--- clear error ---
+                _MEMPUT rbuf, roff%& + poff%, 0 AS LONG 'clearing each single pixel error using _MEMPUT
+                _MEMPUT gbuf, goff%& + poff%, 0 AS LONG 'turns out even faster than clearing the entire
+                _MEMPUT bbuf, boff%& + poff%, 0 AS LONG 'pixel row using _MEMFILL at the end of the loop
+                '--- increment offsets ---
+                noff%& = noff%& + 1 'next dest pixel
+                soff%& = soff%& + 4 'next source pixel
+                IF sa# = 0.0# THEN _CONTINUE 'pixel was fully transparent, no error to distribute
                 '------------------------------------------
                 '--- Floyd-Steinberg error distribution ---
                 '------------------------------------------
@@ -270,8 +296,6 @@ IF shan& < -1 THEN
                 '------------------------------------------
                 '--- End of FS ----------------------------
                 '------------------------------------------
-                noff%& = noff%& + 1 'next dest pixel
-                soff%& = soff%& + 4 'next source pixel
             NEXT x%
             tmp% = cro%: cro% = nro%: nro% = tmp% 'exchange distribution array row offsets
         NEXT y%
@@ -281,6 +305,7 @@ IF shan& < -1 THEN
         _MEMFREE gbuf
         _MEMFREE rbuf
         _MEMFREE nbuf
+        IF back& < -1 THEN _MEMFREE dbuf
         _MEMFREE sbuf
         '--- set result ---
         RemapImageFS& = nhan&

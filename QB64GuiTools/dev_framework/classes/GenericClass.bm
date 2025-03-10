@@ -49,12 +49,6 @@ SELECT CASE methodID$
         tagsOpt$ = "" '+ optional object init tags + user tags
         GOSUB meInit
         'Result Tags: ERROR/WARNING or OBJECT
-    CASE "Newpal"
-        tagsReq$ = "" 'ImageC pseudo method (w/o OBJECT)
-        tagsOpt$ = ""
-        objectID$ = "ImageC"
-        GOSUB meCallObjectClass
-        'Result Tags: empty
     CASE ELSE
         tagsReq$ = "OBJECT," '+ required object method tags
         tagsOpt$ = "" '+ optional object method tags + user tags
