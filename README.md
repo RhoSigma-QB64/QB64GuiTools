@@ -13,7 +13,7 @@ GuiTools is a ready to use program template/skeleton to create neat graphic UI a
 
 Note that GuiTools does not implement the usual Windows like look and feel, but is inspired by the [AmigaOS](https://os.amigaworld.de/index.php?lang=en&page=16) versions 2.0 to 3.9, which have a simple yet elegant look (see pictures below).
 
-#### Download the latest Release v0.17 (December/2023) right here: [QB64GuiTools.7z](https://github.com/RhoSigma-QB64/QB64GuiTools/raw/main/QB64GuiTools.7z)
+#### Download the latest Release v0.18 (March/2025) right here: [QB64GuiTools.7z](https://github.com/RhoSigma-QB64/QB64GuiTools/raw/main/QB64GuiTools.7z)
 
 >**Make sure to move the extracted QB64GuiTools folder with its entire contents into your QB64 installation folder. If you're new to GuiTools, then please also read the [GuiTools-Info.html](https://htmlpreview.github.io/?https://github.com/RhoSigma-QB64/QB64GuiTools/blob/main/QB64GuiTools/GuiTools-Info.html) file in the main folder for a short introduction of the project structure. See docs\ReleaseNotes.txt for latest changes.**
 
