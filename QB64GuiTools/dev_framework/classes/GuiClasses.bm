@@ -44,7 +44,7 @@
 '     'end of handling events
 '   WEND
 '---------------------------------------------------------------------
-FUNCTION GetGUIMsg$
+FUNCTION GetGUIMsg$ (deafmode%)
 IF _EXIT THEN SetTag guiObjects$(0, 0), "USERBREAK", "true"
 '--- handle pending exit requests and GUI refreshes immediately ---
 mess$ = ExtractTag$(guiObjects$(0, 0), "USERBREAK")
@@ -88,7 +88,9 @@ IF mi% <> 0 OR ik$ <> "" OR mwl% <> 0 THEN
 END IF
 IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
                          OR BoolTagTrue%(guiObjects$(0, 0), "IMMFLAG") THEN
+    IF deafmode% THEN mess$ = GetTags$(mess$, "MOUSEX,MOUSEY,MOUSELB,MOUSERB,MOUSEMB,GUIVIEW")
     IF BoolTagTrue%(guiObjects$(0, 0), "SMINP") GOTO update
+    IF deafmode% GOTO moving
     '--- set key press & check modifiers keys ---
     IF ik$ <> "" THEN
         SetTag mess$, "KEYPRESS", "true"
@@ -146,6 +148,7 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
         SetTag mess$, "SCRVAL", LTRIM$(STR$(SGN(mwl%)))
     END IF
     '--- check for mouse movement ---
+    moving:
     mx% = _MOUSEX: gloMx% = -1
     my% = _MOUSEY: gloMy% = -1
     IF mx% <> VAL(GetTagData$(mess$, "MOUSEX", "0")) OR my% <> VAL(GetTagData$(mess$, "MOUSEY", "0")) THEN
@@ -153,6 +156,7 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
         SetTag mess$, "MOUSEX", LTRIM$(STR$(mx%))
         SetTag mess$, "MOUSEY", LTRIM$(STR$(my%))
     END IF
+    IF deafmode% THEN RemTag mess$, "MOUSEMOVE"
     '--- update objects, check for selection/release ---
     update:
     UpdateGuiViews: _DISPLAY
@@ -175,7 +179,8 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
         stim# = TIMER(0.001)
         FOR oix& = guiALBIndex& TO UBOUND(guiObjects$, 2)
             IF RIGHT$(guiObjects$(objFlags%, oix&), 2) = "-u" THEN
-                IF VAL(GetTagData$(guiObjects$(objData%, oix&), "GUIVIEW", "0")) = vix& THEN
+                IF (VAL(GetTagData$(guiObjects$(objData%, oix&), "GUIVIEW", "0")) = vix&) OR _
+                   (guiObjects$(objType%, oix&) = "TextC" AND GetTags$(guiObjects$(objData%, oix&), "ETIM,EVAL") <> "") THEN
                     tag$ = NewTag$("OBJECT", LTRIM$(STR$(oix&)))
                     res$ = GenC$("UPDATE", tag$ + mess$)
                     IF ValidateTags%(res$, "SELECTED", 0) THEN
@@ -228,7 +233,8 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
     FOR oix& = guiALBIndex& TO UBOUND(guiObjects$, 2)
         IF RIGHT$(guiObjects$(objFlags%, oix&), 1) = "u" THEN
             IF MID$(guiObjects$(objFlags%, oix&), 2, 1) = "-" OR MID$(guiObjects$(objFlags%, oix&), 2, 1) = "p" THEN
-                IF BoolTagTrue%(guiObjects$(objData%, oix&), "FOCUS") THEN
+                IF BoolTagTrue%(guiObjects$(objData%, oix&), "FOCUS") AND _
+                   VAL(GetTagData$(guiObjects$(objData%, oix&), "GUIVIEW", "0")) = vix& THEN
                     SetTag mess$, "MOUSEOVER", LTRIM$(STR$(oix&))
                     lastFocus& = oix&: nff% = -1
                     EXIT FOR
@@ -255,7 +261,7 @@ IF lastFocus& = lastIn& AND guiATTProps$ = "" THEN
     IF mitim# >= 1.0 AND mitim# < 1.25 THEN
         IF mi% <> 0 OR ik$ <> "" OR mwl% <> 0 THEN RemTag guiObjects$(objData%, lastIn&), "MITIM"
     ELSEIF mitim# >= 1.25 THEN
-        PrintObjectTooltip lastIn&
+        IF NOT deafmode% THEN PrintObjectTooltip lastIn&
         RemTag guiObjects$(objData%, lastIn&), "MITIM"
     END IF
 END IF
@@ -567,8 +573,8 @@ END SUB
 '       UserMain:, called GOSUB routines and in the "handlers\" files.
 '       This is, as the GuiViews need to inherit from the main screen.
 '---------------------------------------------------------------------
-' viewTitle$  = a default title for the GuiView window (if empty, then
-'               appExeName$.x is used, where .x is the GuiView index)
+' viewTitle$  = a default title for the new GuiView window (if empty,
+'               then "New GuiView Window" is used)
 ' viewWidth%  = pixel width of the new GuiView window
 ' viewHeight% = pixel height of the new GuiView window
 ' Return:     = the new GuiView its index number, zero on failure
@@ -602,7 +608,7 @@ IF vix& = 0 THEN
     vix& = ub& + 1
 END IF
 '--- init view tags ---
-titl$ = appExeName$ + "." + LTRIM$(STR$(vix&))
+titl$ = "New GuiView Window"
 IF viewTitle$ <> "" THEN titl$ = viewTitle$
 guiViews$(vix&) =_
         NewTag$("TITLE", titl$) +_
@@ -645,8 +651,8 @@ END SUB
 'This routine will open the given GuiView window. Note that the user may
 'close any GuiView windows at any time, you may use SUB GuiViewIsOpen%()
 'to find out whether a specific GuiView window is currently open or not.
-'Routine will do nothing, if the given GuiView index does not exist or
-'the specified GuiView is already open.
+'Routine will do nothing, if the given GuiView index does not exist and
+'will try to bring it to front if the specified GuiView is already open.
 '---------------------------------------------------------------------
 'winIcon$ = image file name for the window header icon (empty for default
 '           icon as set in SetupScreen())
@@ -659,7 +665,10 @@ IF winTitle$ <> "*** RhoSigma-OpenGuiView-HandlerCall ***" THEN
     '--- OpenGuiView Setup Block ---
     IF vix& <= LBOUND(guiViews$) OR vix& > UBOUND(guiViews$) THEN EXIT SUB
     IF guiViews$(vix&) = "" THEN EXIT SUB
-    IF BoolTagTrue%(guiViews$(vix&), "ISOPEN") THEN EXIT SUB
+    IF BoolTagTrue%(guiViews$(vix&), "ISOPEN") THEN
+        WindowToTop(GetTagData$(guiViews$(vix&), "TITLE", "") + CHR$(0))
+        EXIT SUB
+    END IF
 
     file$ = GetUniqueID$
     TempLog file$, "MODULE: OpenGuiView CONTENTS: Handshake and parameter exchange file."
@@ -677,15 +686,16 @@ IF winTitle$ <> "*** RhoSigma-OpenGuiView-HandlerCall ***" THEN
     SetTag guiViews$(vix&), "ISOPEN", LTRIM$(STR$(PlantMutex%&("Global\RhoSigma-GuiApp-GuiViewIsOpen-" + viewID$ + CHR$(0))))
 ELSE
     '--- OpenGuiView Handler Block ---
-    SHARED cmdArgs$(): file$ = cmdArgs$(3): progID$ = cmdArgs$(4)
-    viewID$ = cmdArgs$(5): appExeName$ = appExeName$ + "." + LTRIM$(STR$(vix&))
+    SHARED cmdArgs$(): file$ = cmdArgs$(3): progID$ = cmdArgs$(4): viewID$ = cmdArgs$(5)
     runMtx%& = PlantMutex%&("Global\RhoSigma-GuiApp-OpenGuiViewHandler-" + viewID$ + CHR$(0))
     getMtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-" + file$ + CHR$(0))
     '--- get handshake tags ---
     rff% = SafeOpenFile%("I", appTempDir$ + file$)
     LINE INPUT #rff%, tags$: CLOSE rff%
+    KILL appTempDir$ + file$
     '--- init window ---
     wid% = VAL(GetTagData$(tags$, "WIDTH", "0")): hei% = VAL(GetTagData$(tags$, "HEIGHT", "0"))
+    guiVCRCSum& = GetCRC32&(GetTagData$(tags$, "TITLE", ""))
     SetupScreen wid%, hei%, 0
     winImg$ = ImageC$("INIT", NewTag$("IMAGEFILE", winIcon$) + NewTag$("LEFT", "0") + NewTag$("TOP", "0"))
     winIco& = VAL(GetObjTagData$(winImg$, "IHANDLE", "0"))
@@ -1485,7 +1495,7 @@ found% = 0
 IF SeekChunk&(iff%, 1, CHcsetID$) > 0 THEN
     WHILE NOT EOF(iff%)
         GET iff%, , cset(0)
-        IF RStrip$(stmFIXED%, cset(0).csetCLASS) = classID$ THEN
+        IF EOF(iff%) = 0 AND RStrip$(stmFIXED%, cset(0).csetCLASS) = classID$ THEN
             found% = -1
             EXIT WHILE
         END IF
@@ -1560,16 +1570,18 @@ END SUB
 SUB LastPosUpdate (sm%)
 REDIM winp(0) AS ChunkWPOS
 '--- exclusivly search winpos brain ---
-mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-wpbrain.bin" + CHR$(0))
-iff% = SafeOpenFile%("B", appLocalDir$ + "wpbrain.bin")
+mtx%& = LockMutex%&("Global\RhoSigma-GuiApp-FileAccess-wpbrain-v2.bin" + CHR$(0))
+iff% = SafeOpenFile%("B", appLocalDir$ + "wpbrain_v2.bin")
 found% = 0
 IF SeekChunk&(iff%, 1, CHwposID$) > 0 THEN
     WHILE NOT EOF(iff%)
         ptr& = SEEK(iff%)
         GET iff%, , winp(0)
-        IF RStrip$(stmFIXED%, winp(0).wposNAME) = LEFT$(appExeName$, 30) THEN
-            found% = -1
-            EXIT WHILE
+        IF EOF(iff%) = 0 AND RStrip$(stmFIXED%, winp(0).wposNAME) = LEFT$(appExeName$, 30) THEN
+            IF winp(0).wposVCRC = guiVCRCSum& THEN
+                found% = -1
+                EXIT WHILE
+            END IF
         END IF
     WEND
 END IF
@@ -1584,17 +1596,13 @@ IF found% THEN
     END IF
 ELSE
     IF NOT sm% THEN
-        disp% = 0: ext$ = LCASE$(FileExtension$(appExeName$))
-        IF ext$ <> ".exe" THEN
-            disp% = VAL(MID$(ext$, 2))
-            WHILE disp% > 10: disp% = disp% - 10: WEND
-        END IF
-        guiWinX% = 25 + (disp% * 25): guiWinY% = 25 + (disp% * 25)
+        guiWinX% = 25: guiWinY% = 25
         _SCREENMOVE guiWinX%, guiWinY%
     ELSE
         winp(0).wposSTDC.chunkID = CHwposID$
         winp(0).wposSTDC.chunkLEN = CHwposLEN%
         winp(0).wposNAME = LEFT$(appExeName$, 30)
+        winp(0).wposVCRC = guiVCRCSum&
         winp(0).wposXPOS = guiWinX%: winp(0).wposYPOS = guiWinY%
         PUT iff%, LOF(iff%) + 1, winp(0)
         SizeUpdate iff%, wposSIZEOF%
@@ -1683,6 +1691,7 @@ ELSE
                 resu$ = ListC$("SET", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("ACTUAL", LTRIM$(STR$(actu&))))
                 MID$(guiObjects$(objFlags%, lobj&), 2, 1) = "c"
                 SetTag guiObjects$(objData%, lobj&), "REFOBJ", LTRIM$(STR$(this&))
+                RemTag guiObjects$(objData%, lobj&), "REVERSE" 'make sure list is read forward
                 IF methodID$ = "Set" THEN
                     KillAssignedList this& '1st release old list
                     SetTag guiObjects$(objData%, this&), "LISTOBJECT", LTRIM$(STR$(lobj&)) 'then set new
@@ -1976,7 +1985,7 @@ IF guiATTProps$ <> "" THEN
         guiATTProps$ = ""
     END IF
 ELSE
-    IF this& < 0 THEN EXIT SUB
+    IF this& <= 0 THEN EXIT SUB
     '--- set view ---
     SourceDestGuiView VAL(GetTagData$(guiObjects$(objData%, this&), "GUIVIEW", "0"))
     '--- only do, if tooltip or shortcut is available ---
@@ -2101,6 +2110,7 @@ ELSE
         _PUTIMAGE (0, 0), _SOURCE, area&, (left%, topp%)-(left% + widt% + 14, topp% + heig% + 15)
         l% = left%: t% = topp%: w% = widt%: h% = heig%
         guiATTProps$ = NewTag$("GUIVIEW", LTRIM$(STR$(guiAGVIndex&))) +_
+                       NewTag$("OBJECT", LTRIM$(STR$(this&))) +_
                        NewTag$("LEFT", LTRIM$(STR$(left%))) +_
                        NewTag$("TOP", LTRIM$(STR$(topp%))) +_
                        NewTag$("RHANDLE", LTRIM$(STR$(area&)))

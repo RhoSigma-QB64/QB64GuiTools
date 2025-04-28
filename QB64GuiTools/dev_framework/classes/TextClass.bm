@@ -48,7 +48,7 @@ SELECT CASE methodID$
     CASE "Init"
         tagsReq$ = "LEFT,TOP,WIDTH,HEIGHT,"
         tagsOpt$ = "GUIVIEW,PAGEROBJECT,IMAGEOBJECT,SYMBOLOBJECT,FORM," +_
-                   "TEXT,TEXTPLACE,TEXTMOVEX,TEXTMOVEY," +_
+                   "TEXT,TEXTPLACE,TEXTMOVEX,TEXTMOVEY,TEXTSCROLL," +_
                    "LABEL,LABELHIGH,LABELPLACE,LABELMOVEX,LABELMOVEY," +_
                    "IMAGEFILE,IMAGEHANDLE,AREA,TOOLTIP," '+ user tags
         'NOTE: If FORM is omitted (frameless object) then any given back
@@ -60,7 +60,7 @@ SELECT CASE methodID$
     CASE "Set"
         tagsReq$ = "OBJECT,"
         tagsOpt$ = "IMAGEOBJECT,SYMBOLOBJECT," +_
-                   "TEXT,TEXTPLACE,TEXTMOVEX,TEXTMOVEY," '+ user tags
+                   "TEXT,TEXTPLACE,TEXTMOVEX,TEXTMOVEY,TEXTSCROLL," '+ user tags
         GOSUB meSet
         'Result Tags: ERROR/WARNING or empty
     CASE "Get"
@@ -131,7 +131,7 @@ IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
     flag% = 0
     IF SetAssignedImgSym%(this&, "IMAGEOBJECT", TextRes$, classID$, tagsID$) THEN flag% = -1
     IF SetAssignedImgSym%(this&, "SYMBOLOBJECT", TextRes$, classID$, tagsID$) THEN flag% = -1
-    IF UpdateTags%(guiObjects$(objData%, this&), "TEXT,TEXTPLACE,TEXTMOVEX,TEXTMOVEY", tagsID$) THEN flag% = -1
+    IF UpdateTags%(guiObjects$(objData%, this&), "TEXT,TEXTPLACE,TEXTMOVEX,TEXTMOVEY,TEXTSCROLL", tagsID$) THEN flag% = -1
     text$ = GetTag$(tagsID$, "TEXT"): temp$ = GetTagData$(text$, "TEXT", "n/a")
     IF text$ <> "" AND temp$ = "n/a" THEN RemTag guiObjects$(objData%, this&), "TEXT": flag% = -1
     '--- check any remaining user tag changes ---
@@ -145,6 +145,11 @@ IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
     LOOP WHILE utag$ <> ""
     '--- redraw object (if required) ---
     IF flag% THEN
+        '--- first invalidate scroll text data ---
+        txim& = VAL(GetTagData$(guiObjects$(objData%, this&), "SCIMG", "-1"))
+        IF txim& < -1 THEN _FREEIMAGE txim&
+        RemTags guiObjects$(objData%, this&), "SCIMG,EVAL,ETIM"
+        '--- then redraw ---
         IF ValidateTags%(guiObjects$(objData%, this&), "FRM0", 0) THEN
             resu$ = ObjectRefresh$(this&, "d", "")
         ELSE
@@ -170,6 +175,9 @@ meKill:
 IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
     '--- 1st remove interconnections to this object ---
     KillInterconnections this&
+    '--- free scroll text image (if any) ---
+    txim& = VAL(GetTagData$(guiObjects$(objData%, this&), "SCIMG", "-1"))
+    IF txim& < -1 THEN _FREEIMAGE txim&
     '--- delete child objects ---
     resu$ = FrameC$("KILL", ObjectTag$(guiObjects$(objData%, this&), "FRM0"))
     resu$ = ImageC$("KILL", ObjectTag$(guiObjects$(objData%, this&), "BGIMG"))
@@ -232,6 +240,33 @@ IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
             CASE "solid"
                 disp% = 6 + 2
         END SELECT
+        IF _PRINTWIDTH(text$) > (widt% - (2 * disp%)) THEN
+            IF NOT BoolTagTrue%(guiObjects$(objData%, this&), "TEXTSCROLL") THEN
+                WHILE _PRINTWIDTH(text$ + "...") > (widt% - (2 * disp%))
+                    text$ = LEFT$(text$, LEN(text$) - 1)
+                WEND
+                text$ = text$ + "..."
+            ELSE
+                txim& = VAL(GetTagData$(guiObjects$(objData%, this&), "SCIMG", "-1"))
+                sctx$ = text$ + " - - - - - ": scle% = _PRINTWIDTH(sctx$)
+                IF txim& >= -1 THEN
+                    sctx$ = sctx$ + text$
+                    txim& = _NEWIMAGE(_PRINTWIDTH(sctx$) + 10, heig%, 256)
+                    ofon& = _FONT: odes& = _DEST: _DEST txim&: _FONT ofon&
+                    _PRINTMODE _KEEPBACKGROUND: COLOR text%: _CLEARCOLOR 0
+                    _PRINTSTRING (0, txto% - topp% + 1 + ymov%), sctx$
+                    _FONT 16: _DEST odes&
+                    SetTag guiObjects$(objData%, this&), "SCIMG", LTRIM$(STR$(txim&))
+                END IF
+                ssta% = VAL(GetTagData$(guiObjects$(objData%, this&), "EVAL", "0"))
+                _PUTIMAGE (left% + disp%, topp% + disp% - 2), txim&, _DEST, (ssta%, disp% - 2)-(ssta% + widt% - (2 * disp%) - 1, heig% - (2 * (disp% - 2)) - 1)
+                ssta% = ssta% + 1: IF ssta% = scle% THEN ssta% = 0
+                SetTag guiObjects$(objData%, this&), "EVAL", LTRIM$(STR$(ssta%))
+                SetTag guiObjects$(objData%, this&), "ETIM", LTRIM$(STR$(TIMER(0.001)))
+                SetTag guiObjects$(0, 0), "IMMFLAG", "true"
+                RETURN
+            END IF
+        END IF
         SELECT CASE plac$
             CASE "left"
                 txle% = left% + disp%
@@ -263,6 +298,32 @@ IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
         SetTag guiObjects$(objData%, this&), "FOCUS", "true"
     ELSE
         RemTag guiObjects$(objData%, this&), "FOCUS"
+    END IF
+    '--- check scroll timer ---
+    etim# = VAL(GetTagData$(guiObjects$(objData%, this&), "ETIM", "-1"))
+    IF etim# >= 0 THEN
+        etim# = TIMER(0.001) - etim#
+        IF etim# < 0 THEN etim# = etim# + 86400 'midnight fix
+        IF etim# >= 0.04 THEN
+            IF guiATTProps$ <> "" THEN 'look for tooltip/textfield collision, remove tooltip if required
+                obje& = VAL(GetTagData$(guiATTProps$, "OBJECT", "0"))
+                bubb& = VAL(GetTagData$(guiATTProps$, "IHANDLE", "-1"))
+                bux1% = VAL(GetTagData$(guiATTProps$, "LEFT", "0")): bux2% = bux1% + _WIDTH(bubb&) - 1
+                buy1% = VAL(GetTagData$(guiATTProps$, "TOP", "0")): buy2% = buy1% + _HEIGHT(bubb&) - 1
+                IF left% + widt% - 1 >= bux1% THEN
+                    IF left% <= bux2% THEN
+                        IF topp% + heig% - 1 >= buy1% THEN
+                            IF topp% <= buy2% THEN
+                                PrintObjectTooltip 0
+                            END IF
+                        END IF
+                    END IF
+                END IF
+            END IF
+            resu$ = TextC$("DRAW", thisTag$)
+            IF obje& > 0 THEN PrintObjectTooltip obje& 'redraw tooltip if there was one
+        END IF
+        SetTag TextRes$, "IMMFLAG", "true"
     END IF
 END IF
 RETURN

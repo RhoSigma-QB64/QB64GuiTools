@@ -1,0 +1,696 @@
+    IF ValidateTags%(mess$, "GADGETUP", 0) THEN 'use ValidateTags%() to check for non-BOOL tags
+        'This is the most important event type for GUI operation, it is
+        'delivered only, if an clickable GUI object went into focus, then
+        'got selected and finally got unselected while it still (or again)
+        'had focus, ie. the object was regularly clicked once and now the
+        'associated action should be executed. This event is also send,
+        'if any Text/Number input field is unselected, hence its input is
+        'completed. The function ThisObject%() does match the GADGETUP
+        'object with a given object to easily build handling blocks for your
+        'objects: eg. IF ThisObject%(myObj$, message$, "GADGETUP") THEN ...
+        '--- Main View Events ---
+        IF ThisObject%(MainExitButton$, mess$, "GADGETUP") THEN
+            IF nowPlaying% THEN GOSUB togglePlayingState: GOSUB stopPlay
+            IF opts.remStation THEN opts.idxStation = VAL(GetObjTagData$(MainStationsList$, "ACTUAL", "0"))
+            done% = -1
+        END IF
+        IF ThisObject%(MainSettingsButton$, mess$, "GADGETUP") THEN
+            IF SettingsView& = 0 THEN
+                SettingsView& = CreateGuiView& ("Program Settings", 550, 377)
+                SettingsBackImage$ = ImageC$("INIT",_
+                        ViewTag$(SettingsView&) +_
+                        NewTag$("IMAGEFILE", "Back.jpg") +_
+                        NewTag$("BACKFILL", "true") +_
+                        NewTag$("AREA", "false") +_
+                        NewTag$("LEFT", "0") +_
+                        NewTag$("TOP", "0"))
+                SettingsLogoImage$ = ImageC$("INIT",_
+                        ViewTag$(SettingsView&) +_
+                        NewTag$("LEFT", "5") +_
+                        NewTag$("TOP", "0") +_
+                        NewTag$("WIDTH", "175") +_
+                        NewTag$("HEIGHT", "175") +_
+                        NewTag$("STANDALONE", "true") +_
+                        NewTag$("CLEARCOLOR", "0") +_
+                        NewTag$("TOOLTIP", "Choose your|preferences") +_
+                        NewTag$("IMAGEFILE", "Settings.png"))
+                '--- Settings ---
+                SettingsDisplayRuler$ = RulerC$("INIT",_
+                        ViewTag$(SettingsView&) +_
+                        NewTag$("LEFT", "185") +_
+                        NewTag$("TOP", "15") +_
+                        NewTag$("LENGTH", "350") +_
+                        NewTag$("FORM", "solid") +_
+                        NewTag$("TEXT", "Display Options") +_
+                        NewTag$("TEXTPLACE", "right"))
+                SettingsCheckboxCommon$ =_
+                        ViewTag$(SettingsView&) +_
+                        NewTag$("LEFT", "190") +_
+                        NewTag$("WIDTH", "31") +_
+                        NewTag$("HEIGHT", "31") +_
+                        NewTag$("LABELPLACE", "right") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg")
+                SettingsScrollStationCheckbox$ = CheckboxC$("INIT", SettingsCheckboxCommon$ +_
+                        NewTag$("TOP", "30") +_
+                        NewTag$("CHECKED", LTRIM$(STR$(opts.scrStation))) +_
+                        NewTag$("LABEL", "Always scroll -Radio Station- text") +_
+                        NewTag$("TOOLTIP", "Check to make the text always scroll,|otherwise only too long text will scroll."))
+                SettingsScrollFeedsCheckbox$ = CheckboxC$("INIT", SettingsCheckboxCommon$ +_
+                        NewTag$("TOP", "67") +_
+                        NewTag$("CHECKED", LTRIM$(STR$(opts.scrFeeds))) +_
+                        NewTag$("LABEL", "Always scroll -Feeds display- text") +_
+                        NewTag$("TOOLTIP", "Check to make the text always scroll,|otherwise only too long text will scroll."))
+                SettingsVolumeRuler$ = RulerC$("INIT",_
+                        ViewTag$(SettingsView&) +_
+                        NewTag$("LEFT", "185") +_
+                        NewTag$("TOP", "113") +_
+                        NewTag$("LENGTH", "350") +_
+                        NewTag$("FORM", "solid") +_
+                        NewTag$("TEXT", "Volume Options") +_
+                        NewTag$("TEXTPLACE", "right"))
+                SettingsResetVolumeCheckbox$ = CheckboxC$("INIT", SettingsCheckboxCommon$ +_
+                        NewTag$("TOP", "128") +_
+                        NewTag$("CHECKED", LTRIM$(STR$(opts.volReset))) +_
+                        NewTag$("LABEL", "Reset Volume when changing Station") +_
+                        NewTag$("TOOLTIP", "Resets the Volume in case the current level|is higher than the -Start/Reset- level."))
+                SettingsVolumeSlider$ = SliderC$("INIT",_
+                        ViewTag$(SettingsView&) +_
+                        NewTag$("LEFT", "190") +_
+                        NewTag$("TOP", "165") +_
+                        NewTag$("WIDTH", "285") +_
+                        NewTag$("HEIGHT", "31") +_
+                        NewTag$("MINIMUM", "0") +_
+                        NewTag$("MAXIMUM", "100") +_
+                        NewTag$("LEVEL", LTRIM$(STR$(opts.volStart))) +_
+                        NewTag$("ALTMIN", "Mute") +_
+                        NewTag$("ALTMAX", "Full") +_
+                        NewTag$("NOSHOW", "true") +_
+                        NewTag$("LABEL", "Start/Reset Volume") +_
+                        NewTag$("LABELPLACE", "left") +_
+                        NewTag$("TOOLTIP", "The Volume level to set at progam|start and for Station reset action.") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg"))
+                SettingsVolumeText$ = TextC$("INIT",_
+                        ViewTag$(SettingsView&) +_
+                        NewTag$("LEFT", "477") +_
+                        NewTag$("TOP", "164") +_
+                        NewTag$("WIDTH", "53") +_
+                        NewTag$("HEIGHT", "31") +_
+                        NewTag$("TEXTPLACE", "center") +_
+                        NewTag$("FORM", "ridge") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Tissue.jpg"))
+                SettingsVolumeModel$ = ModelC$("INIT",_
+                        NewTag$("WHICH", "forward") +_
+                        FwdPriTag$(SettingsVolumeSlider$) +_
+                        NewTag$("PRITAG", "LEVEL") +_
+                        FwdSecTag$(SettingsVolumeText$) +_
+                        NewTag$("SECTAG", "TEXT"))
+                SettingsPlayerRuler$ = RulerC$("INIT",_
+                        ViewTag$(SettingsView&) +_
+                        NewTag$("LEFT", "15") +_
+                        NewTag$("TOP", "211") +_
+                        NewTag$("LENGTH", "520") +_
+                        NewTag$("FORM", "solid") +_
+                        NewTag$("TEXT", "Player Options") +_
+                        NewTag$("TEXTPLACE", "right"))
+                SettingsBufferSlider$ = SliderC$("INIT",_
+                        ViewTag$(SettingsView&) +_
+                        NewTag$("LEFT", "20") +_
+                        NewTag$("TOP", "255") +_
+                        NewTag$("WIDTH", "150") +_
+                        NewTag$("HEIGHT", "31") +_
+                        NewTag$("MINIMUM", "50") +_
+                        NewTag$("MAXIMUM", "200") +_
+                        NewTag$("LEVEL", LTRIM$(STR$(opts.bufSize))) +_
+                        NewTag$("NOSHOW", "true") +_
+                        NewTag$("LABEL", "Buffer Size") +_
+                        NewTag$("LABELPLACE", "above") +_
+                        NewTag$("TOOLTIP", "Read ahead buffer used to balance|internet speed losses. Changes|effective on next playback (re)start.") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg"))
+                SettingsBufferText$ = TextC$("INIT",_
+                        ViewTag$(SettingsView&) +_
+                        NewTag$("LEFT", "53") +_
+                        NewTag$("TOP", "289") +_
+                        NewTag$("WIDTH", "48") +_
+                        NewTag$("HEIGHT", "31") +_
+                        NewTag$("TEXTPLACE", "center") +_
+                        NewTag$("LABEL", "KiB") +_
+                        NewTag$("LABELPLACE", "right") +_
+                        NewTag$("LABELMOVEY", "3") +_
+                        NewTag$("FORM", "ridge") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Tissue.jpg"))
+                SettingsBufferModel$ = ModelC$("INIT",_
+                        NewTag$("WHICH", "forward") +_
+                        FwdPriTag$(SettingsBufferSlider$) +_
+                        NewTag$("PRITAG", "LEVEL") +_
+                        FwdSecTag$(SettingsBufferText$) +_
+                        NewTag$("SECTAG", "TEXT"))
+                SettingsAutoPlayCheckbox$ = CheckboxC$("INIT", SettingsCheckboxCommon$ +_
+                        NewTag$("TOP", "226") +_
+                        NewTag$("CHECKED", LTRIM$(STR$(opts.autoPlay))) +_
+                        NewTag$("LABEL", "Autoplay on start and Station change") +_
+                        NewTag$("TOOLTIP", "Start playing at program start, also on Station|change if not manually stopped before change."))
+                SettingsAutoRetryCheckbox$ = CheckboxC$("INIT", SettingsCheckboxCommon$ +_
+                        NewTag$("TOP", "263") +_
+                        NewTag$("CHECKED", LTRIM$(STR$(opts.autoRetry))) +_
+                        NewTag$("LABEL", "Automatically restart stalled stream") +_
+                        NewTag$("TOOLTIP", "If playback was interrupted due to slow|internet, then try to restart automatically."))
+                SettingsNoWarningCheckbox$ = CheckboxC$("INIT", SettingsCheckboxCommon$ +_
+                        NewTag$("TOP", "300") +_
+                        NewTag$("CHECKED", LTRIM$(STR$(opts.chgQuiet))) +_
+                        NewTag$("LABEL", "Suppress https:// to http:// warning") +_
+                        NewTag$("TOOLTIP", "Will avoid the pop-up warning appearing|each time the connection type is changed."))
+                SettingsRememberStationCheckbox$ = CheckboxC$("INIT", SettingsCheckboxCommon$ +_
+                        NewTag$("TOP", "337") +_
+                        NewTag$("CHECKED", LTRIM$(STR$(opts.remStation))) +_
+                        NewTag$("LABEL", "Remember active Station at exit") +_
+                        NewTag$("TOOLTIP", "Save last active/playing Station|at exit for next program start."))
+            END IF
+            OpenGuiView "", "", SettingsView&
+        END IF
+        IF ThisObject%(MainInfoButton$, mess$, "GADGETUP") THEN
+            IF InfoView& = 0 THEN
+                InfoView& = CreateGuiView& ("Additional Informations", 640, 316)
+                InfoBackImage$ = ImageC$("INIT",_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("IMAGEFILE", "Back.jpg") +_
+                        NewTag$("BACKFILL", "true") +_
+                        NewTag$("AREA", "false") +_
+                        NewTag$("LEFT", "0") +_
+                        NewTag$("TOP", "0"))
+                InfoLogoImage$ = ImageC$("INIT",_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("LEFT", "7") +_
+                        NewTag$("TOP", "9") +_
+                        NewTag$("WIDTH", "175") +_
+                        NewTag$("HEIGHT", "175") +_
+                        NewTag$("STANDALONE", "true") +_
+                        NewTag$("CLEARCOLOR", "0") +_
+                        NewTag$("TOOLTIP", "Meta-Tags|sent by Server") +_
+                        NewTag$("IMAGEFILE", "Info.png"))
+                '--- Info fields ---
+                InfoNameFrame$ = FrameC$("INIT", MainFrameCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("TOP", "12") +_
+                        NewTag$("TEXT", "Name"))
+                InfoUrlFrame$ = FrameC$("INIT", MainFrameCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("TOP", "90") +_
+                        NewTag$("TEXT", "URL"))
+                InfoGenreFrame$ = FrameC$("INIT", MainFrameCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("TOP", "168") +_
+                        NewTag$("TEXT", "Genre"))
+                InfoDescFrame$ = FrameC$("INIT", MainFrameCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("TOP", "246") +_
+                        NewTag$("TEXT", "Description"))
+                InfoNameText$ = TextC$("INIT", MainTextCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("TOP", "26"))
+                InfoUrlText$ = TextC$("INIT", MainTextCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("TOP", "104"))
+                InfoGenreText$ = TextC$("INIT", MainTextCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("TOP", "182"))
+                InfoDescriptionText$ = TextC$("INIT", MainTextCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("TOP", "260"))
+                InfoRedirectsText$ = TextC$("INIT",_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("LEFT", "70") +_
+                        NewTag$("TOP", "212") +_
+                        NewTag$("WIDTH", "55") +_
+                        NewTag$("HEIGHT", "31") +_
+                        NewTag$("TEXTPLACE", "center") +_
+                        NewTag$("LABEL", "Redirects") +_
+                        NewTag$("LABELPLACE", "above") +_
+                        NewTag$("FORM", "ridge") +_
+                        NewTag$("TOOLTIP", "Number of redirects followed|to reach this Server.") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Tissue.jpg"))
+                '--- Toolbar ---
+                InfoToolRuler$ = RulerC$("INIT",_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("LEFT", "10") +_
+                        NewTag$("TOP", "254") +_
+                        NewTag$("LENGTH", "175") +_
+                        NewTag$("FORM", "ridge"))
+                InfoCopyImage$ = ImageC$("INIT", MainToolimageCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("IMAGEFILE", "Copy32px.png"))
+                InfoOkImage$ = ImageC$("INIT", MainToolimageCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("IMAGEFILE", "Ok32px.png"))
+                InfoOpenImage$ = ImageC$("INIT", MainToolimageCommon$ +_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("IMAGEFILE", "OpenUrl32px.png"))
+                InfoCopyButton$ = ButtonC$("INIT",_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("LEFT", "50") +_
+                        NewTag$("TOP", "265") +_
+                        NewTag$("WIDTH", "44") +_
+                        NewTag$("HEIGHT", "44") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg") +_
+                        NewTag$("TOOLTIP", "Copy URL to Clipboard") +_
+                        ImageTag$(InfoCopyImage$))
+                InfoOpenButton$ = ButtonC$("INIT",_
+                        ViewTag$(InfoView&) +_
+                        NewTag$("LEFT", "101") +_
+                        NewTag$("TOP", "265") +_
+                        NewTag$("WIDTH", "44") +_
+                        NewTag$("HEIGHT", "44") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg") +_
+                        NewTag$("TOOLTIP", "Open URL in Browser") +_
+                        ImageTag$(InfoOpenImage$))
+            END IF
+            OpenGuiView "", "", InfoView&
+            GOSUB updateInfoView
+        END IF
+        IF ThisObject%(MainPlayButton$, mess$, "GADGETUP") THEN
+            streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
+            IF streamUrl$ <> "" THEN
+                redirects% = 0: GOSUB startPlay: GOSUB togglePlayingState
+            END IF
+        END IF
+        IF ThisObject%(MainStopButton$, mess$, "GADGETUP") THEN
+            GOSUB togglePlayingState: GOSUB stopPlay
+            ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
+        END IF
+        IF ThisObject%(MainVolumeSlider$, mess$, "GADGETUP") THEN
+            IF nowPlaying% AND soundHandle& > 0 THEN
+                _SNDVOL soundHandle&, VAL(GetObjTagData$(MainVolumeSlider$, "LEVEL", "67")) / 100
+            END IF
+        END IF
+        IF ThisObject%(MainPreviousButton$, mess$, "GADGETUP") THEN
+            wasPlaying% = nowPlaying% 'remember
+            IF nowPlaying% THEN
+                GOSUB togglePlayingState: GOSUB stopPlay
+                ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", ""))
+            END IF
+            ok$ = ListC$("READ", MainStationsList$ + NewTag$("REVERSE", "true"))
+            temp$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "DATA", "")
+            IF opts.scrStation THEN WHILE _UPRINTWIDTH(temp$, 8) < 400: temp$ = temp$ + " - - - - - " + temp$: WEND
+            ok$ = GenC$("SET", MainStationText$ + NewTag$("TEXT", temp$))
+            IF opts.volReset AND VAL(GetObjTagData$(MainVolumeSlider$, "LEVEL", "67")) > opts.volStart THEN
+                ok$ = GenC$("SET", MainVolumeSlider$ + NewTag$("LEVEL", LTRIM$(STR$(opts.volStart))))
+            END IF
+            IF StationsView& > 0 THEN ok$ = GenC$("SET", StationsListListview$ + NewTag$("ACTUAL", GetObjTagData$(MainStationsList$, "ACTUAL", "0")))
+            IF opts.autoPlay AND wasPlaying% THEN
+                streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
+                IF streamUrl$ <> "" THEN
+                    redirects% = 0: GOSUB startPlay: GOSUB togglePlayingState
+                END IF
+            ELSE
+                ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
+            END IF
+        END IF
+        IF ThisObject%(MainNextButton$, mess$, "GADGETUP") THEN
+            wasPlaying% = nowPlaying% 'remember
+            IF nowPlaying% THEN
+                GOSUB togglePlayingState: GOSUB stopPlay
+                ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", ""))
+            END IF
+            ok$ = ListC$("READ", MainStationsList$ + NewTag$("REVERSE", "false"))
+            temp$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "DATA", "")
+            IF opts.scrStation THEN WHILE _UPRINTWIDTH(temp$, 8) < 400: temp$ = temp$ + " - - - - - " + temp$: WEND
+            ok$ = GenC$("SET", MainStationText$ + NewTag$("TEXT", temp$))
+            IF opts.volReset AND VAL(GetObjTagData$(MainVolumeSlider$, "LEVEL", "67")) > opts.volStart THEN
+                ok$ = GenC$("SET", MainVolumeSlider$ + NewTag$("LEVEL", LTRIM$(STR$(opts.volStart))))
+            END IF
+            IF StationsView& > 0 THEN ok$ = GenC$("SET", StationsListListview$ + NewTag$("ACTUAL", GetObjTagData$(MainStationsList$, "ACTUAL", "0")))
+            IF opts.autoPlay AND wasPlaying% THEN
+                streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
+                IF streamUrl$ <> "" THEN
+                    redirects% = 0: GOSUB startPlay: GOSUB togglePlayingState
+                END IF
+            ELSE
+                ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
+            END IF
+        END IF
+        IF ThisObject%(MainEditButton$, mess$, "GADGETUP") THEN
+            IF StationsView& = 0 THEN
+                StationsView& = CreateGuiView& ("Stations Manager", 550, 312)
+                StationsBackImage$ = ImageC$("INIT",_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("IMAGEFILE", "Back.jpg") +_
+                        NewTag$("BACKFILL", "true") +_
+                        NewTag$("AREA", "false") +_
+                        NewTag$("LEFT", "0") +_
+                        NewTag$("TOP", "0"))
+                StationsLogoImage$ = ImageC$("INIT",_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("LEFT", "-20") +_
+                        NewTag$("TOP", "5") +_
+                        NewTag$("WIDTH", "180") +_
+                        NewTag$("HEIGHT", "180") +_
+                        NewTag$("STANDALONE", "true") +_
+                        NewTag$("CLEARCOLOR", "0") +_
+                        NewTag$("TOOLTIP", "Manage your|favorite Stations") +_
+                        NewTag$("IMAGEFILE", "Station.png"))
+                '--- Stations List (clone main list) ---
+                StationsStationsList$ = ListC$("INIT", NewTag$("SORT", "alphabet"))
+                FOR i% = 1 TO VAL(GetObjTagData$(MainStationsList$, "RECORDS", "0"))
+                    ok$ = ListC$("STORE", StationsStationsList$ + GetTags$(ListC$("READ", MainStationsList$), "DATA,STREAM_URL"))
+                NEXT i%
+                StationsListFrame$ = FrameC$("INIT",_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("LEFT", "140") +_
+                        NewTag$("TOP", "12") +_
+                        NewTag$("WIDTH", "398") +_
+                        NewTag$("HEIGHT", "290") +_
+                        NewTag$("FORM", "solid") +_
+                        NewTag$("TEXT", "Radio Stations List") +_
+                        NewTag$("TEXTPLACE", "topright"))
+                StationsListListview$ = ListviewC$("INIT",_
+                        ViewTag$(StationsView&) +_
+                        ListTag$(StationsStationsList$) +_
+                        NewTag$("ACTUAL", GetObjTagData$(MainStationsList$, "ACTUAL", "0")) +_
+                        NewTag$("LEFT", "154") +_
+                        NewTag$("TOP", "26") +_
+                        NewTag$("WIDTH", "370") +_
+                        NewTag$("HEIGHT", "262") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Tissue.jpg"))
+                '--- Toolbar ---
+                StationsToolRuler$ = RulerC$("INIT",_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("LEFT", "10") +_
+                        NewTag$("TOP", "201") +_
+                        NewTag$("LENGTH", "120") +_
+                        NewTag$("FORM", "ridge"))
+                StationsDeleteImage$ = ImageC$("INIT", MainToolimageCommon$ +_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("IMAGEFILE", "Delete32px.png"))
+                StationsGotoImage$ = ImageC$("INIT", MainToolimageCommon$ +_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("IMAGEFILE", "GoNext32px.png"))
+                StationsImportImage$ = ImageC$("INIT", MainToolimageCommon$ +_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("IMAGEFILE", "Import32px.png"))
+                StationsChangeImage$ = ImageC$("INIT", MainToolimageCommon$ +_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("IMAGEFILE", "Write32px.png"))
+                StationsDeleteButton$ = ButtonC$("INIT",_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("LEFT", "23") +_
+                        NewTag$("TOP", "211") +_
+                        NewTag$("WIDTH", "44") +_
+                        NewTag$("HEIGHT", "44") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg") +_
+                        NewTag$("TOOLTIP", "Delete selected Station") +_
+                        ImageTag$(StationsDeleteImage$))
+                StationsGotoButton$ = ButtonC$("INIT",_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("LEFT", "73") +_
+                        NewTag$("TOP", "211") +_
+                        NewTag$("WIDTH", "44") +_
+                        NewTag$("HEIGHT", "44") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg") +_
+                        NewTag$("TOOLTIP", "Switch to selected Station") +_
+                        ImageTag$(StationsGotoImage$))
+                StationsImportButton$ = ButtonC$("INIT",_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("LEFT", "23") +_
+                        NewTag$("TOP", "261") +_
+                        NewTag$("WIDTH", "44") +_
+                        NewTag$("HEIGHT", "44") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg") +_
+                        NewTag$("TOOLTIP", "Import new Station(s)") +_
+                        ImageTag$(StationsImportImage$))
+                StationsChangeButton$ = ButtonC$("INIT",_
+                        ViewTag$(StationsView&) +_
+                        NewTag$("LEFT", "73") +_
+                        NewTag$("TOP", "261") +_
+                        NewTag$("WIDTH", "44") +_
+                        NewTag$("HEIGHT", "44") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg") +_
+                        NewTag$("TOOLTIP", "Change name of selected Station") +_
+                        ImageTag$(StationsChangeImage$))
+            END IF
+            OpenGuiView "", "", StationsView&
+        END IF
+        '--- Settings View Events ---
+        IF ThisObject%(SettingsScrollStationCheckbox$, mess$, "GADGETUP") THEN
+            opts.scrStation = BoolTagTrue%(GenC$("GET", SettingsScrollStationCheckbox$), "CHECKED")
+            temp$ = GetObjTagData$(MainStationText$, "TEXT", ""): deli% = INSTR(temp$, " - - - - - ")
+            IF deli% > 0 THEN temp$ = LEFT$(temp$, deli% - 1)
+            IF opts.scrStation THEN
+                WHILE _UPRINTWIDTH(temp$, 8) < 400: temp$ = temp$ + " - - - - - " + temp$: WEND
+            END IF
+            ok$ = GenC$("SET", MainStationText$ + NewTag$("TEXT", temp$))
+        END IF
+        IF ThisObject%(SettingsScrollFeedsCheckbox$, mess$, "GADGETUP") THEN
+            opts.scrFeeds = BoolTagTrue%(GenC$("GET", SettingsScrollFeedsCheckbox$), "CHECKED")
+            temp$ = GetObjTagData$(MainFeedsText$, "TEXT", ""): deli% = INSTR(temp$, " - - - - - ")
+            IF deli% > 0 THEN temp$ = LEFT$(temp$, deli% - 1)
+            IF opts.scrFeeds THEN
+                WHILE _UPRINTWIDTH(temp$, 8) < 400: temp$ = temp$ + " - - - - - " + temp$: WEND
+            END IF
+            ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", temp$))
+        END IF
+        IF ThisObject%(SettingsResetVolumeCheckbox$, mess$, "GADGETUP") THEN
+            opts.volReset = BoolTagTrue%(GenC$("GET", SettingsResetVolumeCheckbox$), "CHECKED")
+        END IF
+        IF ThisObject%(SettingsVolumeSlider$, mess$, "GADGETUP") THEN
+            opts.volStart = VAL(GetObjTagData$(SettingsVolumeSlider$, "LEVEL", "67"))
+        END IF
+        IF ThisObject%(SettingsBufferSlider$, mess$, "GADGETUP") THEN
+            opts.bufSize = VAL(GetObjTagData$(SettingsBufferSlider$, "LEVEL", "50"))
+        END IF
+        IF ThisObject%(SettingsAutoPlayCheckbox$, mess$, "GADGETUP") THEN
+            opts.autoPlay = BoolTagTrue%(GenC$("GET", SettingsAutoPlayCheckbox$), "CHECKED")
+        END IF
+        IF ThisObject%(SettingsAutoRetryCheckbox$, mess$, "GADGETUP") THEN
+            opts.autoRetry = BoolTagTrue%(GenC$("GET", SettingsAutoRetryCheckbox$), "CHECKED")
+        END IF
+        IF ThisObject%(SettingsNoWarningCheckbox$, mess$, "GADGETUP") THEN
+            opts.chgQuiet = BoolTagTrue%(GenC$("GET", SettingsNoWarningCheckbox$), "CHECKED")
+        END IF
+        IF ThisObject%(SettingsRememberStationCheckbox$, mess$, "GADGETUP") THEN
+            opts.remStation = BoolTagTrue%(GenC$("GET", SettingsRememberStationCheckbox$), "CHECKED")
+        END IF
+        '--- Info View Events ---
+        IF ThisObject%(InfoCopyButton$, mess$, "GADGETUP") THEN
+            url$ = GetObjTagData$(InfoUrlText$, "TEXT", "")
+            IF LEFT$(url$, 4) <> "http" THEN url$ = "http://" + url$
+            IF RIGHT$(url$, 1) <> "/" THEN url$ = url$ + "/"
+            _CLIPBOARD$ = url$
+            ok$ = GenC$("SET", InfoCopyButton$ + ImageTag$(InfoCopyImage$))
+        END IF
+        IF ThisObject%(InfoOpenButton$, mess$, "GADGETUP") THEN
+            url$ = GetObjTagData$(InfoUrlText$, "TEXT", "")
+            IF LEFT$(url$, 4) <> "http" THEN url$ = "http://" + url$
+            IF RIGHT$(url$, 1) <> "/" THEN url$ = url$ + "/"
+            SHELL _HIDE _DONTWAIT url$
+        END IF
+        '--- Stations View Events ---
+        IF ThisObject%(StationsDeleteButton$, mess$, "GADGETUP") THEN
+            IF VAL(GetObjTagData$(MainStationsList$, "RECORDS", "0")) > 1 THEN
+                result$ = MessageBox$("", appExeName$,_
+                                      "Are you sure deleting that Station?",_
+                                      "{SYM Checkmark * * * *}Yes||{SYM Cross * * * *}No")
+                IF result$ = "Yes" THEN
+                    curPlayAct$ = GetObjTagData$(MainStationsList$, "ACTUAL", "0")
+                    curPlayNam$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "DATA", "")
+                    delStation$ = GetObjTagData$(StationsListListview$, "ACTUAL", "0")
+                    ok$ = ListC$("DELETE", MainStationsList$ + NewTag$("ACTUAL", delStation$))
+                    IF delStation$ <> curPlayAct$ THEN ok$ = ListC$("SEARCH", MainStationsList$ + NewTag$("DATA", curPlayNam$) + NewTag$("HOLD", "true"))
+                    ok$ = GenC$("SET", StationsListListview$ + ListTag$(MainStationsList$) + NewTag$("ACTUAL", GetObjTagData$(MainStationsList$, "ACTUAL", "0")))
+                    SWAP MainStationsList$, StationsStationsList$
+                    ok$ = ListC$("DELETE", MainStationsList$ + NewTag$("ACTUAL", delStation$))
+                    IF delStation$ <> curPlayAct$ THEN
+                        ok$ = ListC$("SEARCH", MainStationsList$ + NewTag$("DATA", curPlayNam$) + NewTag$("HOLD", "true"))
+                    ELSE
+                        GOTO gotoButtonAction
+                    END IF
+                END IF
+            ELSE
+                ok$ = MessageBox$("Error16px.png", appExeName$,_
+                        "Sorry, you cannot delete the last remaining Station.",_
+                        "{IMG Error16px.png 0}Ok, got it...")
+            END IF
+        END IF
+        IF ThisObject%(StationsGotoButton$, mess$, "GADGETUP") THEN
+            gotoButtonAction:
+            wasPlaying% = nowPlaying% 'remember
+            IF nowPlaying% THEN
+                GOSUB togglePlayingState: GOSUB stopPlay
+                ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", ""))
+            END IF
+            ok$ = GenC$("SET", MainStationsList$ + NewTag$("ACTUAL", GetObjTagData$(StationsListListview$, "ACTUAL", "0")))
+            temp$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "DATA", "")
+            IF opts.scrStation THEN WHILE _UPRINTWIDTH(temp$, 8) < 400: temp$ = temp$ + " - - - - - " + temp$: WEND
+            ok$ = GenC$("SET", MainStationText$ + NewTag$("TEXT", temp$))
+            IF opts.volReset AND VAL(GetObjTagData$(MainVolumeSlider$, "LEVEL", "67")) > opts.volStart THEN
+                ok$ = GenC$("SET", MainVolumeSlider$ + NewTag$("LEVEL", LTRIM$(STR$(opts.volStart))))
+            END IF
+            IF opts.autoPlay AND wasPlaying% THEN
+                streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
+                IF streamUrl$ <> "" THEN
+                    redirects% = 0: GOSUB startPlay: GOSUB togglePlayingState
+                END IF
+            ELSE
+                ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
+            END IF
+        END IF
+        IF ThisObject%(StationsImportButton$, mess$, "GADGETUP") THEN
+            m3uFile$ = FileSelect$("", "Select a downloaded *.m3u, *.m3u8 or *.pls file...", fsmLOAD%, _DIR$("Downloads"), "")
+            IF LEN(m3uFile$) > 0 THEN
+                ext$ = LCASE$(FileExtension$(m3uFile$))
+                IF ext$ <> ".m3u" AND ext$ <> ".m3u8" AND ext$ <> ".pls" THEN
+                    result$ = MessageBox$("", appExeName$,_
+                                          "Your choice is not a *.m3u, *.m3u8 or *.pls file.|" +_
+                                          "However, if it's the file you got from the Radio|" +_
+                                          "Station its website, then it still might contain|" +_
+                                          "the required data for import.|~" +_
+                                          "Wrong files will import nothing at best, but in|" +_
+                                          "worst INetRadio will error and then quit.||" +_
+                                          "Are you sure to process the selected file?",_
+                                          "{SYM Checkmark * * * *}Yes||{SYM Cross * * * *}No")
+                    IF result$ = "No" THEN m3uFile$ = ""
+                END IF
+                m3u% = SafeOpenFile%("I", m3uFile$)
+                IF m3u% <> 0 THEN
+                    IF LOF(m3u%) THEN
+                        curPlayNam$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "DATA", "")
+                        LINE INPUT #m3u%, dat$
+                        IF UCASE$(dat$) = "#EXTM3U" THEN
+                            WHILE NOT EOF(m3u%)
+                                LINE INPUT #m3u%, ext$
+                                IF UCASE$(LEFT$(ext$, 7)) = "#EXTINF" THEN
+                                    importProcessEXTINF:
+                                    ext$ = LTRIM$(RTRIM$(MID$(ext$, INSTR(ext$, ",") + 1)))
+                                    DO
+                                        IF EOF(m3u%) THEN EXIT WHILE
+                                        LINE INPUT #m3u%, dat$
+                                        IF LCASE$(LEFT$(dat$, 4)) = "http" THEN
+                                            GOSUB importUpdateList
+                                        ELSEIF UCASE$(LEFT$(dat$, 7)) = "#EXTINF" THEN
+                                            ext$ = dat$: GOTO importProcessEXTINF
+                                        END IF
+                                    LOOP
+                                END IF
+                            WEND
+                        ELSEIF LCASE$(dat$) = "[playlist]" THEN
+                            num% = 0
+                            DO
+                                IF num% THEN ext$ = " (" + LTRIM$(STR$(num%)) + ")": ELSE ext$ = ""
+                                IF LCASE$(LEFT$(dat$, 4)) = "file" THEN
+                                    dat$ = LTRIM$(RTRIM$(MID$(dat$, INSTR(dat$, "=") + 1)))
+                                    IF LCASE$(LEFT$(dat$, 4)) = "http" THEN
+                                        ext$ = LTRIM$(RTRIM$(FilePart$(m3uFile$))) + ext$
+                                        GOSUB importUpdateList
+                                        num% = num% + 1
+                                    END IF
+                                END IF
+                                IF EOF(m3u%) THEN EXIT DO
+                                LINE INPUT #m3u%, dat$
+                            LOOP
+                        ELSE
+                            num% = 0
+                            DO
+                                IF num% THEN ext$ = " (" + LTRIM$(STR$(num%)) + ")": ELSE ext$ = ""
+                                IF LCASE$(LEFT$(dat$, 4)) = "http" THEN
+                                    ext$ = LTRIM$(RTRIM$(FilePart$(m3uFile$))) + ext$
+                                    GOSUB importUpdateList
+                                    num% = num% + 1
+                                END IF
+                                IF EOF(m3u%) THEN EXIT DO
+                                LINE INPUT #m3u%, dat$
+                            LOOP
+                        END IF
+                        GOTO importSkipUpdateList
+                        importUpdateList:
+                            colon% = INSTR(7, dat$, ":"): IF colon% > 0 THEN dat$ = LEFT$(dat$, colon% - 1)
+                            slash% = INSTR(9, dat$, "/"): IF slash% = 0 THEN dat$ = dat$ + "/"
+                            IF _UPRINTWIDTH(ext$, 8) = 0 THEN ext$ = AnsiTextToUtf8Text$(ext$, "Win1252")
+                            ok$ = ListC$("STORE", MainStationsList$ + NewTag$("DATA", ext$) + NewTag$("STREAM_URL", dat$))
+                            ok$ = ListC$("SEARCH", MainStationsList$ + NewTag$("DATA", curPlayNam$) + NewTag$("HOLD", "true"))
+                            ok$ = GenC$("SET", StationsListListview$ + ListTag$(MainStationsList$) + NewTag$("ACTUAL", GetObjTagData$(MainStationsList$, "ACTUAL", "0")))
+                            SWAP MainStationsList$, StationsStationsList$
+                            ok$ = ListC$("STORE", MainStationsList$ + NewTag$("DATA", ext$) + NewTag$("STREAM_URL", dat$))
+                            ok$ = ListC$("SEARCH", MainStationsList$ + NewTag$("DATA", curPlayNam$) + NewTag$("HOLD", "true"))
+                        RETURN
+                        importSkipUpdateList:
+                    END IF
+                END IF
+                CLOSE m3u%
+            END IF
+        END IF
+        IF ThisObject%(StationsChangeButton$, mess$, "GADGETUP") THEN
+            IF EditView& = 0 THEN
+                EditView& = CreateGuiView& ("Station Name Editor", 400, 70)
+                EditBackImage$ = ImageC$("INIT",_
+                        ViewTag$(EditView&) +_
+                        NewTag$("IMAGEFILE", "Back.jpg") +_
+                        NewTag$("BACKFILL", "true") +_
+                        NewTag$("AREA", "false") +_
+                        NewTag$("LEFT", "0") +_
+                        NewTag$("TOP", "0") +_
+                        NewTag$("WIDTH", "400") +_
+                        NewTag$("HEIGHT", "140"))
+                EditNameString$ = StringC$("INIT",_
+                        ViewTag$(EditView&) +_
+                        NewTag$("LEFT", "10") +_
+                        NewTag$("TOP", "30") +_
+                        NewTag$("WIDTH", "380") +_
+                        NewTag$("HEIGHT", "32") +_
+                        NewTag$("TEXTPLACE", "center") +_
+                        NewTag$("LABEL", "Edit the Name, press Enter to confirm.") +_
+                        NewTag$("LABELPLACE", "above") +_
+                        NewTag$("FORM", "ridge") +_
+                        NewTag$("PASSIVE", "true") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Tissue.jpg"))
+            END IF
+            ok$ = GenC$("SET", StationsDeleteButton$ + NewTag$("DISABLED", "true"))
+            ok$ = GenC$("SET", StationsImportButton$ + NewTag$("DISABLED", "true"))
+            ok$ = GenC$("SET", StationsChangeButton$ + NewTag$("DISABLED", "true"))
+            selRecord$ = GenC$("GET", StationsListListview$ + NewTag$("TAGNAMES", "DATA,STREAM_URL"))
+            oldName$ = GetTagData$(selRecord$, "DATA", "")
+            oldUrl$ = GetTagData$(selRecord$, "STREAM_URL", "")
+            ok$ = GenC$("SET", EditNameString$ + NewTag$("TEXT", oldName$))
+            OpenGuiView "", "", EditView&
+            editing% = -1
+        END IF
+        '--- Edit View Events ---
+        IF ThisObject%(EditNameString$, mess$, "GADGETUP") THEN
+            editing% = 0
+            CloseGuiView EditView&
+            newName$ = GetTagData$(GenC$("GET", EditNameString$), "TEXT", "")
+            IF _UPRINTWIDTH(newName$, 8) = 0 THEN newName$ = AnsiTextToUtf8Text$(newName$, "")
+            IF newName$ <> oldName$ THEN
+                curPlayNam$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "DATA", "")
+                ok$ = ListC$("SEARCH", MainStationsList$ + NewTag$("DATA", oldName$) + NewTag$("HOLD", "true"))
+                ok$ = ListC$("DELETE", MainStationsList$)
+                ok$ = ListC$("STORE", MainStationsList$ + NewTag$("DATA", newName$) + NewTag$("STREAM_URL", oldUrl$))
+                ok$ = ListC$("SEARCH", MainStationsList$ + NewTag$("DATA", newName$) + NewTag$("HOLD", "true"))
+                ok$ = GenC$("SET", StationsListListview$ + ListTag$(MainStationsList$) + NewTag$("ACTUAL", GetObjTagData$(MainStationsList$, "ACTUAL", "0")))
+                SWAP MainStationsList$, StationsStationsList$
+                ok$ = ListC$("SEARCH", MainStationsList$ + NewTag$("DATA", oldName$) + NewTag$("HOLD", "true"))
+                ok$ = ListC$("DELETE", MainStationsList$)
+                ok$ = ListC$("STORE", MainStationsList$ + NewTag$("DATA", newName$) + NewTag$("STREAM_URL", oldUrl$))
+                ok$ = ListC$("SEARCH", MainStationsList$ + NewTag$("DATA", curPlayNam$) + NewTag$("HOLD", "true"))
+                IF oldName$ = curPlayNam$ THEN
+                    ok$ = ListC$("SEARCH", MainStationsList$ + NewTag$("DATA", newName$) + NewTag$("HOLD", "true"))
+                    ok$ = GenC$("SET", MainStationText$ + NewTag$("TEXT", newName$))
+                END IF
+            END IF
+            ok$ = GenC$("SET", StationsDeleteButton$ + NewTag$("DISABLED", "false"))
+            ok$ = GenC$("SET", StationsImportButton$ + NewTag$("DISABLED", "false"))
+            ok$ = GenC$("SET", StationsChangeButton$ + NewTag$("DISABLED", "false"))
+        END IF
+    END IF
+

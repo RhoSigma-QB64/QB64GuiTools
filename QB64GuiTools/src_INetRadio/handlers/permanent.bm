@@ -1,0 +1,19 @@
+    GOSUB MainLoop_PermanentHandler 'this logic looks weird, but keep it that way
+    GOTO MainLoop_SkipPermanentHandler
+    'This handler is called permanently in each main loop pass. Use it
+    'to inject your own code into the main loop, which must permanently
+    'be called on a regular pace, eg. scrolling text or streaming music.
+    MainLoop_PermanentHandler:
+        IF nowPlaying% AND stream& <> 0 THEN GOSUB streamPlay
+        IF editing% THEN
+            IF NOT GuiViewIsOpen%(EditView&) THEN
+                ok$ = GenC$("SET", StationsDeleteButton$ + NewTag$("DISABLED", "false"))
+                ok$ = GenC$("SET", StationsImportButton$ + NewTag$("DISABLED", "false"))
+                ok$ = GenC$("SET", StationsChangeButton$ + NewTag$("DISABLED", "false"))
+                editing% = 0
+            END IF
+        END IF
+    RETURN
+    '-----
+    MainLoop_SkipPermanentHandler:
+

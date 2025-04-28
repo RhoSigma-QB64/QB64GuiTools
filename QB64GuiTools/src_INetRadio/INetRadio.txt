@@ -1,0 +1,53 @@
+INetRadio - The Internet Radio Player
+-------------------------------------
+This program was made possible due to the excellent capabilities of the QB64-PE
+language and by utilising the GuiTools Framework's multi-window functionality.
+
+Windows can be opened/closed independently. When closing the main program all
+other still open windows will automatically cloese too. You may arrange the
+windows and they will remember its positions.
+
+INetRadio is mostly self-explaining, so it should be easy to explore all its
+features even without a comprehensive documentation. Most controls have tooltips
+attached to it, which pop up after a second when resting the mouse over it.
+
+INetRadio makes use of the huge Pan Unicode font arialuni.ttf, so it can even
+display Stations/Titles of many countries which doesn't use latin script.
+
+Compiling and EXE
+-----------------
+You should compile INetRadio either directly into its source folder or move
+the compiled EXE there afterwards, so it can find its INR-Assets folder.
+Or expressed different, when you move the EXE to your desired place, then also
+make sure to place a copy of the INR-Assets folder in the same location.
+
+How can I add my favorite Radio Station?
+----------------------------------------
+1. The Radio Station must provide the real audio stream address for use in
+   external players on their website. This can either be as text you can copy
+   or as link/button you can click to download a single entry *.m3u, *.m3u8 or
+   *.pls file containing the required stream address.
+   What i mean is something like the "Play in your MP3 Player" button on
+   http://www.absolutechillout.com/ or the various links and addresses on
+   https://www.radioswissjazz.ch/de/empfang/internet.
+   If the Station doesn't offer such links but rather want you to subscribe or
+   download and use their own App, then you can assume they most probably won't
+   even allow external players accessing their streams anyways.
+   Note also that Stations may restrict streaming in/for/to certain countries,
+   a quick test using the embedded player on their website will show you.
+2. Clicking the stream address link/button will usually start downloading a
+   single entry *.m3u, *.m3u8 or *.pls file. If the Station only offers a
+   stream address to copy, but no download, then simply copy the address and
+   paste it into a new blank text file and save that as StationName.m3u. If
+   the Station offers multiple stream encodings, then make sure to choose a
+   format supported by QB64-PE, that is Mp3, Ogg, Wav or Aiff/Aifc.
+3. You can now import the just downloaded (or saved) file into INetRadio in
+   the "Stations Manager" window.
+4. If required, you may edit the Radio Station's name after importing.
+
+Notes
+-----
+- plain *.m3u(8) and *.pls files do not contain the Stations name, instead the
+  filename is inserted in the Stations list and you may edit it afterwards
+- files using the extended *.m3u(8) format contain the correct Station name
+

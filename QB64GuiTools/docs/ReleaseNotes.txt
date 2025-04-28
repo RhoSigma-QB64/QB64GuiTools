@@ -30,11 +30,36 @@ TODO:
     source, HTML or PDF file, then please don't hesitate to ask for help
     in the forums or via e-mail (support@rhosigma-cw.net)
 - add menus (pulldown and/or popup?)
-  - placed on a hovering layer with autoclean when selection is done
   - low priority as I've no urgent need for it, using toolbars instead
 
 HISTORY:
 --------
+>> 04/28/2025 v0.19
+   - implemented two new event handlers, INITDONE is called once when
+     the initial GUI is created and has passed the 1st event loop and
+     PERMANENT, which is called in each loop regardless of GUI events
+   - added the CharsetSupport.bm library which helps with codepage
+     switching and ANSI to UTF-8 conversion
+   - improved TextC class with text clipping or scrolling according to
+     the new TEXTSCROLL boolean tag
+   - the ButtonC class now accepts the NOSHOW boolean tag to suppress
+     frame and background drawing, hence only the text and image/symbol
+     is drawn in an invisible hot area (see src_TabToolbarDeme for a
+     possible usage example)
+   - created UTF-8 versions of the TextC and ListviewC classes, which use
+     the _U... font and print functions instead of the regular ones, to
+     use these just change the respective $INCLUDE lines at the end of
+     the applications main source file
+   - new application INetRadio is a neat small Web-Radio player which does
+     also perfectly showcase GuiTools its multi forms/windows capabilities
+   - new application TabToolbarDemo is more or less a design study without
+     any real function, showing a way how to build tabbed toolbars and
+     serve as example for the ButtonC class changes (NOSHOW tag)
+   - updated/added many of the toolbar icons in images\icons and its
+     respective embedding sources in the src_XXX\inline folders
+   - many small bugfixes and optimizations under the hood, which came to
+     my attention while creating INetRadio
+
 >> 03/10/2025 v0.18 [silent release]
    - added an option to easily ignore the current GuiTools preferences
      (appLocalDir$ + "gtprefs.bin") for development purposes, just place

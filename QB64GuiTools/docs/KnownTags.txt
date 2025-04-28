@@ -282,6 +282,9 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
        - StringC             <LEFT|center|right>
        - TextC               <LEFT|center|right>
        - RadioC              <left|RIGHT>
+(BOOL) TEXTSCROLL       pub: Only supported in TextC objects, it enables scrolling
+                             of the text, if it exceeds the object width. If false
+                             or omitted, then too long text is simply clipped.
 (WORD) TEXTMOVEX        pub: Delta X adjustment for text.
 (WORD) TEXTMOVEY        pub: Delta Y adjustment for text. (Object's text position
                              calculation is optimized for use of the QB64 inbuild
@@ -413,8 +416,13 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
                              the LEVEL does still hold the numeric value.
 (TEXT) ALTMAX           pub: Alternative level output, if a slider is on its
                              maximum level.
-(BOOL) NOSHOW           pub: Set true to suppress the level output in the
-       - SliderC             slider's knob. You may use a ModelC Forwarder
+(BOOL) NOSHOW           pub: Set true to suppress the button frame and the
+       - ButtonC             beckground image. Only the assigned image/symbol
+                             and the button text are drawn keeping the the
+                             current background of the hot area. Intended
+                             for toolbar creation.
+       - SliderC             Set true to suppress the level output in the
+                             slider's knob. You may use a ModelC Forwarder
                              object to route the actual level to another
                              display object instead. You may also use a
                              ModelC Ratio object instead to implement a

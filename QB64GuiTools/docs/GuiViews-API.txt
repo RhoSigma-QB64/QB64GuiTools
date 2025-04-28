@@ -40,7 +40,8 @@ SUB DeleteGuiView (vix&)
 SUB OpenGuiView (winIcon$, winTitle$, vix&)
 - open the given GuiView's window with optional icon and title
 - use in your event handlers as required
-- does not hurt if the respective window is already open
+- does not hurt if the respective window is already open, it's tried to
+  bring the window to front in that case
 
 SUB CloseGuiView (vix&)
 - close the given GuiView's window programmatically

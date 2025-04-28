@@ -253,11 +253,13 @@ IF winTitle$ <> "*** RhoSigma-MessageBox-HandlerCall ***" THEN
     WEND
     UnlockMutex putMtx%&
     WHILE CheckMutex%("Global\RhoSigma-GuiApp-MessageBoxHandler-" + appProgID$ + CHR$(0))
-        _LIMIT 20
-        IF _EXIT THEN
-            SetTag guiObjects$(0, 0), "USERBREAK", "true"
-            EXIT WHILE
-        END IF
+        _LIMIT 25
+        mess$ = GetGUIMsg$(-1) 'deafmode, ie. no key, click, wheel or move events
+        IF BoolTagTrue%(mess$, "USERBREAK") THEN 'main program break? (X button, Alt-F4)
+            SetTag guiObjects$(0, 0), "USERBREAK", "true" 'forward event to main loop
+            EXIT WHILE 'exit idle loop, ie. close message box and return to main loop
+        END IF 'else stay idle, waiting for message box response
+        ERROR 1001 'keep calling permanent handler while waiting
     WEND
     RemoveMutex parMtx%&
     WHILE CheckMutex%("Global\RhoSigma-GuiApp-MessageBoxHandler-" + appProgID$ + CHR$(0))
@@ -277,13 +279,15 @@ ELSE
     rff% = SafeOpenFile%("I", appTempDir$ + bodyText$)
     ON ERROR GOTO 0 'avoid recursion, in case of errors
     LINE INPUT #rff%, tags$
+    guiVCRCSum& = GetCRC32&("GuiTools MessageBox")
     SetupScreen VAL(GetTagData$(tags$, "WIDTH", "320")), VAL(GetTagData$(tags$, "HEIGHT", "240")), -1
     winImg$ = ImageC$("INIT", NewTag$("IMAGEFILE", winIcon$) + NewTag$("LEFT", "0") + NewTag$("TOP", "0"))
     winIco& = VAL(GetObjTagData$(winImg$, "IHANDLE", "0"))
     IF winIco& < -1 THEN _ICON winIco&
     temp$ = ImageC$("KILL", winImg$)
     _FONT 16
-    _TITLE GetTagData$(tags$, "TITLE", "App Message")
+    titl$ = GetTagData$(tags$, "TITLE", "App Message")
+    _TITLE titl$
     otag$ = ""
     WHILE NOT EOF(rff%)
         LINE INPUT #rff%, tags$
@@ -307,10 +311,11 @@ ELSE
     BeginGUIRefresh
     IF guiViews$(0) = "" THEN FillRectRaster 0, 0, _WIDTH, _HEIGHT, guiShinePen%
     EndGUIRefresh
+    _DELAY 0.1: WindowToTop(titl$ + CHR$(0))
     DO
         _LIMIT 50
         IF NOT CheckMutex%("Global\RhoSigma-GuiApp-MBParent-" + buttonText$ + CHR$(0)) THEN ERROR 1000 'parent is gone, so we do
-        mess$ = GetGUIMsg$
+        mess$ = GetGUIMsg$(0)
         IF BoolTagTrue%(mess$, "USERBREAK") THEN rff% = 0 'cancel (window X button)
         IF BoolTagTrue%(mess$, "KEYPRESS") THEN
             IF GetTagData$(mess$, "KEY", "") = CHR$(27) THEN rff% = 0 'cancel (Esc)
@@ -748,11 +753,13 @@ IF winTitle$ <> "*** RhoSigma-FileSelect-HandlerCall ***" THEN
     WEND
     UnlockMutex putMtx%&
     WHILE CheckMutex%("Global\RhoSigma-GuiApp-FileSelectHandler-" + appProgID$ + CHR$(0))
-        _LIMIT 20
-        IF _EXIT THEN
-            SetTag guiObjects$(0, 0), "USERBREAK", "true"
-            EXIT WHILE
-        END IF
+        _LIMIT 25
+        mess$ = GetGUIMsg$(-1) 'deafmode, ie. no key, click, wheel or move events
+        IF BoolTagTrue%(mess$, "USERBREAK") THEN 'main program break? (X button, Alt-F4)
+            SetTag guiObjects$(0, 0), "USERBREAK", "true" 'forward event to main loop
+            EXIT WHILE 'exit idle loop, ie. close file dialog and return to main loop
+        END IF 'else stay idle, waiting for file dialog response
+        ERROR 1001 'keep calling permanent handler while waiting
     WEND
     RemoveMutex parMtx%&
     WHILE CheckMutex%("Global\RhoSigma-GuiApp-FileSelectHandler-" + appProgID$ + CHR$(0))
@@ -775,6 +782,7 @@ ELSE
     rff% = SafeOpenFile%("I", appTempDir$ + iniDir$)
     LINE INPUT #rff%, tags$: CLOSE rff%
     '--- init window ---
+    guiVCRCSum& = GetCRC32&("GuiTools FileSelect")
     SetupScreen 440, 520, -1
     winImg$ = ImageC$("INIT", NewTag$("IMAGEFILE", winIcon$) + NewTag$("LEFT", "0") + NewTag$("TOP", "0"))
     winIco& = VAL(GetObjTagData$(winImg$, "IHANDLE", "0"))
@@ -862,6 +870,7 @@ ELSE
     BeginGUIRefresh
     IF guiViews$(0) = "" THEN FillRectColor 0, 0, _WIDTH, _HEIGHT, back%
     EndGUIRefresh
+    _DELAY 0.05: WindowToTop(GetTagData$(tags$, "TITLE", titl$) + CHR$(0))
     GOSUB fsReadDir
     GOSUB fsChkButtonStates
     '--- operate GUI ---
@@ -871,7 +880,7 @@ ELSE
             GOSUB fsWriteCancelResult
             ERROR 1000 'parent is gone, so we do
         END IF
-        mess$ = GetGUIMsg$
+        mess$ = GetGUIMsg$(0)
         IF BoolTagTrue%(mess$, "USERBREAK") THEN
             GOSUB fsWriteCancelResult
             rff% = 0 'cancel (window X button)
@@ -1729,7 +1738,7 @@ END FUNCTION
 '--- undocumented - for internal use only
 '---------------------------------------------------------------------
 FUNCTION VersionGuiTools$
-VersionGuiTools$ = MID$("$VER: GuiTools Framework 0.18 (10-Mar-2025) by RhoSigma :END$", 7, 49)
+VersionGuiTools$ = MID$("$VER: GuiTools Framework 0.19 (28-Apr-2025) by RhoSigma :END$", 7, 49)
 END FUNCTION
 
 '****************************************************

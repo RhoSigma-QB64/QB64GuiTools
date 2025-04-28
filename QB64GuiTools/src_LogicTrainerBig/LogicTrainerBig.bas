@@ -50,7 +50,6 @@ UserInitHandler:
 'SUBs and FUNCTIONs. It's also considered good style to TempLog() the
 'written files in order for a correct cleanup in error/crash cases.
 '=====================================================================
-DIM SHARED RhoSigmaImgName$ 'my own icon used in SetupScreen()
 RhoSigmaImgName$ = WriteRhoSigmaImgArray$(appTempDir$ + "RhoSigma32px.png", -1)
 NiceGrayImgName$ = WriteNiceGrayImgArray$(appTempDir$ + "NiceGray.jpg", -1)
 MarbleImgName$ = WriteMarbleImgArray$(appTempDir$ + "Marble.jpg", -1)
@@ -134,6 +133,7 @@ CONST uehRETRY% = 1, uehNEXT% = 2, uehEXIT% = 3
 '-----
 appLastErr% = ERR
 IF appLastErr% = 1000 THEN RESUME emergencyExit 'immediate exit request
+IF appLastErr% = 1001 THEN GOSUB MainLoop_PermanentHandler: RESUME NEXT
 
 IF appErrCnt% >= appErrMax% THEN
     dummy$ = MessageBox$("Error16px.png", appExeName$,_
@@ -384,7 +384,9 @@ BrownSymbol$ = SymbolC$("INIT",_
 '--- Here we can define the remaining global variables, which are not
 '--- needed for object initialization, but during runtime.
 '-----
+init% = -1 'init phase, goes zero after 1st handler loop
 done% = 0 'our main loop continuation boolean
+'-----
 
 '~~~ My Main Loop
 '---------------------------------
@@ -396,7 +398,7 @@ done% = 0 'our main loop continuation boolean
 _MOUSESHOW
 WHILE NOT done%
     _LIMIT 50
-    mess$ = GetGUIMsg$
+    mess$ = GetGUIMsg$(0)
     '--------------- START OF EVENT HANDLER ---------------
     'Here comes a generic event handler, which can be used in this form
     'in any GuiTools based programs. Just fill the required event type
@@ -430,7 +432,13 @@ WHILE NOT done%
     '$INCLUDE: 'handlers\mouseover.bm'
     '$INCLUDE: 'handlers\gadgetdown.bm'
     '$INCLUDE: 'handlers\gadgetup.bm'
+    '-----
+    'The next two handlers are independend from any GUI events.
+    '-----
+    '$INCLUDE: 'handlers\initdone.bm'
+    '$INCLUDE: 'handlers\permanent.bm'
     '---------------- END OF EVENT HANDLER ----------------
+    init% = 0
 WEND
 '~~~~~
 
@@ -616,7 +624,7 @@ RETURN
 '---------------------------------------------------------------------
 '~~~ My SUBs/FUNCs
 '=====================================================================
-'This is a simple help function for debugging. If any method call seems
+'Next is a simple help function for debugging. If any method call seems
 'not to give you the expected results, then you can enclose the call with
 'this function. If the method call will return any errors or warnings,
 'then these will be shown to you in a MessageBox. If no errors/warnings
@@ -699,7 +707,8 @@ IF appFont& > 0 THEN _FONT appFont&: ELSE _FONT 16
 'uncomment and adjust the _LOADIMAGE line below to load a specific icon,
 'otherwise the GuiTools Framework's default icon is used as embedded via
 'the GuiAppIcon.h/.bm files located in the dev_framework folder
-appIcon& = _LOADIMAGE(RhoSigmaImgName$, 32)
+newIcon& = _LOADIMAGE(appTempDir$ + "RhoSigma32px.png", 32)
+IF newIcon& < -1 THEN appIcon& = newIcon& 'on success override default with new one
 IF appIcon& < -1 THEN _ICON appIcon&
 'if you rather use $EXEICON then comment out the IF appIcon& ... line above
 'and uncomment and adjust the $EXEICON line below as you need instead, but
@@ -715,7 +724,7 @@ ELSE
     LastPosUpdate 0 'load last known win pos
 END IF
 _DELAY 0.025: _SCREENSHOW
-IF appGLVComp% THEN _DELAY 0.05: UntitledToTop
+IF appGLVComp% THEN _DELAY 0.05: WindowToTop ("Untitled" + CHR$(0))
 END SUB
 
 '-------------------
@@ -739,7 +748,7 @@ _FONT 16
 IF appFont& > 0 AND guiPGVCount% = 0 THEN _FREEFONT appFont&: appFont& = 0
 '--- free the screen and invalidate its handle ---
 SCREEN 0
-IF appScreen& < -1 THEN _FREEIMAGE appScreen&: appScreen& = -1
+IF appScreen& < -1 THEN _FREEIMAGE appScreen&: appScreen& = 0
 END SUB
 '~~~~~
 
@@ -748,6 +757,7 @@ END SUB
 '*****************************************************
 
 '$INCLUDE: 'QB64GuiTools\dev_framework\support\BufferSupport.bm'
+'$INCLUDE: 'QB64GuiTools\dev_framework\support\CharsetSupport.bm'
 '$INCLUDE: 'QB64GuiTools\dev_framework\support\ConvertSupport.bm'
 '$INCLUDE: 'QB64GuiTools\dev_framework\support\ImageSupport.bm'
 '$INCLUDE: 'QB64GuiTools\dev_framework\support\PackSupport.bm'

@@ -49,7 +49,7 @@ SELECT CASE methodID$
         tagsOpt$ = "GUIVIEW,PAGEROBJECT,IMAGEOBJECT,SYMBOLOBJECT," +_
                    "TEXT,TEXTMOVEX,TEXTMOVEY," +_
                    "IMAGEFILE,IMAGEHANDLE,AREA," +_
-                   "TOOLTIP,SHORTCUT,DISABLED," '+ user tags
+                   "TOOLTIP,SHORTCUT,NOSHOW,DISABLED," '+ user tags
         GOSUB meInit
         'Result Tags: ERROR/WARNING or OBJECT
     CASE "Set"
@@ -98,7 +98,7 @@ ELSE
         InitAssignedImgSym "IMAGEOBJECT", ButtonRes$, classID$, tagsID$
         InitAssignedImgSym "SYMBOLOBJECT", ButtonRes$, classID$, tagsID$
         '--- background/frame init ---
-        IF NOT BoolTagTrue%(tagsID$, "MNFLAG") THEN
+        IF NOT BoolTagTrue%(tagsID$, "NOSHOW") THEN
             BeginChildInit
             InitObjectBGImg this&, ButtonRes$, classID$, tagsID$
             fram$ = FrameC$("INIT", GetTags$(tagsID$, "LEFT,TOP,WIDTH,HEIGHT") + NewTag$("FORM", "simple"))
@@ -200,8 +200,9 @@ IF ValidObject%(this&, thisTag$, ButtonRes$, classID$, methodID$, tagsID$) THEN
         focu% = guiHighPen%: disa% = guiFillPen% 'state pens
         rebo$ = "false" 'recess border frame?
     END IF
-    IF BoolTagTrue%(guiObjects$(objData%, this&), "MNFLAG") THEN
-        menu% = -1: text% = guiShinePen%
+    show% = NOT BoolTagTrue%(guiObjects$(objData%, this&), "NOSHOW")
+    IF NOT show% THEN
+        text% = guiShinePen%
         IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN text% = guiTextPen%
     END IF
     '--- get object's dimensions ---
@@ -210,13 +211,13 @@ IF ValidObject%(this&, thisTag$, ButtonRes$, classID$, methodID$, tagsID$) THEN
     widt% = VAL(GetTagData$(guiObjects$(objData%, this&), "WIDTH", "0"))
     heig% = VAL(GetTagData$(guiObjects$(objData%, this&), "HEIGHT", "0"))
     '--- draw object ----
-    IF NOT menu% THEN
+    IF show% THEN
         FillRectColor left%, topp%, widt%, heig%, back%
         resu$ = ImageC$("DRAW", ObjectTag$(guiObjects$(objData%, this&), "BGIMG"))
     END IF
     '--- image/symbol/frame object ---
     IF BoolTagTrue%(guiObjects$(objData%, this&), "FOCUS") THEN
-        IF NOT menu% THEN
+        IF show% THEN
             LINE (left% + 4, topp% + 4)-(left% + widt% - 5, topp% + heig% - 5), focu%, B
             BrightenObjectBG this&, left%, topp%, widt%, heig%
             LINE (left% + 4, topp% + 4)-(left% + widt% - 5, topp% + heig% - 5), focu%, B
@@ -242,7 +243,7 @@ IF ValidObject%(this&, thisTag$, ButtonRes$, classID$, methodID$, tagsID$) THEN
         SetPrintMode prim%
     END IF
     '--- check on/off state ---
-    IF NOT menu% AND BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN
+    IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN
         FillRectRaster left%, topp%, widt%, heig%, disa%
     END IF
 END IF

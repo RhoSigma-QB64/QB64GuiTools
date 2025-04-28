@@ -1,0 +1,583 @@
+'+---------------+---------------------------------------------------+
+'| ###### ###### |     .--. .         .-.                            |
+'| ##  ## ##   # |     |   )|        (   ) o                         |
+'| ##  ##  ##    |     |--' |--. .-.  `-.  .  .-...--.--. .-.        |
+'| ######   ##   |     |  \ |  |(   )(   ) | (   ||  |  |(   )       |
+'| ##      ##    |     '   `'  `-`-'  `-'-' `-`-`|'  '  `-`-'`-      |
+'| ##     ##   # |                            ._.'                   |
+'| ##     ###### | Sources & Documents placed under the MIT License. |
+'+---------------+---------------------------------------------------+
+'|                                                                   |
+'| === CharsetSupport.bm ===                                         |
+'|                                                                   |
+'| == This include file is part of the GuiTools Framework Project.   |
+'| == It provides some useful SUBs/FUNCTIONs for codepage switching  |
+'| == and ANSI to UTF-8 conversion.                                  |
+'|                                                                   |
+'+-------------------------------------------------------------------+
+'| Done by RhoSigma, R.Heyder, provided AS IS, use at your own risk. |
+'| Find me in the QB64 Forum or mail to support@rhosigma-cw.net for  |
+'| any questions or suggestions. Thanx for your interest in my work. |
+'+-------------------------------------------------------------------+
+
+'-----------------------
+'--- SetAnsiCodepage ---
+'-----------------------
+' Will set the given ANSI codepage and do the required unicode remapping.
+' This is not required for the various _UPRINT functions, but is useful to
+' have the correct charset for the regular PRINT/_PRINTSTRING functions.
+' Best is the same codepage, which you've set in your QB64 IDE.
+'----------
+' SYNTAX:
+'   SetAnsiCodepage cpName$
+'----------
+' INPUTS:
+'   --- cpName$ ---
+'    The desired codepage name as per the CASEs list below. If you give
+'    an invalid name, then the current unicode mapping remains unchanged.
+'---------------------------------------------------------------------
+SUB SetAnsiCodepage (cpName$)
+'--- select codepage ---
+valid% = -1
+SELECT CASE UCASE$(cpName$)
+    CASE "PC437": RESTORE charset_codepage_data_pc437
+    CASE "PC737": RESTORE charset_codepage_data_pc737
+    CASE "PC775": RESTORE charset_codepage_data_pc775
+    CASE "PC850": RESTORE charset_codepage_data_pc850
+    CASE "PC852": RESTORE charset_codepage_data_pc852
+    CASE "PC855": RESTORE charset_codepage_data_pc855
+    CASE "PC857": RESTORE charset_codepage_data_pc857
+    CASE "PC860": RESTORE charset_codepage_data_pc860
+    CASE "PC861": RESTORE charset_codepage_data_pc861
+    CASE "PC862": RESTORE charset_codepage_data_pc862
+    CASE "PC863": RESTORE charset_codepage_data_pc863
+    CASE "PC864": RESTORE charset_codepage_data_pc864
+    CASE "PC865": RESTORE charset_codepage_data_pc865
+    CASE "PC866": RESTORE charset_codepage_data_pc866
+    CASE "PCMIK": RESTORE charset_codepage_data_pcMIK
+    CASE "PC869": RESTORE charset_codepage_data_pc869
+    CASE "PC874": RESTORE charset_codepage_data_pc874
+    CASE "WIN1250": RESTORE charset_codepage_data_win1250
+    CASE "WIN1251": RESTORE charset_codepage_data_win1251
+    CASE "WIN1252": RESTORE charset_codepage_data_win1252
+    CASE "WIN1253": RESTORE charset_codepage_data_win1253
+    CASE "WIN1254": RESTORE charset_codepage_data_win1254
+    CASE "WIN1255": RESTORE charset_codepage_data_win1255
+    CASE "WIN1256": RESTORE charset_codepage_data_win1256
+    CASE "WIN1257": RESTORE charset_codepage_data_win1257
+    CASE "WIN1258": RESTORE charset_codepage_data_win1258
+    CASE ELSE: valid% = 0
+END SELECT
+'--- if valid, then remap unicodes ---
+IF valid% THEN
+    FOR ascii% = 128 TO 255
+        READ unicode&
+        _MAPUNICODE unicode& TO ascii%
+    NEXT ascii%
+END IF
+END SUB
+
+'-----------------------
+'--- GetAnsiCodepage ---
+'-----------------------
+' This function will try to identify the currently active unicode mapping
+' and return the respective ANSI codepage name.
+'----------
+' SYNTAX:
+'   cpName$ = GetAnsiCodepage$
+'----------
+' RESULT:
+'   --- cpName$ ---
+'    The active codepage name as per the CASEs list below. Will return
+'    the string "custom", if no standard codepage mapping is active.
+'---------------------------------------------------------------------
+FUNCTION GetAnsiCodepage$
+'--- identify codepage ---
+'First do a quick codepage check by just summing up all unicodes of the
+'shortest char sequence which is unique across all supported codepages.
+'This is a sequence of 23 chars starting at ASCII code 154.
+sum& = 0
+FOR ascii% = 154 TO 176
+    sum& = sum& + _MAPUNICODE(ascii%)
+NEXT ascii%
+SELECT CASE sum&
+    CASE 31084: cp$ = "Pc437": RESTORE charset_codepage_data_pc437
+    CASE 30682: cp$ = "Pc737": RESTORE charset_codepage_data_pc737
+    CASE 22735: cp$ = "Pc775": RESTORE charset_codepage_data_pc775
+    CASE 14275: cp$ = "Pc850": RESTORE charset_codepage_data_pc850
+    CASE 15682: cp$ = "Pc852": RESTORE charset_codepage_data_pc852
+    CASE 31363: cp$ = "Pc855": RESTORE charset_codepage_data_pc855
+    CASE 14576: cp$ = "Pc857": RESTORE charset_codepage_data_pc857
+    CASE 22179: cp$ = "Pc860": RESTORE charset_codepage_data_pc860
+    CASE 31242: cp$ = "Pc861": RESTORE charset_codepage_data_pc861
+    CASE 32378: cp$ = "Pc862": RESTORE charset_codepage_data_pc862
+    CASE 22824: cp$ = "Pc863": RESTORE charset_codepage_data_pc863
+    CASE 786211: cp$ = "Pc864": RESTORE charset_codepage_data_pc864
+    CASE 31198: cp$ = "Pc865": RESTORE charset_codepage_data_pc865
+    CASE 33300: cp$ = "Pc866": RESTORE charset_codepage_data_pc866
+    CASE 24771: cp$ = "PcMIK": RESTORE charset_codepage_data_pcMIK
+    CASE 26352: cp$ = "Pc869": RESTORE charset_codepage_data_pc869
+    CASE 57640: cp$ = "Pc874": RESTORE charset_codepage_data_pc874
+    CASE 14676: cp$ = "Win1250": RESTORE charset_codepage_data_win1250
+    CASE 22959: cp$ = "Win1251": RESTORE charset_codepage_data_win1251
+    CASE 12556: cp$ = "Win1252": RESTORE charset_codepage_data_win1252
+    CASE 20454: cp$ = "Win1253": RESTORE charset_codepage_data_win1253
+    CASE 12174: cp$ = "Win1254": RESTORE charset_codepage_data_win1254
+    CASE 19349: cp$ = "Win1255": RESTORE charset_codepage_data_win1255
+    CASE 34200: cp$ = "Win1256": RESTORE charset_codepage_data_win1256
+    CASE 11929: cp$ = "Win1257": RESTORE charset_codepage_data_win1257
+    CASE 11821: cp$ = "Win1258": RESTORE charset_codepage_data_win1258
+    CASE ELSE: cp$ = "custom"
+END SELECT
+'If codepage is identified, then check if it's still in standard
+'mapping or maybe modified by the user.
+IF cp$ <> "custom" THEN
+    FOR ascii% = 128 TO 255
+        READ unicode&
+        IF _MAPUNICODE(ascii%) <> unicode& THEN
+            cp$ = "custom"
+            EXIT FOR
+        END IF
+    NEXT ascii%
+END IF
+GetAnsiCodepage$ = cp$
+END FUNCTION
+
+'-------------------------
+'--- UnicodeToUtf8Char ---
+'-------------------------
+' Returns the UTF-8 char sequence for the given Unicode codepoint. The
+' result may be a one- or multiple byte sequence as required in UTF-8.
+' The result is ready to be used with the various _UPRINT functions.
+'----------
+' SYNTAX:
+'   utf8char$ = UnicodeToUtf8Char$ (unicode&)
+'----------
+' INPUTS:
+'   --- unicode& ---
+'    The Unicode codepoint to convert.
+'    (see https://design215.com/toolbox/ascii-utf8.php for lookup)
+'----------
+' RESULT:
+'   --- utf8char$ ---
+'    The UTF-8 notation for the given Unicode codepoint.
+'---------------------------------------------------------------------
+FUNCTION UnicodeToUtf8Char$ (unicode&)
+'--- UTF-8 encoding ---
+IF unicode& < 128 THEN
+    '--- standard ASCII (0-127) goes as is ---
+    UnicodeToUtf8Char$ = CHR$(unicode&)
+ELSE
+    '--- encode the Unicode into UTF-8 notation ---
+    utf$ = "": uc& = unicode& 'avoid argument side effect
+    first% = &B10000000: remain% = 63
+    DO
+        first% = &B10000000 OR (first% \ 2): remain% = (remain% \ 2)
+        conti% = &B10000000 OR (uc& AND &B00111111): uc& = uc& \ 64
+        utf$ = CHR$(conti%) + utf$
+        IF uc& <= remain% THEN
+            first% = (first% OR uc&): uc& = 0
+        END IF
+    LOOP UNTIL uc& = 0
+    UnicodeToUtf8Char$ = CHR$(first%) + utf$
+END IF
+END FUNCTION
+
+'-------------------------------
+'--- UnicodeStringToUtf8Text ---
+'-------------------------------
+' Returns the UTF-8 representation of the given Unicode codepoints string.
+' The result is ready to be used with the various _UPRINT functions.
+'----------
+' SYNTAX:
+'   utf8text$ = UnicodeStringToUtf8Text$ (ucStr$)
+'----------
+' INPUTS:
+'   --- ucStr$ ---
+'    A list of comma separated (decimal) Unicode codepoints representing
+'    the text you wanna get in UTF-8 (eg. "1244,252,4530,32,225"). Don't
+'    use whitespace or leading zeros, just write as shown in the example.
+'    See https://design215.com/toolbox/ascii-utf8.php to lookup codepoints.
+'----------
+' RESULT:
+'   --- utf8text$ ---
+'    The text in UTF-8 notation.
+'---------------------------------------------------------------------
+FUNCTION UnicodeStringToUtf8Text$ (ucStr$)
+'--- convert string ---
+utf$ = "": uci& = 1
+WHILE uci& <= LEN(ucStr$)
+    unicode& = VAL(MID$(ucStr$, uci&))
+    utf$ = utf$ + UnicodeToUtf8Char$(unicode&)
+    uci& = uci& + LEN(STR$(unicode&))
+WEND
+UnicodeStringToUtf8Text$ = utf$
+END FUNCTION
+
+'------------------------------
+'--- UnicodeArrayToUtf8Text ---
+'------------------------------
+' Returns the UTF-8 representation of the given Unicode codepoints array.
+' The result is ready to be used with the various _UPRINT functions.
+'----------
+' SYNTAX:
+'   utf8text$ = UnicodeArrayToUtf8Text$ (ucArr&())
+'----------
+' INPUTS:
+'   --- ucArr&() ---
+'    An 1-dimensional array containing the Unicode codepoints (one per
+'    array element) representing the text you wanna get in UTF-8. The
+'    array will be converted entirely from its LBOUND to the UBOUND.
+'    See https://design215.com/toolbox/ascii-utf8.php to lookup codepoints.
+'----------
+' RESULT:
+'   --- utf8text$ ---
+'    The text in UTF-8 notation.
+'---------------------------------------------------------------------
+FUNCTION UnicodeArrayToUtf8Text$ (ucArr&())
+'--- convert array ---
+utf$ = ""
+FOR uci& = LBOUND(ucArr&) TO UBOUND(ucArr&)
+    utf$ = utf$ + UnicodeToUtf8Char$(ucArr&(uci&))
+NEXT uci&
+UnicodeArrayToUtf8Text$ = utf$
+END FUNCTION
+
+'-----------------------------
+'--- UnicodeDataToUtf8Text ---
+'-----------------------------
+' Returns the UTF-8 representation of the given Unicode codepoints DATA.
+' The result is ready to be used with the various _UPRINT functions.
+'----------
+' SYNTAX:
+'   utf8text$ = UnicodeDataToUtf8Text$
+'----------
+' INPUTS:
+'    You must RESTORE to the Unicode DATA label prior calling this.
+'    The 1st DATA element must designate the number of following Unicodes.
+'    See https://design215.com/toolbox/ascii-utf8.php to lookup codepoints.
+'----------
+' RESULT:
+'   --- utf8text$ ---
+'    The text in UTF-8 notation.
+'---------------------------------------------------------------------
+FUNCTION UnicodeDataToUtf8Text$
+'--- convert data ---
+utf$ = "": READ num&
+FOR uci& = 1 TO num&
+    READ unicode&
+    utf$ = utf$ + UnicodeToUtf8Char$(unicode&)
+NEXT uci&
+UnicodeDataToUtf8Text$ = utf$
+END FUNCTION
+
+'--------------------------
+'--- AnsiTextToUtf8Text ---
+'--------------------------
+' Returns the UTF-8 representation of the given ANSI text string. Can
+' use any codepage for unicode lookup inclusive the active one, where
+' the latter one may even be a "custom" mapped page.
+' The result is ready to be used with the various _UPRINT functions.
+'----------
+' SYNTAX:
+'   utf8text$ = AnsiTextToUtf8Text$ (text$, cpName$)
+'----------
+' INPUTS:
+'   --- text$ ---
+'    Any regular text you wrote in QB64 or any other Editor.
+'   --- cpName$ ---
+'    The original codepage name used when writing the text. Names as
+'    per the CASEs list below, or empty ("") to use the active codepage.
+'----------
+' RESULT:
+'   --- utf8text$ ---
+'    The very same text in UTF-8 notation based on the given codepage.
+'---------------------------------------------------------------------
+FUNCTION AnsiTextToUtf8Text$ (text$, cpName$)
+'--- convert text ---
+utf$ = ""
+FOR chi& = 1 TO LEN(text$)
+    '--- get ANSI char code, reset Unicode ---
+    ascii% = ASC(text$, chi&): unicode& = -1
+    IF ascii% > 127 THEN
+        '--- convert from which codepage? ---
+        SELECT CASE UCASE$(cpName$)
+            CASE "PC437": RESTORE charset_codepage_data_pc437
+            CASE "PC737": RESTORE charset_codepage_data_pc737
+            CASE "PC775": RESTORE charset_codepage_data_pc775
+            CASE "PC850": RESTORE charset_codepage_data_pc850
+            CASE "PC852": RESTORE charset_codepage_data_pc852
+            CASE "PC855": RESTORE charset_codepage_data_pc855
+            CASE "PC857": RESTORE charset_codepage_data_pc857
+            CASE "PC860": RESTORE charset_codepage_data_pc860
+            CASE "PC861": RESTORE charset_codepage_data_pc861
+            CASE "PC862": RESTORE charset_codepage_data_pc862
+            CASE "PC863": RESTORE charset_codepage_data_pc863
+            CASE "PC864": RESTORE charset_codepage_data_pc864
+            CASE "PC865": RESTORE charset_codepage_data_pc865
+            CASE "PC866": RESTORE charset_codepage_data_pc866
+            CASE "PCMIK": RESTORE charset_codepage_data_pcMIK
+            CASE "PC869": RESTORE charset_codepage_data_pc869
+            CASE "PC874": RESTORE charset_codepage_data_pc874
+            CASE "WIN1250": RESTORE charset_codepage_data_win1250
+            CASE "WIN1251": RESTORE charset_codepage_data_win1251
+            CASE "WIN1252": RESTORE charset_codepage_data_win1252
+            CASE "WIN1253": RESTORE charset_codepage_data_win1253
+            CASE "WIN1254": RESTORE charset_codepage_data_win1254
+            CASE "WIN1255": RESTORE charset_codepage_data_win1255
+            CASE "WIN1256": RESTORE charset_codepage_data_win1256
+            CASE "WIN1257": RESTORE charset_codepage_data_win1257
+            CASE "WIN1258": RESTORE charset_codepage_data_win1258
+            CASE ELSE: unicode& = _MAPUNICODE(ascii%) 'get Unicode from active codepage
+        END SELECT
+        '--- or find the Unicode from specified codepage ---
+        IF unicode& = -1 THEN
+            FOR aci% = 128 TO ascii%: READ unicode&: NEXT aci%
+        END IF
+        '--- convert and add UTF-8 char ---
+        IF unicode& = 0 THEN unicode& = 65533 'replacement character
+        utf$ = utf$ + UnicodeToUtf8Char$(unicode&)
+    ELSE
+        '--- standard ASCII (0-127) goes as is ---
+        utf$ = utf$ + CHR$(ascii%)
+    END IF
+NEXT chi&
+AnsiTextToUtf8Text$ = utf$
+EXIT FUNCTION
+'-----------------------------
+charset_codepage_data_pc437:
+DATA 199,252,233,226,228,224,229,231,234,235,232,239,238,236,196,197
+DATA 201,230,198,244,246,242,251,249,255,214,220,162,163,165,8359,402
+DATA 225,237,243,250,241,209,170,186,191,8976,172,189,188,161,171,187
+DATA 9617,9618,9619,9474,9508,9569,9570,9558,9557,9571,9553,9559,9565,9564,9563,9488
+DATA 9492,9524,9516,9500,9472,9532,9566,9567,9562,9556,9577,9574,9568,9552,9580,9575
+DATA 9576,9572,9573,9561,9560,9554,9555,9579,9578,9496,9484,9608,9604,9612,9616,9600
+DATA 945,223,915,960,931,963,181,964,934,920,937,948,8734,966,949,8745
+DATA 8801,177,8805,8804,8992,8993,247,8776,176,8729,183,8730,8319,178,9632,32
+charset_codepage_data_pc737:
+DATA 913,914,915,916,917,918,919,920,921,922,923,924,925,926,927,928
+DATA 929,931,932,933,934,935,936,937,945,946,947,948,949,950,951,952
+DATA 953,954,955,956,957,958,959,960,961,963,962,964,965,966,967,968
+DATA 9617,9618,9619,9474,9508,9569,9570,9558,9557,9571,9553,9559,9565,9564,9563,9488
+DATA 9492,9524,9516,9500,9472,9532,9566,9567,9562,9556,9577,9574,9568,9552,9580,9575
+DATA 9576,9572,9573,9561,9560,9554,9555,9579,9578,9496,9484,9608,9604,9612,9616,9600
+DATA 969,940,941,942,970,943,972,973,971,974,902,904,905,906,908,910
+DATA 911,177,8805,8804,938,939,247,8776,176,8729,183,8730,8319,178,9632,160
+charset_codepage_data_pc775:
+DATA 262,252,233,257,228,291,229,263,322,275,342,343,299,377,196,197
+DATA 201,230,198,333,246,290,162,346,347,214,220,248,163,216,215,164
+DATA 256,298,243,379,380,378,8221,166,169,174,172,189,188,321,171,187
+DATA 9617,9618,9619,9474,9508,260,268,280,278,9571,9553,9559,9565,302,352,9488
+DATA 9492,9524,9516,9500,9472,9532,370,362,9562,9556,9577,9574,9568,9552,9580,381
+DATA 261,269,281,279,303,353,371,363,382,9496,9484,9608,9604,9612,9616,9600
+DATA 211,223,332,323,245,213,181,324,310,311,315,316,326,274,325,8217
+DATA 173,177,8220,190,182,167,247,8222,176,8729,183,185,179,178,9632,160
+charset_codepage_data_pc850:
+DATA 199,252,233,226,228,224,229,231,234,235,232,239,238,236,196,197
+DATA 201,230,198,244,246,242,251,249,255,214,220,248,163,216,215,402
+DATA 225,237,243,250,241,209,170,186,191,174,172,189,188,161,171,187
+DATA 9617,9618,9619,9474,9508,193,194,192,169,9571,9553,9559,9565,162,165,9488
+DATA 9492,9524,9516,9500,9472,9532,227,195,9562,9556,9577,9574,9568,9552,9580,164
+DATA 240,208,202,203,200,305,205,206,207,9496,9484,9608,9604,166,204,9600
+DATA 211,223,212,210,245,213,181,254,222,218,219,217,253,221,175,180
+DATA 173,177,8215,190,182,167,247,184,176,168,183,185,179,178,9632,160
+charset_codepage_data_pc852:
+DATA 199,252,233,226,228,367,263,231,322,235,336,337,238,377,196,262
+DATA 201,313,314,244,246,317,318,346,347,214,220,356,357,321,215,269
+DATA 225,237,243,250,260,261,381,382,280,281,172,378,268,351,171,187
+DATA 9617,9618,9619,9474,9508,193,194,282,350,9571,9553,9559,9565,379,380,9488
+DATA 9492,9524,9516,9500,9472,9532,258,259,9562,9556,9577,9574,9568,9552,9580,164
+DATA 273,272,270,203,271,327,205,206,283,9496,9484,9608,9604,354,366,9600
+DATA 211,223,212,323,324,328,352,353,340,218,341,368,253,221,355,180
+DATA 173,733,731,711,728,167,247,184,176,168,729,369,344,345,9632,160
+charset_codepage_data_pc855:
+DATA 1106,1026,1107,1027,1105,1025,1108,1028,1109,1029,1110,1030,1111,1031,1112,1032
+DATA 1113,1033,1114,1034,1115,1035,1116,1036,1118,1038,1119,1039,1102,1070,1098,1066
+DATA 1072,1040,1073,1041,1094,1062,1076,1044,1077,1045,1092,1060,1075,1043,171,187
+DATA 9617,9618,9619,9474,9508,1093,1061,1080,1048,9571,9553,9559,9565,1081,1049,9488
+DATA 9492,9524,9516,9500,9472,9532,1082,1050,9562,9556,9577,9574,9568,9552,9580,164
+DATA 1083,1051,1084,1052,1085,1053,1086,1054,1087,9496,9484,9608,9604,1055,1103,9600
+DATA 1071,1088,1056,1089,1057,1090,1058,1091,1059,1078,1046,1074,1042,1100,1068,8470
+DATA 173,1099,1067,1079,1047,1096,1064,1101,1069,1097,1065,1095,1063,167,9632,160
+charset_codepage_data_pc857:
+DATA 199,252,233,226,228,224,229,231,234,235,232,239,238,305,196,197
+DATA 201,230,198,244,246,242,251,249,304,214,220,248,163,216,350,351
+DATA 225,237,243,250,241,209,286,287,191,174,172,189,188,161,171,187
+DATA 9617,9618,9619,9474,9508,193,194,192,169,9571,9553,9559,9565,162,165,9488
+DATA 9492,9524,9516,9500,9472,9532,227,195,9562,9556,9577,9574,9568,9552,9580,164
+DATA 186,170,202,203,200,0,205,206,207,9496,9484,9608,9604,166,204,9600
+DATA 211,223,212,210,245,213,181,0,215,218,219,217,236,255,175,180
+DATA 173,177,0,190,182,167,247,184,176,168,183,185,179,178,9632,160
+charset_codepage_data_pc860:
+DATA 199,252,233,226,227,224,193,231,234,202,232,205,212,236,195,194
+DATA 201,192,200,244,245,242,218,249,204,213,220,162,163,217,8359,211
+DATA 225,237,243,250,241,209,170,186,191,210,172,189,188,161,171,187
+DATA 9617,9618,9619,9474,9508,9569,9570,9558,9557,9571,9553,9559,9565,9564,9563,9488
+DATA 9492,9524,9516,9500,9472,9532,9566,9567,9562,9556,9577,9574,9568,9552,9580,9575
+DATA 9576,9572,9573,9561,9560,9554,9555,9579,9578,9496,9484,9608,9604,9612,9616,9600
+DATA 945,223,915,960,931,963,181,964,934,920,937,948,8734,966,949,8745
+DATA 8801,177,8805,8804,8992,8993,247,8776,176,8729,183,8730,8319,178,9632,160
+charset_codepage_data_pc861:
+DATA 199,252,233,226,228,224,229,231,234,235,232,208,240,222,196,197
+DATA 201,230,198,244,246,254,251,221,253,214,220,248,163,216,8359,402
+DATA 225,237,243,250,193,205,211,218,191,8976,172,189,188,161,171,187
+DATA 9617,9618,9619,9474,9508,9569,9570,9558,9557,9571,9553,9559,9565,9564,9563,9488
+DATA 9492,9524,9516,9500,9472,9532,9566,9567,9562,9556,9577,9574,9568,9552,9580,9575
+DATA 9576,9572,9573,9561,9560,9554,9555,9579,9578,9496,9484,9608,9604,9612,9616,9600
+DATA 945,223,915,960,931,963,181,964,934,920,937,948,8734,966,949,8745
+DATA 8801,177,8805,8804,8992,8993,247,8776,176,8729,183,8730,8319,178,9632,160
+charset_codepage_data_pc862:
+DATA 1488,1489,1490,1491,1492,1493,1494,1495,1496,1497,1498,1499,1500,1501,1502,1503
+DATA 1504,1505,1506,1507,1508,1509,1510,1511,1512,1513,1514,162,163,165,8359,402
+DATA 225,237,243,250,241,209,170,186,191,8976,172,189,188,161,171,187
+DATA 9617,9618,9619,9474,9508,9569,9570,9558,9557,9571,9553,9559,9565,9564,9563,9488
+DATA 9492,9524,9516,9500,9472,9532,9566,9567,9562,9556,9577,9574,9568,9552,9580,9575
+DATA 9576,9572,9573,9561,9560,9554,9555,9579,9578,9496,9484,9608,9604,9612,9616,9600
+DATA 945,223,915,960,931,963,181,964,934,920,937,948,8734,966,949,8745
+DATA 8801,177,8805,8804,8992,8993,247,8776,176,8729,183,8730,8319,178,9632,160
+charset_codepage_data_pc863:
+DATA 199,252,233,226,194,224,182,231,234,235,232,239,238,8215,192,167
+DATA 201,200,202,244,203,207,251,249,164,212,220,162,163,217,219,402
+DATA 166,180,243,250,168,184,179,175,206,8976,172,189,188,190,171,187
+DATA 9617,9618,9619,9474,9508,9569,9570,9558,9557,9571,9553,9559,9565,9564,9563,9488
+DATA 9492,9524,9516,9500,9472,9532,9566,9567,9562,9556,9577,9574,9568,9552,9580,9575
+DATA 9576,9572,9573,9561,9560,9554,9555,9579,9578,9496,9484,9608,9604,9612,9616,9600
+DATA 945,223,915,960,931,963,181,964,934,920,937,948,8734,966,949,8745
+DATA 8801,177,8805,8804,8992,8993,247,8776,176,8729,183,8730,8319,178,9632,160
+charset_codepage_data_pc864:
+DATA 176,183,8729,8730,9618,9472,9474,9532,9508,9516,9500,9524,9488,9484,9492,9496
+DATA 946,8734,966,177,189,188,8776,171,187,65271,65272,0,0,65275,65276,0
+DATA 160,173,65154,163,164,65156,0,0,65166,65167,65173,65177,1548,65181,65185,65189
+DATA 1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,65233,1563,65201,65205,65209,1567
+DATA 162,65152,65153,65155,65157,65226,65163,65165,65169,65171,65175,65179,65183,65187,65191,65193
+DATA 65195,65197,65199,65203,65207,65211,65215,65217,65221,65227,65231,166,172,247,215,65225
+DATA 1600,65235,65239,65243,65247,65251,65255,65259,65261,65263,65267,65213,65228,65230,65229,65249
+DATA 65149,1617,65253,65257,65260,65264,65266,65232,65237,65269,65270,65245,65241,65265,9632,0
+charset_codepage_data_pc865:
+DATA 199,252,233,226,228,224,229,231,234,235,232,239,238,236,196,197
+DATA 201,230,198,244,246,242,251,249,255,214,220,248,163,216,8359,402
+DATA 225,237,243,250,241,209,170,186,191,8976,172,189,188,161,171,164
+DATA 9617,9618,9619,9474,9508,9569,9570,9558,9557,9571,9553,9559,9565,9564,9563,9488
+DATA 9492,9524,9516,9500,9472,9532,9566,9567,9562,9556,9577,9574,9568,9552,9580,9575
+DATA 9576,9572,9573,9561,9560,9554,9555,9579,9578,9496,9484,9608,9604,9612,9616,9600
+DATA 945,223,915,960,931,963,181,964,934,920,937,948,8734,966,949,8745
+DATA 8801,177,8805,8804,8992,8993,247,8776,176,8729,183,8730,8319,178,9632,160
+charset_codepage_data_pc866:
+DATA 1040,1041,1042,1043,1044,1045,1046,1047,1048,1049,1050,1051,1052,1053,1054,1055
+DATA 1056,1057,1058,1059,1060,1061,1062,1063,1064,1065,1066,1067,1068,1069,1070,1071
+DATA 1072,1073,1074,1075,1076,1077,1078,1079,1080,1081,1082,1083,1084,1085,1086,1087
+DATA 9617,9618,9619,9474,9508,9569,9570,9558,9557,9571,9553,9559,9565,9564,9563,9488
+DATA 9492,9524,9516,9500,9472,9532,9566,9567,9562,9556,9577,9574,9568,9552,9580,9575
+DATA 9576,9572,9573,9561,9560,9554,9555,9579,9578,9496,9484,9608,9604,9612,9616,9600
+DATA 1088,1089,1090,1091,1092,1093,1094,1095,1096,1097,1098,1099,1100,1101,1102,1103
+DATA 1025,1105,1028,1108,1031,1111,1038,1118,176,8729,183,8730,8470,164,9632,160
+charset_codepage_data_pcMIK:
+DATA 1040,1041,1042,1043,1044,1045,1046,1047,1048,1049,1050,1051,1052,1053,1054,1055
+DATA 1056,1057,1058,1059,1060,1061,1062,1063,1064,1065,1066,1067,1068,1069,1070,1071
+DATA 1072,1073,1074,1075,1076,1077,1078,1079,1080,1081,1082,1083,1084,1085,1086,1087
+DATA 1088,1089,1090,1091,1092,1093,1094,1095,1096,1097,1098,1099,1100,1101,1102,1103
+DATA 9492,9524,9516,9500,9472,9532,9571,9553,9562,9566,9577,9574,9568,9552,9580,9488
+DATA 9617,9618,9619,9474,9508,8470,167,9559,9565,9496,9484,9608,9604,9612,9616,9600
+DATA 945,223,915,960,931,963,181,964,934,920,937,948,8734,966,949,8745
+DATA 8801,177,8805,8804,8992,8993,247,8776,176,8729,183,8730,8319,178,9632,160
+charset_codepage_data_pc869:
+DATA 0,0,0,0,0,0,902,0,183,172,166,8216,8217,904,8213,905
+DATA 906,938,908,0,0,910,939,169,911,178,179,940,163,941,942,943
+DATA 970,912,972,973,913,914,915,916,917,918,919,189,920,921,171,187
+DATA 9617,9618,9619,9474,9508,922,923,924,925,9571,9553,9559,9565,926,927,9488
+DATA 9492,9524,9516,9500,9472,9532,928,929,9562,9556,9577,9574,9568,9552,9580,931
+DATA 932,933,934,935,936,937,945,946,947,9496,9484,9608,9604,948,949,9600
+DATA 950,951,952,953,954,955,956,957,958,959,960,961,963,962,964,900
+DATA 173,177,965,966,967,167,968,901,176,168,969,971,944,974,9632,160
+charset_codepage_data_pc874:
+DATA 8364,0,0,0,0,8230,0,0,0,0,0,0,0,0,0,0
+DATA 0,8216,8217,8220,8221,8226,8211,8212,0,0,0,0,0,0,0,0
+DATA 160,3585,3586,3587,3588,3589,3590,3591,3592,3593,3594,3595,3596,3597,3598,3599
+DATA 3600,3601,3602,3603,3604,3605,3606,3607,3608,3609,3610,3611,3612,3613,3614,3615
+DATA 3616,3617,3618,3619,3620,3621,3622,3623,3624,3625,3626,3627,3628,3629,3630,3631
+DATA 3632,3633,3634,3635,3636,3637,3638,3639,3640,3641,3642,0,0,0,0,3647
+DATA 3648,3649,3650,3651,3652,3653,3654,3655,3656,3657,3658,3659,3660,3661,3662,3663
+DATA 3664,3665,3666,3667,3668,3669,3670,3671,3672,3673,3674,3675,0,0,0,0
+charset_codepage_data_win1250:
+DATA 8364,0,8218,0,8222,8230,8224,8225,0,8240,352,8249,346,356,381,377
+DATA 0,8216,8217,8220,8221,8226,8211,8212,0,8482,353,8250,347,357,382,378
+DATA 160,711,728,321,164,260,166,167,168,169,350,171,172,173,174,379
+DATA 176,177,731,322,180,181,182,183,184,261,351,187,317,733,318,380
+DATA 340,193,194,258,196,313,262,199,268,201,280,203,282,205,206,270
+DATA 272,323,327,211,212,336,214,215,344,366,218,368,220,221,354,223
+DATA 341,225,226,259,228,314,263,231,269,233,281,235,283,237,238,271
+DATA 273,324,328,243,244,337,246,247,345,367,250,369,252,253,355,729
+charset_codepage_data_win1251:
+DATA 1026,1027,8218,1107,8222,8230,8224,8225,8364,8240,1033,8249,1034,1036,1035,1039
+DATA 1106,8216,8217,8220,8221,8226,8211,8212,0,8482,1113,8250,1114,1116,1115,1119
+DATA 160,1038,1118,1032,164,1168,166,167,1025,169,1028,171,172,173,174,1031
+DATA 176,177,1030,1110,1169,181,182,183,1105,8470,1108,187,1112,1029,1109,1111
+DATA 1040,1041,1042,1043,1044,1045,1046,1047,1048,1049,1050,1051,1052,1053,1054,1055
+DATA 1056,1057,1058,1059,1060,1061,1062,1063,1064,1065,1066,1067,1068,1069,1070,1071
+DATA 1072,1073,1074,1075,1076,1077,1078,1079,1080,1081,1082,1083,1084,1085,1086,1087
+DATA 1088,1089,1090,1091,1092,1093,1094,1095,1096,1097,1098,1099,1100,1101,1102,1103
+charset_codepage_data_win1252:
+DATA 8364,0,8218,402,8222,8230,8224,8225,710,8240,352,8249,338,0,381,0
+DATA 0,8216,8217,8220,8221,8226,8211,8212,732,8482,353,8250,339,0,382,376
+DATA 160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175
+DATA 176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191
+DATA 192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207
+DATA 208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223
+DATA 224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239
+DATA 240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255
+charset_codepage_data_win1253:
+DATA 8364,0,8218,402,8222,8230,8224,8225,0,8240,0,8249,0,0,0,0
+DATA 0,8216,8217,8220,8221,8226,8211,8212,0,8482,0,8250,0,0,0,0
+DATA 160,901,902,163,164,165,166,167,168,169,0,171,172,173,174,8213
+DATA 176,177,178,179,900,181,182,183,904,905,906,187,908,189,910,911
+DATA 912,913,914,915,916,917,918,919,920,921,922,923,924,925,926,927
+DATA 928,929,0,931,932,933,934,935,936,937,938,939,940,941,942,943
+DATA 944,945,946,947,948,949,950,951,952,953,954,955,956,957,958,959
+DATA 960,961,962,963,964,965,966,967,968,969,970,971,972,973,974,0
+charset_codepage_data_win1254:
+DATA 8364,0,8218,402,8222,8230,8224,8225,710,8240,352,8249,338,0,0,0
+DATA 0,8216,8217,8220,8221,8226,8211,8212,732,8482,353,8250,339,0,0,376
+DATA 160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175
+DATA 176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191
+DATA 192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207
+DATA 286,209,210,211,212,213,214,215,216,217,218,219,220,304,350,223
+DATA 224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239
+DATA 287,241,242,243,244,245,246,247,248,249,250,251,252,305,351,255
+charset_codepage_data_win1255:
+DATA 8364,0,8218,402,8222,8230,8224,8225,710,8240,0,8249,0,0,0,0
+DATA 0,8216,8217,8220,8221,8226,8211,8212,732,8482,0,8250,0,0,0,0
+DATA 160,161,162,163,8362,165,166,167,168,169,215,171,172,173,174,175
+DATA 176,177,178,179,180,181,182,183,184,185,247,187,188,189,190,191
+DATA 1456,1457,1458,1459,1460,1461,1462,1463,1464,1465,0,1467,1468,1469,1470,1471
+DATA 1472,1473,1474,1475,1520,1521,1522,1523,1524,0,0,0,0,0,0,0
+DATA 1488,1489,1490,1491,1492,1493,1494,1495,1496,1497,1498,1499,1500,1501,1502,1503
+DATA 1504,1505,1506,1507,1508,1509,1510,1511,1512,1513,1514,0,0,8206,8207,0
+charset_codepage_data_win1256:
+DATA 8364,1662,8218,402,8222,8230,8224,8225,710,8240,1657,8249,338,1670,1688,1672
+DATA 1711,8216,8217,8220,8221,8226,8211,8212,1705,8482,1681,8250,339,8204,8205,1722
+DATA 160,1548,162,163,164,165,166,167,168,169,1726,171,172,173,174,175
+DATA 176,177,178,179,180,181,182,183,184,185,1563,187,188,189,190,1567
+DATA 1729,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583
+DATA 1584,1585,1586,1587,1588,1589,1590,215,1591,1592,1593,1594,1600,1601,1602,1603
+DATA 224,1604,226,1605,1606,1607,1608,231,232,233,234,235,1609,1610,238,239
+DATA 1611,1612,1613,1614,244,1615,1616,247,1617,249,1618,251,252,8206,8207,1746
+charset_codepage_data_win1257:
+DATA 8364,0,8218,0,8222,8230,8224,8225,0,8240,0,8249,0,168,711,184
+DATA 0,8216,8217,8220,8221,8226,8211,8212,0,8482,0,8250,0,175,731,0
+DATA 160,0,162,163,164,0,166,167,216,169,342,171,172,173,174,198
+DATA 176,177,178,179,180,181,182,183,248,185,343,187,188,189,190,230
+DATA 260,302,256,262,196,197,280,274,268,201,377,278,290,310,298,315
+DATA 352,323,325,211,332,213,214,215,370,321,346,362,220,379,381,223
+DATA 261,303,257,263,228,229,281,275,269,233,378,279,291,311,299,316
+DATA 353,324,326,243,333,245,246,247,371,322,347,363,252,380,382,729
+charset_codepage_data_win1258:
+DATA 8364,0,8218,402,8222,8230,8224,8225,710,8240,0,8249,338,0,0,0
+DATA 0,8216,8217,8220,8221,8226,8211,8212,732,8482,0,8250,339,0,0,376
+DATA 160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175
+DATA 176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191
+DATA 192,193,194,258,196,197,198,199,200,201,202,203,768,205,206,207
+DATA 272,209,777,211,212,416,214,215,216,217,218,219,220,431,771,223
+DATA 224,225,226,259,228,229,230,231,232,233,234,235,769,237,238,239
+DATA 273,241,803,243,244,417,246,247,248,249,250,251,252,432,8363,255
+END FUNCTION
+

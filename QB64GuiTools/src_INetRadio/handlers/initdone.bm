@@ -1,0 +1,13 @@
+    IF init% THEN
+        'This handler is called exactly once right after the initialization
+        'of the main GUI, ie. after the main loop finishes its 1st pass.
+        'Use it for for things, which must be done once after successful
+        'program start and GUI init, eg. auto start playing music etc..
+        IF opts.autoPlay THEN
+            streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
+            IF streamUrl$ <> "" THEN
+                GOSUB startPlay: GOSUB togglePlayingState
+            END IF
+        END IF
+    END IF
+

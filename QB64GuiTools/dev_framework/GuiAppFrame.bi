@@ -118,11 +118,12 @@ CONST csetSIZEOF% = chunkSIZEOF% + CHcsetLEN%
 TYPE ChunkWPOS 'holds the last window position of a named application
     wposSTDC AS Chunk 'standard chunk
     wposNAME AS STRING * 30 'application's EXE name
+    wposVCRC AS LONG 'view checksum for additional GuiViews
     wposXPOS AS INTEGER 'window's left position
     wposYPOS AS INTEGER 'window's top position
 END TYPE
 CONST CHwposID$ = "WPOS"
-CONST CHwposLEN% = 30 + 2 + 2
+CONST CHwposLEN% = 30 + 4 + 2 + 2
 CONST wposSIZEOF% = chunkSIZEOF% + CHwposLEN%
 
 TYPE ChunkVARS 'holds the source values for GetUniqueID$()
@@ -184,8 +185,8 @@ DECLARE LIBRARY "QB64GuiTools\dev_framework\GuiAppFrame" 'Do not add .h here !!
     FUNCTION RegexIsActive% ()
     'Regular expression matching must be explicitly enabled in the file
     'GuiAppFrame.h (dev_framework). Carfully read the notes given there.
-    SUB UntitledToTop ()
-    'Bring the still untitled window to the top of the Z-Order.
+    SUB WindowToTop (winTitle$) 'add CHR$(0) to title
+    'Bring the named window to the top of the Z-Order.
     FUNCTION FindColor& (BYVAL r&, BYVAL g&, BYVAL b&, BYVAL i&, BYVAL mi&, BYVAL ma&)
     'This is a replacement for the _RGB function. It works for up to 8-bit
     '(256 colors) images only and needs a valid image. It can limit the
@@ -232,6 +233,7 @@ DIM SHARED appIcon& 'default icon handle
 DIM SHARED appFont& 'default font handle
 '--- additional views ---
 REDIM SHARED guiViews$(0)
+DIM SHARED guiVCRCSum& 'title checksum, if not main instance
 DIM SHARED guiAGVIndex& 'active GuiView index
 guiAGVIndex& = 0
 DIM SHARED guiPGVCount% 'pending GuiViews counter
@@ -302,7 +304,7 @@ END IF
 appSMObj%& = CreateSMObject%&("RhoSigma-GuiApp-MainInpSM-" + appProgID$ + CHR$(0), 8192)
 
 '--- ready to go ---
-GOSUB UserInitHandler
+IF cmdArgs$(0) = "NWONKNU" THEN GOSUB UserInitHandler 'call for main instance only
 SELECT CASE cmdArgs$(0)
     CASE "IUGNEPO"
         '================================================================
@@ -339,7 +341,7 @@ END SELECT
 emergencyExit:
 LastPosUpdate -1 'save last known win pos
 CloseScreen
-GOSUB UserExitHandler
+IF guiVCRCSum& = 0 THEN GOSUB UserExitHandler 'call for main instance only
 CLOSE
 
 '--- cleanup views & shared memory ---
@@ -380,7 +382,7 @@ DATA 4
 '--- *.tmp files go into appTempDir$ and are temporary in the session, ---
 '--- other extensions go into appLocalDir$ and will survive sessions   ---
 DATA "gtprefs.bin","PREF"
-DATA "wpbrain.bin","WINB"
+DATA "wpbrain_v2.bin","WINB"
 DATA "univars.tmp","UVAR"
 DATA "templog.tmp","TMPL"
 
@@ -477,7 +479,7 @@ IF SeekChunk&(crgtFile%, 1, CHtlogID$) > 0 THEN
     WHILE NOT EOF(crgtFile%)
         crgtLog& = SEEK(crgtFile%)
         GET crgtFile%, , crgtTLOG(0)
-        IF appProgID$ = "" OR crgtTLOG(0).tlogACCESSOR = appProgID$ THEN
+        IF (EOF(crgtFile%) = 0) AND (appProgID$ = "" OR crgtTLOG(0).tlogACCESSOR = appProgID$) THEN
             InternalErrHandler
             KILL appTempDir$ + RStrip$(stmFIXED%, crgtTLOG(0).tlogNAME)
             UserErrHandler
@@ -527,5 +529,6 @@ RETURN
 InternalErrorHandler:
 appLastErr% = ERR
 IF appLastErr% = 1000 THEN RESUME emergencyExit 'immediate exit request
+IF appLastErr% = 1001 THEN GOSUB MainLoop_PermanentHandler
 RESUME NEXT
 

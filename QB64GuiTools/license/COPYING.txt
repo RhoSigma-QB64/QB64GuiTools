@@ -10,11 +10,13 @@ contents in this distribution:
     - src_GTPrefsEditor\   (entire contents)
     - src_GuiApp\          (entire contents)
     - src_GuiAppDemo\      (entire contents)
+    - src_INetRadio\       (entire contents)
     - src_LogicTrainer\    (entire contents)
     - src_LogicTrainerBig\ (entire contents)
     - src_MakeCARR\        (entire contents)
     - src_MakeDATA\        (entire contents)
     - src_MultiWinDemo\    (entire contents)
+    - src_TabToolbarDemo\  (entire contents)
 
 For the contents of the "images" folder various rules apply, however
 these rules still allow free use & copying, if followed correctly.
@@ -25,8 +27,7 @@ which is under the GNU General Public License version 2 (see GPL-2.0.txt).
 
 The misc icons are available for download here:
 Size 32px => https://www.iconfinder.com/iconsets/32x32-free-design-icons
-Size 16px => https://www.iconfinder.com/iconsets/6x16-free-application-icons
-   the link works, typo (missing 1) is correct  ^^
+Size 16px => scaled down from the 32px ones
 you are free to copy, share, modify and use the icons, even commercially,
 as long as you include a link to the authors website (http://www.aha-soft.com/),
 what is done hereby. However, you're not allowed to sell the icons itself.

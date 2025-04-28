@@ -1,0 +1,15 @@
+    IF ValidateTags%(mess$, "MOUSEIN", 0) THEN 'use ValidateTags%() to check for non-BOOL tags
+        'Any clickable GUI object went into focus state. This event is
+        'triggered once right in the moment when the mousepointer does
+        'enter an clickable object. The function ThisObject%() does match
+        'the MOUSEIN object with a given object to easily build handling
+        'blocks for your objects:
+        ' eg. IF ThisObject%(myObj$, message$, "MOUSEIN") THEN ...
+        '--- Info View Events ---
+        IF ThisObject%(InfoCopyButton$, mess$, "MOUSEIN") THEN
+            IF BoolTagTrue%(GenC$("GET", InfoCopyButton$ + NewTag$("TAGNAMES", "SELECTED")), "SELECTED") THEN
+                ok$ = GenC$("SET", InfoCopyButton$ + ImageTag$(InfoOkImage$))
+            END IF
+        END IF
+    END IF
+

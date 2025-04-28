@@ -264,15 +264,18 @@ int16_t RegexIsActive(void) {
 //=== Miscellaneous stuff ============================================
 //====================================================================
 
-// Bring the initial still untitled program window to the top of the
-// Z-Order and activate it for input. Call this after a short _DELAY
-// of 0.05 to 0.1 seconds to allow Windows to finish its setup first.
+// Bring the named window to the top of the Z-Order and activate it for
+// input. Call this after a short _DELAY of 0.05 to 0.1 seconds to allow
+// Windows to finish its setup first.
+// In: window title (STRING, add CHR$(0) to end of string)
 //--------------------------------------------------------------------
-void UntitledToTop(void) {
-    HWND win = FindWindowA(NULL, "Untitled");
-    if (win) {
-        BringWindowToTop(win); Sleep(50);
-        SetForegroundWindow(win); Sleep(50);
+void WindowToTop(const char *winTitle) {
+    if (winTitle && winTitle[0] != '\0') {
+        HWND win = FindWindowA(NULL, winTitle);
+        if (win) {
+            BringWindowToTop(win); Sleep(50);
+            SetForegroundWindow(win); Sleep(50);
+        }
     }
 }
 
