@@ -56,7 +56,15 @@ UserInitHandler:
 '=====================================================================
 RhoSigmaImgName$ = WriteRhoSigmaImgArray$(appTempDir$ + "RhoSigma32px.png", -1)
 PlasmaImgName$ = WritePlasmaImgArray$(appTempDir$ + "Plasma.jpg", -1)
+AluminiumImgName$ = WriteAluminiumImgArray$(appTempDir$ + "Aluminium.jpg", -1)
+CrapImgName$ = WriteCrapImgArray$(appTempDir$ + "Crap.jpg", -1)
+PaperGrayImgName$ = WritePaperGrayImgArray$(appTempDir$ + "PaperGray.jpg", -1)
+MarbleBrownImgName$ = WriteMarbleBrownImgArray$(appTempDir$ + "MarbleBrown.jpg", -1)
+WallRoughImgName$ = WriteWallRoughImgArray$(appTempDir$ + "WallRough.jpg", -1)
 TempLog RhoSigmaImgName$, "": TempLog PlasmaImgName$, ""
+TempLog AluminiumImgName$, "": TempLog CrapImgName$, ""
+TempLog PaperGrayImgName$, "": TempLog MarbleBrownImgName$, ""
+TempLog WallRoughImgName$, ""
 '--- the next 3 blocks should always be kept ---
 DIM SHARED Info16Img$, Info32Img$ 'for Info MsgBoxes
 Info16Img$ = WriteInfo16ImgData$(appTempDir$ + "Info16px.png")
@@ -398,8 +406,8 @@ Cancel$ = ButtonC$("INIT",_
 '--- Here we can define the remaining global variables, which are not
 '--- needed for object initialization, but during runtime.
 '-----
-init% = -1 'init phase, goes zero after 1st handler loop
-done% = 0 'our main loop continuation boolean
+init% = -1 'init state indicator (handler control, don't touch)
+done% = 0 'main loop (ie. program) keeps running until this is set true
 '-----
 DIM SHARED lzwProgress$ 'progress indicator object for LzwPack$()
 
@@ -919,6 +927,11 @@ END SUB
 
 '$INCLUDE: 'inline\RhoSigmaImg.bm'
 '$INCLUDE: 'inline\PlasmaImg.bm'
+'$INCLUDE: 'inline\AluminiumImg.bm'
+'$INCLUDE: 'inline\CrapImg.bm'
+'$INCLUDE: 'inline\PaperGrayImg.bm'
+'$INCLUDE: 'inline\MarbleBrownImg.bm'
+'$INCLUDE: 'inline\WallRoughImg.bm'
 
 '$INCLUDE: 'inline\Info16Img.bm'
 '$INCLUDE: 'inline\Info32Img.bm'

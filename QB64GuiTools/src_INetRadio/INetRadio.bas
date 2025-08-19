@@ -3,7 +3,7 @@ $IF VERSION < 3.12.0 THEN
 $END IF
 
 '-----------------------------------------------------------
-$VERSIONINFO:FILEVERSION#=1,1,0,0
+$VERSIONINFO:FILEVERSION#=1,2,0,0
 $VERSIONINFO:FileDescription='A neat small Web-Radio player'
 $VERSIONINFO:LegalCopyright='MIT License'
 '-----------------------------------------------------------
@@ -29,7 +29,7 @@ $VERSIONINFO:LegalCopyright='MIT License'
 '|                                                                   |
 '| === INetRadio.bas ===                                             |
 '|                                                                   |
-'| == A small neat Web-Radio player. Listen to your favorite Radio   |
+'| == A neat small Web-Radio player. Listen to your favorite Radio   |
 '| == Stations without much hassle, see INetRadio.txt for more info. |
 '|                                                                   |
 '+-------------------------------------------------------------------+
@@ -60,6 +60,12 @@ UserInitHandler:
 'SUBs and FUNCTIONs. It's also considered good style to TempLog() the
 'written files in order for a correct cleanup in error/crash cases.
 '=====================================================================
+Cancel16ImgName$ = WriteCancel16ImgArray$(appTempDir$ + "Cancel16px.png", -1)
+BackImgName$ = WriteBackImgArray$(appTempDir$ + "Back.jpg", -1)
+MarbleImgName$ = WriteMarbleImgArray$(appTempDir$ + "Marble.jpg", -1)
+TissueImgName$ = WriteTissueImgArray$(appTempDir$ + "Tissue.jpg", -1)
+TempLog Cancel16ImgName$, "": TempLog BackImgName$, ""
+TempLog MarbleImgName$, "": TempLog TissueImgName$, ""
 '--- the next 3 blocks should always be kept ---
 DIM SHARED Info16Img$, Info32Img$ 'for Info MsgBoxes
 Info16Img$ = WriteInfo16ImgData$(appTempDir$ + "Info16px.png")
@@ -73,12 +79,19 @@ DIM SHARED Error16Img$, Error32Img$ 'for error MsgBoxes
 Error16Img$ = WriteError16ImgData$(appTempDir$ + "Error16px.png")
 Error32Img$ = WriteError32ImgData$(appTempDir$ + "Error32px.png")
 TempLog Error16Img$, "": TempLog Error32Img$, ""
-'--- defaults for 1st start ---
-IF NOT _FILEEXISTS(appLocalDir$ + "INR-Options.bin") THEN
-    ok$ = WriteOptionsBinArray$(appLocalDir$ + "INR-Options.bin", 0)
+'--- prepare defaults for 1st start ---
+cvfs% = 0 '(c)urrent (v)ersion (f)irst (s)tart flag
+IF (NOT _FILEEXISTS(appLocalDir$ + "INR-Options.bin")) OR _
+   (NOT _FILEEXISTS(appLocalDir$ + "INR-Stations.txt")) THEN
+    cvfs% = -1
+ELSE
+    IF NOT _FILEEXISTS(appLocalDir$ + "INR-Version.txt") _ORELSE _
+       _READFILE$(appLocalDir$ + "INR-Version.txt") <> VersionINetRadio$ THEN cvfs% = -1
 END IF
-IF NOT _FILEEXISTS(appLocalDir$ + "INR-Stations.txt") THEN
-    ok$ = WriteStationsTxtArray$(appLocalDir$ + "INR-Stations.txt", 0)
+IF cvfs% THEN
+    _WRITEFILE appLocalDir$ + "INR-Options.bin", ReadOptionsBinArray$
+    _WRITEFILE appLocalDir$ + "INR-Stations.txt", ReadStationsTxtArray$
+    _WRITEFILE appLocalDir$ + "INR-Version.txt", VersionINetRadio$
 END IF
 '--- read settings ---
 TYPE Settings
@@ -99,12 +112,23 @@ GET optsFile%, , opts: CLOSE optsFile%
 '--- read Stations list ---
 MainStationsList$ = ListC$("INIT", NewTag$("SORT", "alphabet"))
 listFile% = FileToBuf%(appLocalDir$ + "INR-Stations.txt")
-WHILE NOT EndOfBuf%(bh%)
+WHILE NOT EndOfBuf%(listFile%)
     ok$ = ListC$("STORE", MainStationsList$ +_
         NewTag$("DATA", ReadBufLine$(listFile%)) +_
         NewTag$("STREAM_URL", ReadBufLine$(listFile%)))
 WEND
 DisposeBuf listFile%
+'--- preparations for recent view ---
+RecentFile% = CreateBuf%: RecentMarked% = 0
+RecentListWrite$ = ListC$("INIT", "")
+ok$ = ListC$("STORE", RecentListWrite$ + NewTag$("DATA", CHR$(255)))
+RecentListLinked$ = ListC$("INIT", "")
+ok$ = ListC$("STORE", RecentListLinked$ + NewTag$("DATA", CHR$(255)))
+'--- further temporary file names ---
+svrresName$ = "INR-SvrRes(" + appProgID$ + ").txt"
+TempLog svrresName$, "CONTENTS: Server response from Radio Station."
+streamName$ = "INR-Stream(" + appProgID$ + ").bin"
+TempLog streamName$, "CONTENTS: The running radio stream."
 RETURN
 '=====================================================================
 '===================== END OF USER INIT HANDLER ======================
@@ -131,7 +155,6 @@ KILL Info32Img$: KILL Info16Img$
 '-----
 IF nowPlaying% THEN GOSUB togglePlayingState: GOSUB stopPlay
 IF opts.remStation THEN opts.idxStation = VAL(GetObjTagData$(MainStationsList$, "ACTUAL", "0"))
-IF _FILEEXISTS(appTempDir$ + "INR-Stream.bin") THEN KILL appTempDir$ + "INR-Stream.bin"
 '--- save Stations list ---
 listFile% = CreateBuf%
 FOR i% = 1 TO VAL(GetObjTagData$(MainStationsList$, "RECORDS", "0"))
@@ -268,7 +291,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 640, 230, 0
-appCR$ = "The Internet Radio Player v1.1, Done by RhoSigma, Roland Heyder"
+appCR$ = "The Internet Radio Player v1.2, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - " + appCR$
 
 '------------------------------
@@ -358,6 +381,8 @@ MainPlayImage$ = ImageC$("INIT", MainToolimageCommon$ +_
         NewTag$("IMAGEFILE", "StartPlay32px.png"))
 MainStopImage$ = ImageC$("INIT", MainToolimageCommon$ +_
         NewTag$("IMAGEFILE", "StopPlay32px.png"))
+MainRecentImage$ = ImageC$("INIT", MainToolimageCommon$ +_
+        NewTag$("IMAGEFILE", "Recent32px.png"))
 MainPreviousImage$ = ImageC$("INIT", MainToolimageCommon$ +_
         NewTag$("IMAGEFILE", "GoPrev32px.png"))
 MainNextImage$ = ImageC$("INIT", MainToolimageCommon$ +_
@@ -380,7 +405,7 @@ MainSettingsButton$ = ButtonC$("INIT", MainToolbuttonCommon$ +_
         ImageTag$(MainSettingsImage$))
 MainInfoButton$ = ButtonC$("INIT", MainToolbuttonCommon$ +_
         NewTag$("LEFT", "115") +_
-        NewTag$("TOOLTIP", "More info") +_
+        NewTag$("TOOLTIP", "Server info") +_
         NewTag$("DISABLED", "true") +_
         ImageTag$(MainInfoImage$))
 MainPlayButton$ = ButtonC$("INIT", MainToolbuttonCommon$ +_
@@ -392,10 +417,14 @@ MainStopButton$ = ButtonC$("INIT", MainToolbuttonCommon$ +_
         NewTag$("TOOLTIP", "Stop playing") +_
         NewTag$("DISABLED", "true") +_
         ImageTag$(MainStopImage$))
-MainVolumeSlider$ = SliderC$("INIT",_
+MainRecentButton$ = ButtonC$("INIT", MainToolbuttonCommon$ +_
         NewTag$("LEFT", "295") +_
+        NewTag$("TOOLTIP", "Recent titles") +_
+        ImageTag$(MainRecentImage$))
+MainVolumeSlider$ = SliderC$("INIT",_
+        NewTag$("LEFT", "345") +_
         NewTag$("TOP", "179") +_
-        NewTag$("WIDTH", "180") +_
+        NewTag$("WIDTH", "130") +_
         NewTag$("HEIGHT", "25") +_
         NewTag$("MINIMUM", "0") +_
         NewTag$("MAXIMUM", "100") +_
@@ -425,8 +454,8 @@ MainEditButton$ = ButtonC$("INIT", MainToolbuttonCommon$ +_
 '--- Here we can define the remaining global variables, which are not
 '--- needed for object initialization, but during runtime.
 '-----
-init% = -1 'init phase, goes zero after 1st handler loop
-done% = 0 'our main loop continuation boolean
+init% = -1 'init state indicator (handler control, don't touch)
+done% = 0 'main loop (ie. program) keeps running until this is set true
 '-----
 eol$ = CHR$(13) + CHR$(10) 'http headers & parsing
 nowPlaying% = 0 'current playing state
@@ -511,6 +540,8 @@ togglePlayingState:
 nowPlaying% = NOT nowPlaying%
 ok$ = GenC$("SET", MainPlayButton$ + NewTag$("DISABLED", LTRIM$(STR$(nowPlaying%))))
 ok$ = GenC$("SET", MainStopButton$ + NewTag$("DISABLED", LTRIM$(STR$(NOT nowPlaying%))))
+temp$ = GetObjTagData$(MainStationText$, "TEXT", ""): deli% = INSTR(temp$, " - - - - - ")
+IF deli% > 0 THEN temp$ = LEFT$(temp$, deli% - 1)
 IF NOT nowPlaying% THEN
     ok$ = GenC$("SET", MainInfoButton$ + NewTag$("DISABLED", "true"))
     IF InfoView& > 0 THEN
@@ -522,6 +553,10 @@ IF NOT nowPlaying% THEN
         ok$ = GenC$("SET", InfoCopyButton$ + NewTag$("DISABLED", "true"))
         ok$ = GenC$("SET", InfoOpenButton$ + NewTag$("DISABLED", "true"))
     END IF
+    AddMarkRecent "playback stopped - " + temp$
+ELSE
+    AddMarkRecent "-----"
+    AddMarkRecent "playback started - " + temp$
 END IF
 RETURN
 
@@ -556,6 +591,28 @@ ok$ = GenC$("SET", InfoDescriptionText$ + NewTag$("TEXT", icy$))
 ok$ = GenC$("SET", InfoRedirectsText$ + NewTag$("TEXT", LTRIM$(STR$(redirects%))))
 RETURN
 
+saveRecent:
+result$ = MessageBox$("", appExeName$,_
+                      "You've marked titles in the recent list.|" +_
+                      "Do you wanna save the list before exit?",_
+                      "{SYM Checkmark * * * *}Yes||{SYM Cross * * * *}No")
+IF result$ = "Yes" THEN
+    saveRecentDirect:
+    rtlFile$ = FileSelect$("", "Choose a filename to save...", fsmSAVE%, _DIR$("Documents"), "INR-RecentTitles.txt")
+    IF LEN(rtlFile$) > 0 THEN
+        ext$ = LCASE$(FileExtension$(rtlFile$))
+        IF ext$ = "" THEN rtlFile$ = rtlFile$ + ".txt"
+        IF _FILEEXISTS(rtlFile$) THEN
+            result$ = MessageBox$("", appExeName$,_
+                                  "File already exists, overwrite?",_
+                                  "{SYM Checkmark * * * *}Yes||{SYM Cross * * * *}No")
+            IF result$ = "No" GOTO saveRecentDirect
+        END IF
+        BufToFile RecentFile%, rtlFile$
+    END IF
+END IF
+RETURN
+
 startPlay:
 '--- prepare args ---
 IF LEFT$(LCASE$(streamUrl$), 8) = "https://" THEN
@@ -564,7 +621,11 @@ IF LEFT$(LCASE$(streamUrl$), 8) = "https://" THEN
                 "This Station uses https:// connections, which is not supported.|" +_
                 "It is now changed to use a http:// connection instead. However,|" +_
                 "if it fails, then this Station is unusable and can be deleted.",_
-                "{IMG Error16px.png 0}Ok, got it...")
+                "{IMG Error16px.png 0}Ok, got it...|{IMG Cancel16px.png 0}Ok, don't show again...")
+        IF ok$ = "Ok, don't show again..." THEN
+            opts.chgQuiet = -1
+            IF SettingsView& > 0 THEN ok$ = GenC$("SET", SettingsNoWarningCheckbox$ + NewTag$("CHECKED", "true"))
+        END IF
     END IF
     streamUrl$ = "http://" + MID$(streamUrl$, 9)
 END IF
@@ -583,15 +644,15 @@ IF stream& = 0 THEN
             "{IMG Error16px.png 0}Ok, got it...")
     RETURN
 END IF
-OPEN "O", streamFile%, appTempDir$ + "INR-Stream.bin": CLOSE streamFile%
-OPEN "B", streamFile%, appTempDir$ + "INR-Stream.bin"
+OPEN "O", streamFile%, appTempDir$ + streamName$: CLOSE streamFile%
+OPEN "B", streamFile%, appTempDir$ + streamName$
 '--- send request ---
 request$ = "GET " + file$ + " HTTP/1.0" + eol$ '1.0 to avoid "chunked" transfer
 request$ = request$ + "Host: " + host$ + eol$
-request$ = request$ + "User-Agent: INetRadio/1.1 (QB64-PE; GuiTools Framework;)" + eol$
+request$ = request$ + "User-Agent: INetRadio/1.2 (QB64-PE; GuiTools Framework;)" + eol$
 request$ = request$ + "Accept: audio/mpeg, audio/ogg, audio/wav, audio/x-aiff" + eol$
 request$ = request$ + "Accept-Charset: utf-8" + eol$
-request$ = request$ + "Icy-MetaData: 1" + eol$
+request$ = request$ + "Icy-MetaData: 1" + eol$ 'https://stackoverflow.com/questions/44050266/get-info-from-streaming-radio
 request$ = request$ + eol$
 PUT stream&, , request$
 '--- reset state variables ---
@@ -630,7 +691,7 @@ ELSEIF MID$(received$, 10, 3) = "302" AND LEN(response$) = 0 THEN
     IF lo% > 0 THEN el% = INSTR(lo%, received$, eol$)
     IF lo% > 0 AND el% > 0 THEN
         streamUrl$ = LTRIM$(RTRIM$(MID$(received$, lo% + 9, el% - (lo% + 9))))
-        GOSUB stopPlay: _DELAY 0.1: GOSUB startPlay
+        GOSUB stopPlay: _DELAY 0.1: GOSUB startPlay: IF stream& = 0 THEN GOSUB togglePlayingState: RETURN
         redirects% = redirects% + 1
     END IF
 ELSEIF MID$(received$, 10, 3) = "200" AND LEN(response$) = 0 THEN
@@ -649,13 +710,12 @@ ELSEIF MID$(received$, 10, 3) = "200" AND LEN(response$) = 0 THEN
             RETURN
         END IF
     END IF
-    mi% = INSTR(LCASE$(received$), "icy-metaint:")
+    mi% = INSTR(LCASE$(received$), "icy-metaint:") 'https://stackoverflow.com/questions/44050266/get-info-from-streaming-radio
     IF mi% > 0 THEN metainterval& = VAL(MID$(received$, mi% + 12))
     er% = INSTR(received$, eol$ + eol$)
     IF er% > 0 THEN
         response$ = LEFT$(received$, er% + 3)
-        _WRITEFILE appTempDir$ + "INR-SvrRes.txt", response$
-        TempLog "INR-SvrRes.txt", "CONTENTS: Server response from Radio Station."
+        _WRITEFILE appTempDir$ + svrresName$, response$
         ok$ = GenC$("SET", MainInfoButton$ + NewTag$("DISABLED", "false"))
         GOSUB updateInfoView
         received$ = MID$(received$, er% + 4)
@@ -665,7 +725,7 @@ ELSEIF MID$(received$, 10, 3) = "200" AND LEN(response$) = 0 THEN
     END IF
 ELSEIF LEN(response$) > 0 THEN
     IF soundHandle& = 0 AND LOF(streamFile%) > (opts.bufSize * 1024) THEN
-        soundHandle& = _SNDOPEN(appTempDir$ + "INR-Stream.bin", "stream")
+        soundHandle& = _SNDOPEN(appTempDir$ + streamName$, "stream")
         IF soundHandle& > 0 THEN
             _SNDVOL soundHandle&, VAL(GetObjTagData$(MainVolumeSlider$, "LEVEL", "67")) / 100
             _SNDPLAY soundHandle&
@@ -673,7 +733,7 @@ ELSEIF LEN(response$) > 0 THEN
     ELSEIF soundHandle& > 0 THEN
         IF NOT _SNDPLAYING(soundHandle&) THEN 'stalled ?
             IF opts.autoRetry THEN 'retry ?
-                GOSUB stopPlay: _DELAY 0.1: GOSUB startPlay
+                GOSUB stopPlay: _DELAY 0.1: GOSUB startPlay: IF stream& = 0 THEN GOSUB togglePlayingState: RETURN
             ELSE
                 GOSUB togglePlayingState: GOSUB stopPlay
                 ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "Stream has stalled, press play to restart. If it happens frequently, then try raising the buffer size."))
@@ -682,6 +742,7 @@ ELSEIF LEN(response$) > 0 THEN
         END IF
     END IF
     IF metainterval& > 0 THEN
+        'https://stackoverflow.com/questions/44050266/get-info-from-streaming-radio
         IF LEN(received$) < metainterval& + 4081 THEN RETURN
         soundData$ = LEFT$(received$, metainterval&): PUT streamFile%, , soundData$
         received$ = MID$(received$, metainterval& + 1)
@@ -692,6 +753,7 @@ ELSEIF LEN(response$) > 0 THEN
             ste% = INSTR(st%, feeds$, "';")
             feeds$ = MID$(feeds$, st%, ste% - st%)
             IF _UPRINTWIDTH(feeds$, 8) = 0 THEN feeds$ = AnsiTextToUtf8Text$(feeds$, "Win1252")
+            AddMarkRecent feeds$
             IF opts.scrFeeds THEN WHILE _UPRINTWIDTH(feeds$, 8) < 400: feeds$ = feeds$ + " - - - - - " + feeds$: WEND
             ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", feeds$))
         END IF
@@ -736,10 +798,40 @@ IF UCASE$(ShowErrSwitch$) = "ON" THEN
     END IF
 END IF
 END FUNCTION
+'-----
+SUB AddMarkRecent (entry$)
+SHARED RecentView&, RecentFile%, RecentMarked%
+SHARED RecentListWrite$, RecentListLinked$, RecentListListview$
+nul& = SeekBuf&(RecentFile%, 0, SBM_BufStart)
+IF entry$ = "*****" AND GetBufLen&(RecentFile%) >= 9 THEN
+    tmp$ = ReadBufRawData$(RecentFile%, 7)
+    nul& = SeekBuf&(RecentFile%, 6, SBM_BufStart)
+    IF ASC(tmp$, 7) = 226 THEN
+        DeleteBufRawData RecentFile%, 3: WriteBufRawData RecentFile%, ">"
+        RecentMarked% = RecentMarked% + 1
+    ELSE
+        DeleteBufRawData RecentFile%, 1: WriteBufRawData RecentFile%, AnsiTextToUtf8Text$(CHR$(179), "Pc437")
+        IF RecentMarked% > 0 THEN RecentMarked% = RecentMarked% - 1
+    END IF
+ELSEIF entry$ = "-----" THEN
+    WriteBufLine RecentFile%, AnsiTextToUtf8Text$(MKI$(&HFFFF) + STRING$(32, 196), "Pc437")
+ELSEIF entry$ <> "*****" AND entry$ <> "-----" THEN
+    WriteBufLine RecentFile%, AnsiTextToUtf8Text$(LEFT$(TIME$, 5) + " " + CHR$(179) + " " + entry$, "")
+END IF
+ok$ = ListC$("KILL", RecentListWrite$): RecentListWrite$ = ListC$("INIT", "")
+nul& = SeekBuf&(RecentFile%, 0, SBM_BufStart)
+WHILE NOT EndOfBuf%(RecentFile%)
+    ok$ = ListC$("STORE", RecentListWrite$ + NewTag$("DATA", ReadBufLine$(RecentFile%)))
+WEND
+IF RecentView& > 0 THEN
+    ok$ = GenC$("SET", RecentListListview$ + ListTag$(RecentListWrite$))
+    SWAP RecentListWrite$, RecentListLinked$
+END IF
+END SUB
 '--- Function to define/return the program's version string.
 '-----
 FUNCTION VersionINetRadio$
-VersionINetRadio$ = MID$("$VER: INetRadio 1.1 (26-Apr-2025) by RhoSigma :END$", 7, 39)
+VersionINetRadio$ = MID$("$VER: INetRadio 1.2 (14-Aug-2025) by RhoSigma :END$", 7, 39)
 END FUNCTION
 '~~~~~
 '=====================================================================
@@ -875,6 +967,10 @@ END SUB
 '$INCLUDE: 'inline\Error16Img.bm'
 '$INCLUDE: 'inline\Error32Img.bm'
 
+'$INCLUDE: 'inline\Cancel16Img.bm'
+'$INCLUDE: 'inline\BackImg.bm'
+'$INCLUDE: 'inline\MarbleImg.bm'
+'$INCLUDE: 'inline\TissueImg.bm'
 '$INCLUDE: 'inline\OptionsBin.bm'
 '$INCLUDE: 'inline\StationsTxt.bm'
 

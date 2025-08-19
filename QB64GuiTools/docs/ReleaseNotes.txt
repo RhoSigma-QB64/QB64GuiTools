@@ -34,6 +34,18 @@ TODO:
 
 HISTORY:
 --------
+>> 08/18/2025 v0.20
+   - changed CurrDIR$() to always return with a trailing backslash to be
+     in line with the _CWD$ function in QB64-PE v4.1.0 and up
+   - new function Utf8CharLen%(), improvements & fixes in CharsetSupport.bm
+   - improved TextC class so that scrolling will have some less CPU load
+   - fixed the READONLY mode in ListviewC class, a) suppress keyboard
+     shortcut selection, b) still show tooltips for overlong list entries
+   - improved the UTF-8 versions of TextC and ListviewC classes to better
+     handle invalid strings
+   - several fixes and improvements in the INetRadio application
+   - several fixes in the MakeCARR/MakeDATA applications
+
 >> 04/28/2025 v0.19
    - implemented two new event handlers, INITDONE is called once when
      the initial GUI is created and has passed the 1st event loop and
@@ -130,13 +142,13 @@ HISTORY:
      for direct rendering into any GuiViews is from within the GUIREFRESH
      event handler using SUB SourceDestGuiView() first to designate the view
    - bugfix in GuiViews cleanup and minor changes in display logic, also
-     added SUB DeleteGuiView() as counterpart to CreateGuiView()
+     added SUB DeleteGuiView() as counterpart to CreateGuiView&()
    - replaced the old Format[n]$ functions with my new IndexFormat$()
    - replaced old INKEY$ workaround (for german keyboard layout) with an
      adapted version of forum member moises1953's enhanced InkeyHit$()
      routine (permission was granted), which has support for most western
      european (CP1252 based) languages
-   - fixed Cut-/PasteBufBlock() functions in BufferSupport.bm, blocks
+   - fixed Cut-/PasteBufBlock%() functions in BufferSupport.bm, blocks
      were shifted by one byte due to the use of the wrong seek mode
    - several fixes in PackSupport.bm to avoid deadlock conditions when
      using the "hidden" progress indicator feature

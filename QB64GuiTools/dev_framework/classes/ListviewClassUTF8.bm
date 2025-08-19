@@ -59,7 +59,7 @@ SELECT CASE methodID$
         '      default to one (1), if omitted. The spacing is a minimum
         '      value here and may be slightly raised internally to better
         '      arrange the entries in the visible Listview area.
-        '      If READONLY is true, then ACTUAL and SHORTCUT is ignored.
+        '      If READONLY is true, then ACTUAL is ignored.
         GOSUB meInit
         'Result Tags: ERROR/WARNING or OBJECT
     CASE "Set"
@@ -69,6 +69,7 @@ SELECT CASE methodID$
         'NOTE: If ACTUAL is not given or outside list bounds, then it
         '      will default to one (1st list entry/record), may also be
         '      zero for no list entry preselection.
+        '      If READONLY is true, then ACTUAL is ignored.
         GOSUB meSet
         'Result Tags: ERROR/WARNING or empty
     CASE "Get"
@@ -110,10 +111,7 @@ ELSE
     InitGeneralProperties this&, classID$, flagsID$, tagsID$
     ApplyPrefs classID$, tagsID$
     '--- object specific init ---
-    IF BoolTagTrue%(tagsID$, "READONLY") THEN
-        SetTag tagsID$, "ACTUAL", "0"
-        RemTag tagsID$, "SHORTCUT"
-    END IF
+    IF BoolTagTrue%(tagsID$, "READONLY") THEN SetTag tagsID$, "ACTUAL", "0"
     '--- check list/pager conditions ---
     IF InitSetAssignedList%(this&, ListviewRes$, classID$, methodID$, tagsID$) THEN
         IF InitAssignedPager%(this&, ListviewRes$, classID$, tagsID$) THEN
@@ -175,7 +173,9 @@ meInitEntries:
 ospa% = VAL(GetTagData$(guiObjects$(objData%, this&) + tagsID$, "OSPAC", "1"))
 iwid% = 0: IF BoolTagTrue%(guiObjects$(objData%, lobj&), "HASLVIS") THEN iwid% = CINT((_UFONTHEIGHT + ospa%) / 3 * 4) + 3
 FOR i% = 0 TO numT% - 1
-    text$ = TextC$("INIT", NewTag$("LVFLAG", "true") + NewTag$("LEFT", LTRIM$(STR$(left% + 4 + iwid%))) + NewTag$("TOP", LTRIM$(STR$(topp% + topT% + 3 + (i% * stpT%)))) + NewTag$("WIDTH", LTRIM$(STR$(widt% - 31 - iwid%))) + NewTag$("HEIGHT", LTRIM$(STR$(tObH%))))
+    text$ = TextC$("INIT", GetTag$(guiObjects$(objData%, this&) + tagsID$, "GUIVIEW") + NewTag$("LVFLAG", "true") +_
+            NewTag$("LEFT", LTRIM$(STR$(left% + 4 + iwid%))) + NewTag$("TOP", LTRIM$(STR$(topp% + topT% + 3 + (i% * stpT%)))) +_
+            NewTag$("WIDTH", LTRIM$(STR$(widt% - 31 - iwid%))) + NewTag$("HEIGHT", LTRIM$(STR$(tObH%))))
     resu$ = ListC$("STORE", tObL$ + NewTag$("DATA", GetTagData$(text$, "OBJECT", "0")))
 NEXT i%
 RETURN
@@ -336,7 +336,7 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
     tObL$ = NewTag$("OBJECT", LTRIM$(STR$(tObL&)))
     resu$ = ListC$("SET", tObL$ + NewTag$("ACTUAL", "1"))
     '--- draw object ----
-    IF VAL(GetTagData$(guiATTProps$, "TOBJ", "0")) = this& THEN PrintObjectTooltip 0
+    IF VAL(GetTagData$(guiATTProps$, "TOBJ", "0")) = this& THEN UPrintObjectTooltipLV 0
     FillRectColor left%, topp%, widt%, heig%, guiBackPen%
     resu$ = ImageC$("DRAW", ObjectTag$(guiObjects$(objData%, this&), "BGIMG"))
     '--- image/symbol/frame object ---
@@ -376,13 +376,15 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
                 guiObjects$(objData%, tobj&) = guiObjects$(objData%, tobj&) + lvis$
             END IF
         END IF
-        IF _UPRINTWIDTH(text$, 8) = 0 THEN text$ = AnsiTextToUtf8Text$(text$, "")
+        IF _UPRINTWIDTH(text$, 8) = 0 THEN
+            ouc% = _MAPUNICODE(255)
+            nuc% = 160: IF _FONT = 16 THEN nuc% = 255
+            _MAPUNICODE nuc% TO 255
+            text$ = AnsiTextToUtf8Text$(text$, "")
+            _MAPUNICODE ouc% TO 255
+        END IF
         IF _UPRINTWIDTH(text$, 8) > twid% THEN
             SetTag guiObjects$(objData%, tobj&), "TOOLTIP", text$
-            WHILE _UPRINTWIDTH(text$ + "...", 8) > twid%
-                text$ = LEFT$(text$, LEN(text$) - 1)
-            WEND
-            text$ = text$ + "..."
         ELSE
             RemTag guiObjects$(objData%, tobj&), "TOOLTIP"
         END IF
@@ -391,8 +393,10 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
         IF (tonu& + i%) = actu& THEN sele$ = NewTag$("SELECTED", "true"): focu% = guiFillTextPen%
         resu$ = TextC$("DRAW", tobj$ + sele$)
         IF i% = VAL(GetTagData$(guiObjects$(objData%, this&), "FOCUS", "0")) THEN
-            LINE (tlft%, ttop%)-(tlft% + twid% - 1, ttop% + thei% - 1), focu%, B
-            BrightenObjectBG this&, tlft%, ttop%, twid%, thei%
+            IF NOT BoolTagTrue%(guiObjects$(objData%, this&), "READONLY") THEN
+                LINE (tlft%, ttop%)-(tlft% + twid% - 1, ttop% + thei% - 1), focu%, B
+                BrightenObjectBG this&, tlft%, ttop%, twid%, thei%
+            END IF
             IF ValidateTags%(guiObjects$(objData%, tobj&), "TOOLTIP", -1) THEN j& = tobj&: ELSE j& = 0
         END IF
     NEXT i%
@@ -402,9 +406,9 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
     IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN
         FillRectRaster left%, topp%, widt%, heig%, guiFillPen%
     ELSE
-        IF j& > 0 THEN
+        IF (NOT BoolTagTrue%(guiObjects$(objData%, sobj&), "SELECTED")) AND (j& > 0) THEN
             RemTag guiObjects$(objData%, this&), "MITIM"
-            PrintObjectTooltip j&
+            UPrintObjectTooltipLV j&
             SetTag guiATTProps$, "TOBJ", LTRIM$(STR$(this&))
         END IF
     END IF
@@ -424,18 +428,20 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
     sobj& = VAL(GetTagData$(guiObjects$(objData%, this&), "SCR0", "0"))
     visi% = VAL(GetTagData$(guiObjects$(objData%, sobj&), "VISIBLENUM", "0"))
     tonu& = VAL(GetTagData$(guiObjects$(objData%, sobj&), "TOPNUM", "0"))
-    shor$ = GetTagData$(guiObjects$(objData%, this&), "SHORTCUT", "n/a")
-    IF NOT BoolTagTrue%(osta$, "SELECTED") AND shor$ <> "n/a" AND guiASCObject& = 0 THEN
-        IF BoolTagTrue%(tagsID$, "KEYPRESS") THEN
-            IF ObjectShortcut%(shor$, tagsID$) THEN
-                ObjectsUnselect this&
-                actu& = actu& + 1: IF actu& > reco& THEN actu& = 1
-                SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
-                GOSUB meAdjustScroller
-                resu$ = ListviewC$("DRAW", thisTag$)
-                SetTag ListviewRes$, "RELEASED", LTRIM$(STR$(this&))
-                SetTag ListviewRes$, "SHORTCUT", "true"
-                RETURN
+    IF NOT BoolTagTrue%(guiObjects$(objData%, this&), "READONLY") THEN
+        shor$ = GetTagData$(guiObjects$(objData%, this&), "SHORTCUT", "n/a")
+        IF NOT BoolTagTrue%(osta$, "SELECTED") AND shor$ <> "n/a" AND guiASCObject& = 0 THEN
+            IF BoolTagTrue%(tagsID$, "KEYPRESS") THEN
+                IF ObjectShortcut%(shor$, tagsID$) THEN
+                    ObjectsUnselect this&
+                    actu& = actu& + 1: IF actu& > reco& THEN actu& = 1
+                    SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
+                    GOSUB meAdjustScroller
+                    resu$ = ListviewC$("DRAW", thisTag$)
+                    SetTag ListviewRes$, "RELEASED", LTRIM$(STR$(this&))
+                    SetTag ListviewRes$, "SHORTCUT", "true"
+                    RETURN
+                END IF
             END IF
         END IF
     END IF
@@ -467,15 +473,15 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
     '--- check for mouse trigger ---
     IF moux% >= left% AND moux% < (left% + widt%) AND mouy% >= topp% AND mouy% < (topp% + heig%) THEN
         SetTag guiObjects$(objData%, this&), "FOCUS", "true"
+        ftxt% = 0
+        FOR i% = 1 TO numT%
+            tobj& = VAL(GetTagData$(ListC$("READ", tObL$), "DATA", "0")): tobj$ = NewTag$("OBJECT", LTRIM$(STR$(tobj&)))
+            tlft% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "LEFT", "0")): ttop% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "TOP", "0"))
+            twid% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "WIDTH", "0")): thei% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "HEIGHT", "0"))
+            IF moux% >= tlft% AND moux% < (tlft% + twid%) AND mouy% >= ttop% AND mouy% < (ttop% + thei%) THEN ftxt% = i%
+        NEXT i%
+        IF ftxt% <> 0 THEN SetTag guiObjects$(objData%, this&), "FOCUS", LTRIM$(STR$(ftxt%))
         IF NOT BoolTagTrue%(guiObjects$(objData%, this&), "READONLY") THEN
-            ftxt% = 0
-            FOR i% = 1 TO numT%
-                tobj& = VAL(GetTagData$(ListC$("READ", tObL$), "DATA", "0")): tobj$ = NewTag$("OBJECT", LTRIM$(STR$(tobj&)))
-                tlft% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "LEFT", "0")): ttop% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "TOP", "0"))
-                twid% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "WIDTH", "0")): thei% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "HEIGHT", "0"))
-                IF moux% >= tlft% AND moux% < (tlft% + twid%) AND mouy% >= ttop% AND mouy% < (ttop% + thei%) THEN ftxt% = i%
-            NEXT i%
-            IF ftxt% <> 0 THEN SetTag guiObjects$(objData%, this&), "FOCUS", LTRIM$(STR$(ftxt%))
             IF BoolTagTrue%(tagsID$, "MOUSELBDOWN") THEN
                 IF ftxt% <> 0 THEN
                     actu& = tonu& + ftxt%
@@ -587,4 +593,242 @@ RETURN
 END FUNCTION
 '=====================================================================
 '=====================================================================
+
+'--- INTERNAL --------------------------------------------------------
+' This SUB will print the help/tooltip (if any) of the given object or
+' will remove the currently displayed tooltip on the next call. This is
+' a UTF-8 variant explicitly used by the UTF-8 Listview class only.
+'---------------------------------------------------------------------
+' Inputs: this& = the object, which its help/tooltip shall be printed
+'---------------------------------------------------------------------
+SUB UPrintObjectTooltipLV (this&)
+IF guiATTProps$ <> "" THEN
+    '--- redraw or remove currently shown tooltip ---
+    SourceDestGuiView VAL(GetTagData$(guiATTProps$, "GUIVIEW", "0"))
+    left% = VAL(GetTagData$(guiATTProps$, "LEFT", "0"))
+    topp% = VAL(GetTagData$(guiATTProps$, "TOP", "0"))
+    bubb& = VAL(GetTagData$(guiATTProps$, "IHANDLE", "-1"))
+    area& = VAL(GetTagData$(guiATTProps$, "RHANDLE", "-1"))
+    IF this& THEN
+        _PUTIMAGE (left%, topp%), bubb&, _DEST
+    ELSE
+        _PUTIMAGE (left%, topp%), area&, _DEST
+        _FREEIMAGE area&
+        _FREEIMAGE bubb&
+        guiATTProps$ = ""
+    END IF
+ELSE
+    IF this& <= 0 THEN EXIT SUB
+    '--- set view ---
+    SourceDestGuiView VAL(GetTagData$(guiObjects$(objData%, this&), "GUIVIEW", "0"))
+    '--- only do, if tooltip or shortcut is available ---
+    text$ = LTRIM$(RTRIM$(GetTagData$(guiObjects$(objData%, this&), "TOOLTIP", "")))
+    shor$ = GetTagData$(guiObjects$(objData%, this&), "SHORTCUT", "")
+    IF text$ <> "" OR shor$ <> "" THEN
+        '--- assemble the text ---
+        IF text$ <> "" THEN
+            IF RIGHT$(text$, 1) <> "|" THEN text$ = text$ + "|"
+        END IF
+        IF shor$ <> "" THEN
+            IF text$ <> "" THEN text$ = text$ + "----------|"
+            key$ = MKI$(VAL(shor$))
+            IF RIGHT$(key$, 1) = CHR$(0) AND ASC(LEFT$(key$, 1)) > 32 THEN
+                key$ = LEFT$(key$, 1)
+            ELSE
+                RESTORE MakeShortcut_FKeys
+                FOR i% = 1 TO 25
+                    READ fu$, id&
+                    IF VAL(shor$) = id& THEN key$ = fu$: EXIT FOR
+                NEXT i%
+            END IF
+            IF LEN(key$) = 1 AND key$ >= "A" AND key$ <= "Z" THEN key$ = key$ + " (SHIFT " + CHR$(ASC(key$) + 32) + ")"
+            IF INSTR(shor$, "A") THEN key$ = "ALT " + key$
+            IF INSTR(shor$, "C") THEN key$ = "CTRL " + key$
+            IF INSTR(shor$, "S") THEN key$ = "SHIFT " + key$
+            text$ = text$ + "Shortcut: " + key$ + "|"
+        END IF
+        '--- make sure it's valid Utf-8 ---
+        IF _UPRINTWIDTH(text$, 8) = 0 THEN
+            ouc% = _MAPUNICODE(255)
+            nuc% = 160: IF _FONT = 16 THEN nuc% = 255
+            _MAPUNICODE nuc% TO 255
+            text$ = AnsiTextToUtf8Text$(text$, "")
+            _MAPUNICODE ouc% TO 255
+        END IF
+        '--- calculate required bounding box for print ---
+        sp% = 1: nl% = 0: pw% = 0
+        FOR i% = 1 TO LEN(text$)
+            IF MID$(text$, i%, 1) = "|" THEN
+                nl% = nl% + 1
+                temp$ = MID$(text$, sp%, i% - sp%)
+                IF _UPRINTWIDTH(temp$, 8) > pw% THEN pw% = _UPRINTWIDTH(temp$, 8)
+                sp% = i% + 1
+            END IF
+        NEXT i%
+        ph% = (_UFONTHEIGHT * nl%)
+        '--- get object dimensions & precalc pin point ---
+        x% = VAL(GetTagData$(guiObjects$(objData%, this&), "LEFT", "0"))
+        y% = VAL(GetTagData$(guiObjects$(objData%, this&), "TOP", "0"))
+        w% = VAL(GetTagData$(guiObjects$(objData%, this&), "WIDTH", "0"))
+        h% = VAL(GetTagData$(guiObjects$(objData%, this&), "HEIGHT", "0"))
+        IF guiObjects$(objType%, this&) = "RadioC" THEN
+            x% = x% - INT(w% / 2): h% = w%: y% = y% - INT(h% / 2)
+        END IF
+        '- flip adjustments for images
+        IF w% < 0 THEN w% = -w%: x% = x% - w%
+        IF h% < 0 THEN h% = -h%: y% = y% - h%
+        '- adjust tooltip pin position
+        down% = y% - 22 - ph%: IF down% < 0 THEN down% = 0
+        IF (down% + ph% + 32) > (y% + h% - 6) THEN
+            y% = y% + h% - 11: down% = -1
+        ELSE
+            y% = y% + 10: down% = 0
+        END IF
+        ox% = x%: x% = x% + INT(w% * 0.33)
+        '--- calculate polygon arrays for drawing ---
+        REDIM cpx%(3), cpy%(3), pax%(18), pay%(18), npax%(2), npay%(2)
+        $CHECKING:OFF
+        cpx%(0) = x% - 16 - INT(pw% * 0.25)
+        IF down% THEN cpy%(0) = y% + 24: ELSE cpy%(0) = y% - 24 - ph%
+        cpx%(1) = cpx%(0) + pw%: cpy%(1) = cpy%(0)
+        cpx%(2) = cpx%(1): cpy%(2) = cpy%(1) + ph%
+        cpx%(3) = cpx%(0): cpy%(3) = cpy%(2)
+        i% = 0
+        FOR a% = 180 TO 90 STEP -30: pax%(i%) = cpx%(0) + PolToCartX%(a%, 8): pay%(i%) = cpy%(0) + PolToCartY%(a%, -8): i% = i% + 1: NEXT a%
+        IF down% THEN
+            pax%(4) = x% - 16: pay%(4) = pay%(3)
+            pax%(5) = x%: pay%(5) = y%
+            pax%(6) = x% - 6: pay%(6) = pay%(3)
+            i% = 7
+        END IF
+        FOR a% = 90 TO 0 STEP -30: pax%(i%) = cpx%(1) + PolToCartX%(a%, 8): pay%(i%) = cpy%(1) + PolToCartY%(a%, -8): i% = i% + 1: NEXT a%
+        FOR a% = 360 TO 270 STEP -30: pax%(i%) = cpx%(2) + PolToCartX%(a%, 8): pay%(i%) = cpy%(2) + PolToCartY%(a%, -8): i% = i% + 1: NEXT a%
+        IF NOT down% THEN
+            pax%(12) = x% - 6: pay%(12) = pay%(11)
+            pax%(13) = x%: pay%(13) = y%
+            pax%(14) = x% - 16: pay%(14) = pay%(11)
+            i% = 15
+        END IF
+        FOR a% = 270 TO 180 STEP -30: pax%(i%) = cpx%(3) + PolToCartX%(a%, 8): pay%(i%) = cpy%(3) + PolToCartY%(a%, -8): i% = i% + 1: NEXT a%
+        '- fit polygon to screen bounds
+        IF pax%(0) < 0 THEN offx% = -pax%(0): ELSE offx% = 0
+        IF pay%(3) < 0 THEN offy% = -pay%(3): ELSE offy% = 0
+        IF down% THEN i% = 10: ELSE i% = 7
+        IF offx% = 0 AND pax%(i%) > _WIDTH - 1 THEN offx% = _WIDTH - 1 - pax%(i%)
+        FOR i% = 0 TO 18
+            pax%(i%) = pax%(i%) + offx%
+            pay%(i%) = pay%(i%) + offy%
+        NEXT i%
+        IF down% THEN i% = 8: ELSE i% = 0
+        npax%(0) = pax%(12 - i%): npay%(0) = pay%(12 - i%)
+        npax%(1) = pax%(13 - i%): npay%(1) = pay%(13 - i%)
+        npax%(2) = pax%(14 - i%): npay%(2) = pay%(14 - i%)
+        '- recalc pin position according to screen
+        '- fitted polygon and the object bounds
+        IF npax%(1) < ox% THEN
+            move% = (ox% + 10) - npax%(1)
+            IF down% AND (npax%(1) + move%) > (pax%(14) - 14) THEN
+                move% = (pax%(14) - 14) - npax%(1)
+            ELSEIF NOT down% AND (npax%(1) + move%) > (pax%(11) - 14) THEN
+                move% = (pax%(11) - 14) - npax%(1)
+            END IF
+            npax%(0) = npax%(0) + move%: npax%(1) = npax%(1) + move%: npax%(2) = npax%(2) + move%
+        ELSEIF npax%(1) > ox% + w% - 1 THEN
+            move% = npax%(1) - (ox% + w% - 11)
+            IF (npax%(1) - move%) < (pax%(15) + 28) THEN
+                move% = npax%(1) - (pax%(15) + 28)
+            END IF
+            npax%(0) = npax%(0) - move%: npax%(1) = npax%(1) - move%: npax%(2) = npax%(2) - move%
+        END IF
+        pax%(12 - i%) = npax%(0): pax%(13 - i%) = npax%(1): pax%(14 - i%) = npax%(2)
+        $CHECKING:ON
+        '--- save data for later display restauration ---
+        IF down% THEN i% = 10: ELSE i% = 7
+        left% = pax%(0): topp% = pay%(3)
+        widt% = pax%(i%) - pax%(0) + 1: heig% = pay%(15) - pay%(3) + 1
+        IF down% THEN topp% = topp% - 16: heig% = heig% + 16
+        area& = _NEWIMAGE(widt% + 15, heig% + 16, 256)
+        _PUTIMAGE (0, 0), _SOURCE, area&, (left%, topp%)-(left% + widt% + 14, topp% + heig% + 15)
+        l% = left%: t% = topp%: w% = widt%: h% = heig%
+        guiATTProps$ = NewTag$("GUIVIEW", LTRIM$(STR$(guiAGVIndex&))) +_
+                       NewTag$("OBJECT", LTRIM$(STR$(this&))) +_
+                       NewTag$("LEFT", LTRIM$(STR$(left%))) +_
+                       NewTag$("TOP", LTRIM$(STR$(topp%))) +_
+                       NewTag$("RHANDLE", LTRIM$(STR$(area&)))
+        '--- process display area (gray out, make shadow etc.) ---
+        IF down% THEN topp% = topp% + 16: heig% = heig% - 16
+        area& = _NEWIMAGE(widt% + 15, heig% + 15, 32)
+        _PUTIMAGE (0, 0), _SOURCE, area&, (left%, topp%)-(left% + widt% + 14, topp% + heig% + 14)
+        drk1& = ModifyBrightness&(area&, -0.16, 10, 10, widt% + 9, heig% + 9, -1): _FREEIMAGE area&
+        drk2& = ModifyBrightness&(drk1&, -0.16, 10, 10, widt% + 7, heig% + 7, -1): _FREEIMAGE drk1&
+        drk3& = ModifyBrightness&(drk2&, -0.16, 10, 10, widt% + 4, heig% + 4, -1): _FREEIMAGE drk2&
+        rem1& = ModifyBrightness&(drk3&, -0.16, 0, 0, widt% - 1, 9, -1): _FREEIMAGE drk3&
+        rem2& = ModifyBrightness&(rem1&, -0.16, 0, 10, 9, heig% - 1, -1): _FREEIMAGE rem1&
+        rem3& = ModifyBrightness&(rem2&, -0.16, 0, 0, widt% - 1, 9, -1): _FREEIMAGE rem2&
+        rem4& = ModifyBrightness&(rem3&, -0.16, 0, 10, 9, heig% - 1, -1): _FREEIMAGE rem3&
+        rem5& = ModifyBrightness&(rem4&, -0.16, 0, 0, widt% - 1, 9, -1): _FREEIMAGE rem4&
+        rem6& = ModifyBrightness&(rem5&, -0.16, 0, 10, 9, heig% - 1, -1): _FREEIMAGE rem5&
+        grad& = ModifyContrast&(rem6&, -0.5, 0, 0, widt% - 1, heig% - 1, -1): _FREEIMAGE rem6&
+        gray& = MakeGrayscale&(grad&, 0, 0, widt% - 1, heig% - 1, -1): _FREEIMAGE grad&
+        filt& = ApplyFilter&(gray&, "gauss8", 0, 0, 0, 0, widt% + 10, heig% + 10, -1): _FREEIMAGE gray&
+        shad& = RemapImageFS&(filt&, -1, _DEST): _FREEIMAGE filt&
+        '--- do corner corrections, because I insisted on rounded corners ---
+        sx% = left%: sy% = topp%: dx% = 0: dy% = 0
+        _PUTIMAGE (dx%, dy%), _SOURCE, shad&, (sx%, sy%)-(sx% + 7, sy%)
+        _PUTIMAGE (dx%, dy%), _SOURCE, shad&, (sx%, sy%)-(sx% + 3, sy% + 3)
+        _PUTIMAGE (dx%, dy%), _SOURCE, shad&, (sx%, sy%)-(sx%, sy% + 7)
+        sx% = left%: sy% = topp% + heig% - 1: dx% = 0: dy% = heig% - 1
+        _PUTIMAGE (dx%, dy%), _SOURCE, shad&, (sx%, sy%)-(sx% + 7, sy% + 1)
+        _PUTIMAGE (dx%, dy% - 3), _SOURCE, shad&, (sx%, sy% - 3)-(sx% + 3, sy%)
+        _PUTIMAGE (dx%, dy% - 7), _SOURCE, shad&, (sx%, sy% - 7)-(sx%, sy%)
+        sx% = sx% + 9: sy% = sy% + 10: dx% = dx% + 9: dy% = dy% + 10
+        _PUTIMAGE (dx%, dy%), _SOURCE, shad&, (sx%, sy%)-(sx% + 7, sy%)
+        _PUTIMAGE (dx%, dy% - 3), _SOURCE, shad&, (sx%, sy% - 3)-(sx% + 3, sy%)
+        _PUTIMAGE (dx%, dy% - 7), _SOURCE, shad&, (sx%, sy% - 7)-(sx%, sy%)
+        sx% = left% + widt% - 1: sy% = topp%: dx% = widt% - 1: dy% = 0
+        _PUTIMAGE (dx% - 7, dy%), _SOURCE, shad&, (sx% - 7, sy%)-(sx%, sy%)
+        _PUTIMAGE (dx% - 3, dy%), _SOURCE, shad&, (sx% - 3, sy%)-(sx%, sy% + 3)
+        _PUTIMAGE (dx%, dy%), _SOURCE, shad&, (sx%, sy%)-(sx% + 1, sy% + 7)
+        sx% = sx% + 11: sy% = sy% + 9: dx% = dx% + 11: dy% = dy% + 9
+        _PUTIMAGE (dx% - 7, dy%), _SOURCE, shad&, (sx% - 7, sy%)-(sx%, sy%)
+        _PUTIMAGE (dx% - 3, dy%), _SOURCE, shad&, (sx% - 3, sy%)-(sx%, sy% + 3)
+        _PUTIMAGE (dx%, dy%), _SOURCE, shad&, (sx%, sy%)-(sx%, sy% + 7)
+        sx% = left% + widt% + 9: sy% = topp% + heig% + 9: dx% = widt% + 9: dy% = heig% + 9
+        _PUTIMAGE (dx% - 7, dy%), _SOURCE, shad&, (sx% - 7, sy%)-(sx%, sy%)
+        _PUTIMAGE (dx% - 3, dy% - 3), _SOURCE, shad&, (sx% - 3, sy% - 3)-(sx%, sy%)
+        _PUTIMAGE (dx%, dy% - 7), _SOURCE, shad&, (sx%, sy% - 7)-(sx%, sy%)
+        '--- draw tooltip (comic like speaking bubble) ---
+        _PUTIMAGE (left%, topp%), shad&, _DEST: _FREEIMAGE shad&
+        FillPolygon npax%(), npay%(), POINT(npax%(0) - 5, npay%(0)), POINT(npax%(0) - 5, npay%(0))
+        FillPolygon pax%(), pay%(), -1, guiHighPen%
+        REDIM opax%(0), opay%(0)
+        IF OffsetPolygon%(pax%(), pay%(), opax%(), opay%(), -0.66) THEN
+            FillPolygon opax%(), opay%(), -1, guiHighPen%
+        END IF
+        ERASE opax%, opay%
+        '--- print the text into the bubble ---
+        sp% = 1: nl% = 0
+        FOR i% = 1 TO LEN(text$)
+            IF MID$(text$, i%, 1) = "|" THEN
+                temp$ = MID$(text$, sp%, i% - sp%)
+                prim% = _PRINTMODE
+                SetPrintMode pmKEEP%
+                COLOR guiShadowPen%
+                _UPRINTSTRING (pax%(3) + 2 + INT((pw% - _UPRINTWIDTH(temp$, 8)) / 2), pay%(0) + 2 + (nl% * _UFONTHEIGHT)), temp$, , 8
+                COLOR guiShinePen%
+                _UPRINTSTRING (pax%(3) + 1 + INT((pw% - _UPRINTWIDTH(temp$, 8)) / 2), pay%(0) + 1 + (nl% * _UFONTHEIGHT)), temp$, , 8
+                SetPrintMode prim%
+                nl% = nl% + 1
+                sp% = i% + 1
+            END IF
+        NEXT i%
+        '--- snapshot bubble, for redraw on StringC cursor blink ---
+        area& = _NEWIMAGE(w% + 15, h% + 16, 256)
+        _PUTIMAGE (0, 0), _SOURCE, area&, (l%, t%)-(l% + w% + 14, t% + h% + 15)
+        SetTag guiATTProps$, "IHANDLE", LTRIM$(STR$(area&))
+        '--- cleanup arrays ---
+        ERASE cpx%, cpy%, pax%, pay%, npax%, npay%
+    END IF
+END IF
+END SUB
 

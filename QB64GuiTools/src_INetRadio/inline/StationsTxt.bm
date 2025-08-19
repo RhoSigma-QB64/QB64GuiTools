@@ -45,7 +45,7 @@ FUNCTION ReadStationsTxtArray$
 '--- option _explicit requirements ---
 DIM temp$
 '--- get array & set result ---
-temp$ = SPACE$(277) 'Do not change this number !!
+temp$ = SPACE$(675) 'Do not change this number !!
 ReadStationsTxtData temp$
 ReadStationsTxtArray$ = LzwUnpack$(temp$)
 END FUNCTION

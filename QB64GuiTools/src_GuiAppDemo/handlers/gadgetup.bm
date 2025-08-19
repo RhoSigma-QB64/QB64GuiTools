@@ -168,7 +168,7 @@
             DumpObjectArray "GuiAppDemoArray.txt"
             dummy$ = MessageBox$("Info16px.png", "",_
                                  "The Object Dump was written into file|" +_
-                                 CurrDIR$ + "\GuiAppDemoArray.txt",_
+                                 CurrDIR$ + "GuiAppDemoArray.txt",_
                                  "Thank You")
         END IF
         '--- Page 4 ---

@@ -6,7 +6,9 @@
         'conditions to allow the main loop to exit and the program to
         'cleanup and terminate.
         IF nowPlaying% THEN GOSUB togglePlayingState: GOSUB stopPlay
+        ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
         IF opts.remStation THEN opts.idxStation = VAL(GetObjTagData$(MainStationsList$, "ACTUAL", "0"))
+        IF RecentMarked% > 0 THEN GOSUB saveRecent
         done% = -1
     END IF
 

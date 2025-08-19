@@ -306,15 +306,19 @@ IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
         IF etim# < 0 THEN etim# = etim# + 86400 'midnight fix
         IF etim# >= 0.04 THEN
             IF guiATTProps$ <> "" THEN 'look for tooltip/textfield collision, remove tooltip if required
-                obje& = VAL(GetTagData$(guiATTProps$, "OBJECT", "0"))
-                bubb& = VAL(GetTagData$(guiATTProps$, "IHANDLE", "-1"))
-                bux1% = VAL(GetTagData$(guiATTProps$, "LEFT", "0")): bux2% = bux1% + _WIDTH(bubb&) - 1
-                buy1% = VAL(GetTagData$(guiATTProps$, "TOP", "0")): buy2% = buy1% + _HEIGHT(bubb&) - 1
-                IF left% + widt% - 1 >= bux1% THEN
-                    IF left% <= bux2% THEN
-                        IF topp% + heig% - 1 >= buy1% THEN
-                            IF topp% <= buy2% THEN
-                                PrintObjectTooltip 0
+                ovix& = VAL(GetTagData$(guiObjects$(objData%, this&), "GUIVIEW", "0"))
+                tvix& = VAL(GetTagData$(guiATTProps$, "GUIVIEW", "0"))
+                IF ovix& = tvix& THEN 'no collision possible, if on different GuiViews
+                    bubb& = VAL(GetTagData$(guiATTProps$, "IHANDLE", "-1"))
+                    bux1% = VAL(GetTagData$(guiATTProps$, "LEFT", "0")): bux2% = bux1% + _WIDTH(bubb&) - 1
+                    buy1% = VAL(GetTagData$(guiATTProps$, "TOP", "0")): buy2% = buy1% + _HEIGHT(bubb&) - 1
+                    IF left% + widt% - 1 >= bux1% THEN
+                        IF left% <= bux2% THEN
+                            IF topp% + heig% - 1 >= buy1% THEN
+                                IF topp% <= buy2% THEN
+                                    obje& = VAL(GetTagData$(guiATTProps$, "OBJECT", "0"))
+                                    PrintObjectTooltip 0
+                                END IF
                             END IF
                         END IF
                     END IF

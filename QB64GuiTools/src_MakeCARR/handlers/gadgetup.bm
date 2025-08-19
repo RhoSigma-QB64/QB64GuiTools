@@ -21,9 +21,9 @@
                         tmpH$ = NewTag$("TEXT", srcPath$ + src$ + ".h")
                     END IF
                 END IF
-                res$ = GenC$("SET", InputTarget$ + NewTag$("DISABLED", "no") + tmpT$)
+                res$ = GenC$("SET", InputTarget$ + NewTag$("DISABLED", "no") + tmpT$): tmpT$ = ""
                 res$ = GenC$("SET", GetTarget$ + NewTag$("DISABLED", "no"))
-                res$ = GenC$("SET", InputHeader$ + NewTag$("DISABLED", "no") + tmpH$)
+                res$ = GenC$("SET", InputHeader$ + NewTag$("DISABLED", "no") + tmpH$): tmpH$ = ""
                 res$ = GenC$("SET", GetHeader$ + NewTag$("DISABLED", "no"))
                 res$ = GenC$("SET", Reset$ + NewTag$("DISABLED", "no"))
             END IF
@@ -43,9 +43,9 @@
                             tmpH$ = NewTag$("TEXT", srcPath$ + src$ + ".h")
                         END IF
                     END IF
-                    res$ = GenC$("SET", InputTarget$ + NewTag$("DISABLED", "no") + tmpT$)
+                    res$ = GenC$("SET", InputTarget$ + NewTag$("DISABLED", "no") + tmpT$): tmpT$ = ""
                     res$ = GenC$("SET", GetTarget$ + NewTag$("DISABLED", "no"))
-                    res$ = GenC$("SET", InputHeader$ + NewTag$("DISABLED", "no") + tmpH$)
+                    res$ = GenC$("SET", InputHeader$ + NewTag$("DISABLED", "no") + tmpH$): tmpH$ = ""
                     res$ = GenC$("SET", GetHeader$ + NewTag$("DISABLED", "no"))
                     res$ = GenC$("SET", Reset$ + NewTag$("DISABLED", "no"))
                 END IF

@@ -11,7 +11,9 @@
         '--- Main View Events ---
         IF ThisObject%(MainExitButton$, mess$, "GADGETUP") THEN
             IF nowPlaying% THEN GOSUB togglePlayingState: GOSUB stopPlay
+            ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
             IF opts.remStation THEN opts.idxStation = VAL(GetObjTagData$(MainStationsList$, "ACTUAL", "0"))
+            IF RecentMarked% > 0 THEN GOSUB saveRecent
             done% = -1
         END IF
         IF ThisObject%(MainSettingsButton$, mess$, "GADGETUP") THEN
@@ -277,12 +279,90 @@
         IF ThisObject%(MainPlayButton$, mess$, "GADGETUP") THEN
             streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
             IF streamUrl$ <> "" THEN
-                redirects% = 0: GOSUB startPlay: GOSUB togglePlayingState
+                redirects% = 0: GOSUB startPlay: IF stream& <> 0 THEN GOSUB togglePlayingState
             END IF
         END IF
         IF ThisObject%(MainStopButton$, mess$, "GADGETUP") THEN
             GOSUB togglePlayingState: GOSUB stopPlay
             ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
+        END IF
+        IF ThisObject%(MainRecentButton$, mess$, "GADGETUP") THEN
+            IF RecentView& = 0 THEN
+                RecentView& = CreateGuiView& ("Recent Titles", 640, 316)
+                RecentBackImage$ = ImageC$("INIT",_
+                        ViewTag$(RecentView&) +_
+                        NewTag$("IMAGEFILE", "Back.jpg") +_
+                        NewTag$("BACKFILL", "true") +_
+                        NewTag$("AREA", "false") +_
+                        NewTag$("LEFT", "0") +_
+                        NewTag$("TOP", "0"))
+                RecentLogoImage$ = ImageC$("INIT",_
+                        ViewTag$(RecentView&) +_
+                        NewTag$("LEFT", "7") +_
+                        NewTag$("TOP", "19") +_
+                        NewTag$("WIDTH", "180") +_
+                        NewTag$("HEIGHT", "180") +_
+                        NewTag$("STANDALONE", "true") +_
+                        NewTag$("CLEARCOLOR", "0") +_
+                        NewTag$("TOOLTIP", "List of recently|played titles") +_
+                        NewTag$("IMAGEFILE", "Recent.png"))
+                '--- Recent fields ---
+                RecentListFrame$ = FrameC$("INIT",_
+                        ViewTag$(RecentView&) +_
+                        NewTag$("LEFT", "195") +_
+                        NewTag$("TOP", "12") +_
+                        NewTag$("WIDTH", "433") +_
+                        NewTag$("HEIGHT", "294") +_
+                        NewTag$("FORM", "solid") +_
+                        NewTag$("TEXT", "Recent Titles") +_
+                        NewTag$("TEXTPLACE", "topright"))
+                RecentListListview$ = ListviewC$("INIT",_
+                        ViewTag$(RecentView&) +_
+                        ListTag$(RecentListLinked$) +_
+                        NewTag$("LEFT", "209") +_
+                        NewTag$("TOP", "26") +_
+                        NewTag$("WIDTH", "405") +_
+                        NewTag$("HEIGHT", "266") +_
+                        NewTag$("READONLY", "true") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Tissue.jpg"))
+                '--- Toolbar ---
+                RecentToolRuler$ = RulerC$("INIT",_
+                        ViewTag$(RecentView&) +_
+                        NewTag$("LEFT", "10") +_
+                        NewTag$("TOP", "254") +_
+                        NewTag$("LENGTH", "175") +_
+                        NewTag$("FORM", "ridge"))
+                RecentFavoriteImage$ = ImageC$("INIT", MainToolimageCommon$ +_
+                        ViewTag$(RecentView&) +_
+                        NewTag$("IMAGEFILE", "Favorite32px.png"))
+                RecentSaveAsImage$ = ImageC$("INIT", MainToolimageCommon$ +_
+                        ViewTag$(RecentView&) +_
+                        NewTag$("IMAGEFILE", "SaveAs32px.png"))
+                RecentFavoriteButton$ = ButtonC$("INIT",_
+                        ViewTag$(RecentView&) +_
+                        NewTag$("LEFT", "50") +_
+                        NewTag$("TOP", "265") +_
+                        NewTag$("WIDTH", "44") +_
+                        NewTag$("HEIGHT", "44") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg") +_
+                        NewTag$("TOOLTIP", "Mark/Unmark current title") +_
+                        ImageTag$(RecentFavoriteImage$))
+                RecentSaveAsButton$ = ButtonC$("INIT",_
+                        ViewTag$(RecentView&) +_
+                        NewTag$("LEFT", "101") +_
+                        NewTag$("TOP", "265") +_
+                        NewTag$("WIDTH", "44") +_
+                        NewTag$("HEIGHT", "44") +_
+                        NewTag$("AREA", "true") +_
+                        NewTag$("IMAGEFILE", "Marble.jpg") +_
+                        NewTag$("TOOLTIP", "Save current list") +_
+                        ImageTag$(RecentSaveAsImage$))
+                ok$ = GenC$("SET", RecentListListview$ + ListTag$(RecentListWrite$))
+                SWAP RecentListWrite$, RecentListLinked$
+            END IF
+            OpenGuiView "", "", RecentView&
         END IF
         IF ThisObject%(MainVolumeSlider$, mess$, "GADGETUP") THEN
             IF nowPlaying% AND soundHandle& > 0 THEN
@@ -306,7 +386,7 @@
             IF opts.autoPlay AND wasPlaying% THEN
                 streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
                 IF streamUrl$ <> "" THEN
-                    redirects% = 0: GOSUB startPlay: GOSUB togglePlayingState
+                    redirects% = 0: GOSUB startPlay: IF stream& <> 0 THEN GOSUB togglePlayingState
                 END IF
             ELSE
                 ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
@@ -329,7 +409,7 @@
             IF opts.autoPlay AND wasPlaying% THEN
                 streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
                 IF streamUrl$ <> "" THEN
-                    redirects% = 0: GOSUB startPlay: GOSUB togglePlayingState
+                    redirects% = 0: GOSUB startPlay: IF stream& <> 0 THEN GOSUB togglePlayingState
                 END IF
             ELSE
                 ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
@@ -372,7 +452,6 @@
                 StationsListListview$ = ListviewC$("INIT",_
                         ViewTag$(StationsView&) +_
                         ListTag$(StationsStationsList$) +_
-                        NewTag$("ACTUAL", GetObjTagData$(MainStationsList$, "ACTUAL", "0")) +_
                         NewTag$("LEFT", "154") +_
                         NewTag$("TOP", "26") +_
                         NewTag$("WIDTH", "370") +_
@@ -439,6 +518,7 @@
                         NewTag$("TOOLTIP", "Change name of selected Station") +_
                         ImageTag$(StationsChangeImage$))
             END IF
+            ok$ = GenC$("SET", StationsListListview$ + NewTag$("ACTUAL", GetObjTagData$(MainStationsList$, "ACTUAL", "0")))
             OpenGuiView "", "", StationsView&
         END IF
         '--- Settings View Events ---
@@ -495,6 +575,13 @@
             IF RIGHT$(url$, 1) <> "/" THEN url$ = url$ + "/"
             SHELL _HIDE _DONTWAIT url$
         END IF
+        '--- Recent View Events ---
+        IF ThisObject%(RecentFavoriteButton$, mess$, "GADGETUP") THEN
+            AddMarkRecent "*****"
+        END IF
+        IF ThisObject%(RecentSaveAsButton$, mess$, "GADGETUP") THEN
+            GOSUB saveRecentDirect
+        END IF
         '--- Stations View Events ---
         IF ThisObject%(StationsDeleteButton$, mess$, "GADGETUP") THEN
             IF VAL(GetObjTagData$(MainStationsList$, "RECORDS", "0")) > 1 THEN
@@ -539,7 +626,7 @@
             IF opts.autoPlay AND wasPlaying% THEN
                 streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
                 IF streamUrl$ <> "" THEN
-                    redirects% = 0: GOSUB startPlay: GOSUB togglePlayingState
+                    redirects% = 0: GOSUB startPlay: IF stream& <> 0 THEN GOSUB togglePlayingState
                 END IF
             ELSE
                 ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))

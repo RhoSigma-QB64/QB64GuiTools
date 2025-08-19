@@ -210,7 +210,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 460, 345, 0
-appCR$ = "The GuiTools Framework v0.19, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.20, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------
@@ -409,8 +409,8 @@ IcTextV1V2$ = ModelC$("INIT",_
 '--- Here we can define the remaining global variables, which are not
 '--- needed for object initialization, but during runtime.
 '-----
-init% = -1 'init phase, goes zero after 1st handler loop
-done% = 0 'our main loop continuation boolean
+init% = -1 'init state indicator (handler control, don't touch)
+done% = 0 'main loop (ie. program) keeps running until this is set true
 '-----
 
 '~~~ My Main Loop

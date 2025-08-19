@@ -183,6 +183,98 @@ ELSE
 END IF
 END FUNCTION
 
+'-------------------
+'--- Utf8CharLen ---
+'-------------------
+' Returns the byte length of the first UTF-8 character in the given string.
+' It checks whether the first 1-4 bytes of the given string represent a
+' valid UTF-8 character and if so, return the length of the UTF-8 sequence.
+' The check starts at the first byte and ends as soon a UTF-8 character
+' is identified or the sequence turns out invalid. If there are less than
+' four bytes in the string, then it is padded in such a way that the check
+' will still work correct. That is, the padding will not randomly turn a
+' invalid sequence into a valid one or vice versa.
+'
+' May also be used to check the validity of an entire string in a loop.
+' For that pass in MID$(str,pos) and if the function's result is greater
+' than zero(0), then add it to the position for the next iteration until
+' the entire string is done. If the result is zero(0) in any iteration,
+' then the string is no valid UTF-8 string. However, using the function
+' _UPRINTWIDTH and checking for a zero(0) result to identify an invalid
+' string is maybe easier than processing the entire string in a loop.
+'  You may pass invalid UTF-8 strings through the AnsiTextToUtf8Text$()
+' function to correct that.
+'----------
+' SYNTAX:
+'   utf8Length% = Utf8CharLen% (utf8Char$)
+'----------
+' INPUTS:
+'   --- utf8Char$ ---
+'    The string to examine for the first character's length. Only the
+'    first four bytes are relevant for this function.
+'----------
+' RESULT:
+'   --- utf8Length% ---
+'    The length of the identified UTF-8 sequence or zero, that is:
+'     - (0) the first four bytes of the string are no valid UTF-8 character
+'     - (1) the first byte is a plain ASCII (0-127) character
+'     - (2) at the first byte starts a valid 2-byte UTF-8 character
+'     - (3) at the first byte starts a valid 3-byte UTF-8 character
+'     - (4) at the first byte starts a valid 4-byte UTF-8 character
+'---------------------------------------------------------------------
+FUNCTION Utf8CharLen% (utf8Char$)
+'--- check input length ---
+SELECT CASE LEN(utf8Char$)
+    CASE IS < 4: utf$ = utf8Char$ + STRING$(4 - LEN(utf8Char$), &H00C0)
+    CASE IS > 4: utf$ = LEFT$(utf8Char$, 4)
+    CASE ELSE: utf$ = utf8Char$ 'avoid argument side effect
+END SELECT
+Utf8CharLen% = 0: ci% = 0
+'--- UTF-8 state machine ---
+'http://unicode.org/mail-arch/unicode-ml/y2003-m02/att-0467/01-The_Algorithm_to_Valide_an_UTF-8_String
+'(look near the bottom of the page), modified to check a single UTF-8 char only, instead of a string
+ci% = ci% + 1: av% = ASC(utf$, ci%)
+IF (av% >= &H0000 AND av% <= &H007F) GOTO done
+IF (av% >= &H00C2 AND av% <= &H00DF) GOTO stateA
+IF (av% >= &H00E1 AND av% <= &H00EC) OR (av% >= &H00EE AND av% <= &H00EF) GOTO stateB
+IF (av% = &H00E0) GOTO stateC
+IF (av% = &H00ED) GOTO stateD
+IF (av% >= &H00F1 AND av% <= &H00F3) GOTO stateE
+IF (av% = &H00F0) GOTO stateF
+IF (av% = &H00F4) GOTO stateG
+EXIT FUNCTION
+stateA:
+ci% = ci% + 1: av% = ASC(utf$, ci%)
+IF (av% >= &H0080 AND av% <= &H00BF) GOTO done
+EXIT FUNCTION
+stateB:
+ci% = ci% + 1: av% = ASC(utf$, ci%)
+IF (av% >= &H0080 AND av% <= &H00BF) GOTO stateA
+EXIT FUNCTION
+stateC:
+ci% = ci% + 1: av% = ASC(utf$, ci%)
+IF (av% >= &H00A0 AND av% <= &H00BF) GOTO stateA
+EXIT FUNCTION
+stateD:
+ci% = ci% + 1: av% = ASC(utf$, ci%)
+IF (av% >= &H0080 AND av% <= &H009F) GOTO stateA
+EXIT FUNCTION
+stateE:
+ci% = ci% + 1: av% = ASC(utf$, ci%)
+IF (av% >= &H0080 AND av% <= &H00BF) GOTO stateB
+EXIT FUNCTION
+stateF:
+ci% = ci% + 1: av% = ASC(utf$, ci%)
+IF (av% >= &H0090 AND av% <= &H00BF) GOTO stateB
+EXIT FUNCTION
+stateG:
+ci% = ci% + 1: av% = ASC(utf$, ci%)
+IF (av% >= &H0080 AND av% <= &H008F) GOTO stateB
+EXIT FUNCTION
+done:
+Utf8CharLen% = ci%
+END FUNCTION
+
 '-------------------------------
 '--- UnicodeStringToUtf8Text ---
 '-------------------------------
@@ -276,7 +368,9 @@ END FUNCTION
 '--------------------------
 ' Returns the UTF-8 representation of the given ANSI text string. Can
 ' use any codepage for unicode lookup inclusive the active one, where
-' the latter one may even be a "custom" mapped page.
+' the latter one may even be a "custom" mapped page. This function can
+' handle strings which already contain UTF-8 (eg. strings which were
+' converted earlier), it will not hurt those already existing UTF-8 chars.
 ' The result is ready to be used with the various _UPRINT functions.
 '----------
 ' SYNTAX:
@@ -300,6 +394,12 @@ FOR chi& = 1 TO LEN(text$)
     '--- get ANSI char code, reset Unicode ---
     ascii% = ASC(text$, chi&): unicode& = -1
     IF ascii% > 127 THEN
+        '--- check if already converted ---
+        chl% = Utf8CharLen%(MID$(text$, chi&))
+        IF chl% > 0 THEN
+            utf$ = utf$ + MID$(text$, chi&, chl%) 'take already converted UTF-8
+            chi& = chi& + chl% - 1: GOTO skipped '-1 to counter NEXT increment
+        END IF
         '--- convert from which codepage? ---
         SELECT CASE UCASE$(cpName$)
             CASE "PC437": RESTORE charset_codepage_data_pc437
@@ -337,6 +437,7 @@ FOR chi& = 1 TO LEN(text$)
         '--- convert and add UTF-8 char ---
         IF unicode& = 0 THEN unicode& = 65533 'replacement character
         utf$ = utf$ + UnicodeToUtf8Char$(unicode&)
+        skipped:
     ELSE
         '--- standard ASCII (0-127) goes as is ---
         utf$ = utf$ + CHR$(ascii%)
@@ -353,7 +454,7 @@ DATA 9617,9618,9619,9474,9508,9569,9570,9558,9557,9571,9553,9559,9565,9564,9563,
 DATA 9492,9524,9516,9500,9472,9532,9566,9567,9562,9556,9577,9574,9568,9552,9580,9575
 DATA 9576,9572,9573,9561,9560,9554,9555,9579,9578,9496,9484,9608,9604,9612,9616,9600
 DATA 945,223,915,960,931,963,181,964,934,920,937,948,8734,966,949,8745
-DATA 8801,177,8805,8804,8992,8993,247,8776,176,8729,183,8730,8319,178,9632,32
+DATA 8801,177,8805,8804,8992,8993,247,8776,176,8729,183,8730,8319,178,9632,160
 charset_codepage_data_pc737:
 DATA 913,914,915,916,917,918,919,920,921,922,923,924,925,926,927,928
 DATA 929,931,932,933,934,935,936,937,945,946,947,948,949,950,951,952

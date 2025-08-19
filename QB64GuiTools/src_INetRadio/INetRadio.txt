@@ -4,15 +4,15 @@ This program was made possible due to the excellent capabilities of the QB64-PE
 language and by utilising the GuiTools Framework's multi-window functionality.
 
 Windows can be opened/closed independently. When closing the main program all
-other still open windows will automatically cloese too. You may arrange the
+other secondary windows will automatically cloese too. You may arrange the
 windows and they will remember its positions.
 
 INetRadio is mostly self-explaining, so it should be easy to explore all its
 features even without a comprehensive documentation. Most controls have tooltips
 attached to it, which pop up after a second when resting the mouse over it.
 
-INetRadio makes use of the huge Pan Unicode font arialuni.ttf, so it can even
-display Stations/Titles of many countries which doesn't use latin script.
+INetRadio supports UTF-8 and is using the huge Pan Unicode font arialuni.ttf
+to display Stations/Titles of many countries which doesn't use latin script.
 
 Compiling and EXE
 -----------------
@@ -21,12 +21,75 @@ the compiled EXE there afterwards, so it can find its INR-Assets folder.
 Or expressed different, when you move the EXE to your desired place, then also
 make sure to place a copy of the INR-Assets folder in the same location.
 
-How can I add my favorite Radio Station?
-----------------------------------------
-1. The Radio Station must provide the real audio stream address for use in
+
+
+
+
+The Main Window
+---------------
+It shows the currently selected Radio Station and the Feeds comming in with the
+stream, which mostly is the currently playing song but may also be other things
+like Station informations or advertisements. The controls should be obvious.
+
+The Settings Window
+-------------------
+A couple of things you may change to your desire, the tooltips will help you.
+
+The Informations Window
+-----------------------
+Gives some additional informations returned by the accessed server such as
+the Stations Web URL or the played music genre. The controls allow to copy the
+URL or directly open it in your standard browser.
+
+The Recent Titles Window
+------------------------
+Shows the recently played titles and Station switches. You may mark the current
+title, e.g. if you like it and wanna look it up later on Youtube or iTunes.
+INetRadio warns at exit, if marked titles exist end allows to save the list.
+
+The Stations Manager Window
+---------------------------
+Allows you to directly switch to another Station, delete or import Stations or
+editing the Stations names.
+
+The Station name edit Window
+----------------------------
+Click in the input field to activate it and then edit the name, confirm your
+input with an <Enter> press. In alternative simply close the window to cancel
+editing. But attention, keep the mouse pointer over the editing window while
+typing, the input field will go inactive if the mouse hits another INR window.
+Note also that the input field does not support UTF-8 as QB64-PE currently has
+no unicode input methods, i.e. if the Station name contains foreign characters,
+then you see only char salad in the field. The best things you can do in such
+a case is to either leave the name as is (close the editor window) or replace
+it with a complete new name.
+
+
+
+
+
+My internet data is limited, how much will Web-Radio need?
+----------------------------------------------------------
+Well, that depends mainly on the bitrate of the stream you're listening to,
+as higher the bitrate, as more data will flow through your internet line.
+The most preset Stations in INetRadio are 128Kbit streams, except of the
+"Paradise Radio" streams, which are 192Kbit. The 128Kbit streams roughly
+eat 57MB per hour, hence you'd hit 1GB after approx. 18 hours listening.
+The 192Kbit streams eat 85MB per hour, hence 1GB after approx. 12 hours.
+
+If you have streams with other bitrates you may use the formula below:
+    MB per hour = (((Kbits * 1024) / 8) * 3600) / 1048576
+
+
+
+
+
+How can I add more Radio Stations?
+----------------------------------
+1. The Radio Station must provide the real audio stream addresses for use in
    external players on their website. This can either be as text you can copy
    or as link/button you can click to download a single entry *.m3u, *.m3u8 or
-   *.pls file containing the required stream address.
+   *.pls file containing the required stream addresses.
    What i mean is something like the "Play in your MP3 Player" button on
    http://www.absolutechillout.com/ or the various links and addresses on
    https://www.radioswissjazz.ch/de/empfang/internet.
@@ -42,12 +105,30 @@ How can I add my favorite Radio Station?
    the Station offers multiple stream encodings, then make sure to choose a
    format supported by QB64-PE, that is Mp3, Ogg, Wav or Aiff/Aifc.
 3. You can now import the just downloaded (or saved) file into INetRadio in
-   the "Stations Manager" window.
-4. If required, you may edit the Radio Station's name after importing.
+   the "Stations Manager" window. Note that plain *.m3u(8) and *.pls files do
+   not contain the Stations name, instead the filename will be used as Station
+   name and you may edit it afterwards. Files using the extended *.m3u(8) format
+   contain the correct Station name.
+3.1. Sometimes a downloaded file is not single entry, but contains a whole bunch
+     of stream addresses which are all added when importing. That are usually
+     alternative servers. If one server is down or idle, you may try another.
+     However, I never experienced a need for that and I usually keep only the
+     first entry and delete all other. It's up to you, if you keep or delete it.
+4. If you wish, you may edit the Radio Stations names after importing.
 
-Notes
------
-- plain *.m3u(8) and *.pls files do not contain the Stations name, instead the
-  filename is inserted in the Stations list and you may edit it afterwards
-- files using the extended *.m3u(8) format contain the correct Station name
+To be honest, it's very hard to find good streaming services which don't
+require you to subscribe or downloading and using their own App and which are
+nevertheless free for use and don't pack their streams with tons of commercials.
+
+But I've found two California based services free for use (well they beg for
+donations) and absolutely 100% commercial free. Just the latter fact justifies
+a donation I guess.
+
+https://radioparadise.com/ (Eureka,CA)
+https://somafm.com/ (San Francisco,CA)
+
+I've already added a couple of their channels to the preset Stations list, but
+there are plenty more channels to explore on the websites, the above mentioned
+*.m3u links are at the very bottom of each channels page on SomaFM, simply
+choose any available MP3. On Radio Paradise use the menu "Listen >> Stream links".
 

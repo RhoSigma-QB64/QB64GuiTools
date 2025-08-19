@@ -6,7 +6,7 @@
         IF opts.autoPlay THEN
             streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
             IF streamUrl$ <> "" THEN
-                GOSUB startPlay: GOSUB togglePlayingState
+                redirects% = 0: GOSUB startPlay: IF stream& <> 0 THEN GOSUB togglePlayingState
             END IF
         END IF
     END IF

@@ -51,7 +51,7 @@ SELECT CASE methodID$
         '      default to one (1), if omitted. The spacing is a minimum
         '      value here and may be slightly raised internally to better
         '      arrange the entries in the visible Listview area.
-        '      If READONLY is true, then ACTUAL and SHORTCUT is ignored.
+        '      If READONLY is true, then ACTUAL is ignored.
         GOSUB meInit
         'Result Tags: ERROR/WARNING or OBJECT
     CASE "Set"
@@ -61,6 +61,7 @@ SELECT CASE methodID$
         'NOTE: If ACTUAL is not given or outside list bounds, then it
         '      will default to one (1st list entry/record), may also be
         '      zero for no list entry preselection.
+        '      If READONLY is true, then ACTUAL is ignored.
         GOSUB meSet
         'Result Tags: ERROR/WARNING or empty
     CASE "Get"
@@ -102,10 +103,7 @@ ELSE
     InitGeneralProperties this&, classID$, flagsID$, tagsID$
     ApplyPrefs classID$, tagsID$
     '--- object specific init ---
-    IF BoolTagTrue%(tagsID$, "READONLY") THEN
-        SetTag tagsID$, "ACTUAL", "0"
-        RemTag tagsID$, "SHORTCUT"
-    END IF
+    IF BoolTagTrue%(tagsID$, "READONLY") THEN SetTag tagsID$, "ACTUAL", "0"
     '--- check list/pager conditions ---
     IF InitSetAssignedList%(this&, ListviewRes$, classID$, methodID$, tagsID$) THEN
         IF InitAssignedPager%(this&, ListviewRes$, classID$, tagsID$) THEN
@@ -167,7 +165,9 @@ meInitEntries:
 ospa% = VAL(GetTagData$(guiObjects$(objData%, this&) + tagsID$, "OSPAC", "1"))
 iwid% = 0: IF BoolTagTrue%(guiObjects$(objData%, lobj&), "HASLVIS") THEN iwid% = CINT((_FONTHEIGHT + ospa%) / 3 * 4) + 3
 FOR i% = 0 TO numT% - 1
-    text$ = TextC$("INIT", NewTag$("LVFLAG", "true") + NewTag$("LEFT", LTRIM$(STR$(left% + 4 + iwid%))) + NewTag$("TOP", LTRIM$(STR$(topp% + topT% + 3 + (i% * stpT%)))) + NewTag$("WIDTH", LTRIM$(STR$(widt% - 31 - iwid%))) + NewTag$("HEIGHT", LTRIM$(STR$(tObH%))))
+    text$ = TextC$("INIT", GetTag$(guiObjects$(objData%, this&) + tagsID$, "GUIVIEW") + NewTag$("LVFLAG", "true") +_
+            NewTag$("LEFT", LTRIM$(STR$(left% + 4 + iwid%))) + NewTag$("TOP", LTRIM$(STR$(topp% + topT% + 3 + (i% * stpT%)))) +_
+            NewTag$("WIDTH", LTRIM$(STR$(widt% - 31 - iwid%))) + NewTag$("HEIGHT", LTRIM$(STR$(tObH%))))
     resu$ = ListC$("STORE", tObL$ + NewTag$("DATA", GetTagData$(text$, "OBJECT", "0")))
 NEXT i%
 RETURN
@@ -370,10 +370,6 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
         END IF
         IF _PRINTWIDTH(text$) > twid% THEN
             SetTag guiObjects$(objData%, tobj&), "TOOLTIP", text$
-            WHILE _PRINTWIDTH(text$ + "...") > twid%
-                text$ = LEFT$(text$, LEN(text$) - 1)
-            WEND
-            text$ = text$ + "..."
         ELSE
             RemTag guiObjects$(objData%, tobj&), "TOOLTIP"
         END IF
@@ -382,8 +378,10 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
         IF (tonu& + i%) = actu& THEN sele$ = NewTag$("SELECTED", "true"): focu% = guiFillTextPen%
         resu$ = TextC$("DRAW", tobj$ + sele$)
         IF i% = VAL(GetTagData$(guiObjects$(objData%, this&), "FOCUS", "0")) THEN
-            LINE (tlft%, ttop%)-(tlft% + twid% - 1, ttop% + thei% - 1), focu%, B
-            BrightenObjectBG this&, tlft%, ttop%, twid%, thei%
+            IF NOT BoolTagTrue%(guiObjects$(objData%, this&), "READONLY") THEN
+                LINE (tlft%, ttop%)-(tlft% + twid% - 1, ttop% + thei% - 1), focu%, B
+                BrightenObjectBG this&, tlft%, ttop%, twid%, thei%
+            END IF
             IF ValidateTags%(guiObjects$(objData%, tobj&), "TOOLTIP", -1) THEN j& = tobj&: ELSE j& = 0
         END IF
     NEXT i%
@@ -393,7 +391,7 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
     IF BoolTagTrue%(guiObjects$(objData%, this&), "DISABLED") THEN
         FillRectRaster left%, topp%, widt%, heig%, guiFillPen%
     ELSE
-        IF j& > 0 THEN
+        IF (NOT BoolTagTrue%(guiObjects$(objData%, sobj&), "SELECTED")) AND (j& > 0) THEN
             RemTag guiObjects$(objData%, this&), "MITIM"
             PrintObjectTooltip j&
             SetTag guiATTProps$, "TOBJ", LTRIM$(STR$(this&))
@@ -415,18 +413,20 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
     sobj& = VAL(GetTagData$(guiObjects$(objData%, this&), "SCR0", "0"))
     visi% = VAL(GetTagData$(guiObjects$(objData%, sobj&), "VISIBLENUM", "0"))
     tonu& = VAL(GetTagData$(guiObjects$(objData%, sobj&), "TOPNUM", "0"))
-    shor$ = GetTagData$(guiObjects$(objData%, this&), "SHORTCUT", "n/a")
-    IF NOT BoolTagTrue%(osta$, "SELECTED") AND shor$ <> "n/a" AND guiASCObject& = 0 THEN
-        IF BoolTagTrue%(tagsID$, "KEYPRESS") THEN
-            IF ObjectShortcut%(shor$, tagsID$) THEN
-                ObjectsUnselect this&
-                actu& = actu& + 1: IF actu& > reco& THEN actu& = 1
-                SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
-                GOSUB meAdjustScroller
-                resu$ = ListviewC$("DRAW", thisTag$)
-                SetTag ListviewRes$, "RELEASED", LTRIM$(STR$(this&))
-                SetTag ListviewRes$, "SHORTCUT", "true"
-                RETURN
+    IF NOT BoolTagTrue%(guiObjects$(objData%, this&), "READONLY") THEN
+        shor$ = GetTagData$(guiObjects$(objData%, this&), "SHORTCUT", "n/a")
+        IF NOT BoolTagTrue%(osta$, "SELECTED") AND shor$ <> "n/a" AND guiASCObject& = 0 THEN
+            IF BoolTagTrue%(tagsID$, "KEYPRESS") THEN
+                IF ObjectShortcut%(shor$, tagsID$) THEN
+                    ObjectsUnselect this&
+                    actu& = actu& + 1: IF actu& > reco& THEN actu& = 1
+                    SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu&))
+                    GOSUB meAdjustScroller
+                    resu$ = ListviewC$("DRAW", thisTag$)
+                    SetTag ListviewRes$, "RELEASED", LTRIM$(STR$(this&))
+                    SetTag ListviewRes$, "SHORTCUT", "true"
+                    RETURN
+                END IF
             END IF
         END IF
     END IF
@@ -458,15 +458,15 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
     '--- check for mouse trigger ---
     IF moux% >= left% AND moux% < (left% + widt%) AND mouy% >= topp% AND mouy% < (topp% + heig%) THEN
         SetTag guiObjects$(objData%, this&), "FOCUS", "true"
+        ftxt% = 0
+        FOR i% = 1 TO numT%
+            tobj& = VAL(GetTagData$(ListC$("READ", tObL$), "DATA", "0")): tobj$ = NewTag$("OBJECT", LTRIM$(STR$(tobj&)))
+            tlft% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "LEFT", "0")): ttop% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "TOP", "0"))
+            twid% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "WIDTH", "0")): thei% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "HEIGHT", "0"))
+            IF moux% >= tlft% AND moux% < (tlft% + twid%) AND mouy% >= ttop% AND mouy% < (ttop% + thei%) THEN ftxt% = i%
+        NEXT i%
+        IF ftxt% <> 0 THEN SetTag guiObjects$(objData%, this&), "FOCUS", LTRIM$(STR$(ftxt%))
         IF NOT BoolTagTrue%(guiObjects$(objData%, this&), "READONLY") THEN
-            ftxt% = 0
-            FOR i% = 1 TO numT%
-                tobj& = VAL(GetTagData$(ListC$("READ", tObL$), "DATA", "0")): tobj$ = NewTag$("OBJECT", LTRIM$(STR$(tobj&)))
-                tlft% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "LEFT", "0")): ttop% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "TOP", "0"))
-                twid% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "WIDTH", "0")): thei% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "HEIGHT", "0"))
-                IF moux% >= tlft% AND moux% < (tlft% + twid%) AND mouy% >= ttop% AND mouy% < (ttop% + thei%) THEN ftxt% = i%
-            NEXT i%
-            IF ftxt% <> 0 THEN SetTag guiObjects$(objData%, this&), "FOCUS", LTRIM$(STR$(ftxt%))
             IF BoolTagTrue%(tagsID$, "MOUSELBDOWN") THEN
                 IF ftxt% <> 0 THEN
                     actu& = tonu& + ftxt%

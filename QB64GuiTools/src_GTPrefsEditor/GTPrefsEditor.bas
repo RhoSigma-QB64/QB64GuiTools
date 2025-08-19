@@ -885,8 +885,8 @@ END SELECT
 '--- Here we can define the remaining global variables, which are not
 '--- needed for object initialization, but during runtime.
 '-----
-init% = -1 'init phase, goes zero after 1st handler loop
-done% = 0 'our main loop continuation boolean
+init% = -1 'init state indicator (handler control, don't touch)
+done% = 0 'main loop (ie. program) keeps running until this is set true
 '-----
 
 '~~~ My Main Loop
