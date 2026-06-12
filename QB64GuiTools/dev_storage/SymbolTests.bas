@@ -35,10 +35,15 @@ END DECLARE
 CONST guiReservedPens% = 0 'no reserved pens
 REDIM SHARED fsNearCol%(&HFFFFFF)
 
-IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
-    path$ = "QB64GuiTools\dev_storage\" 'compiled to qb64 folder
-ELSE
+IF _FILEEXISTS("SymbolTests.bas") THEN
     path$ = "" 'compiled to source folder
+ELSEIF _FILEEXISTS("qb64pe.exe") OR _FILEEXISTS("qb64.exe") THEN
+    path$ = "QB64GuiTools\dev_storage\" 'compiled to qb64(pe) folder
+ELSE
+    PRINT
+    PRINT "ERROR: Can't locate the program's source folder, please make sure"
+    PRINT "       to save EXEs either to source folder or to qb64(pe) folder."
+    END
 END IF
 
 appScreen& = _NEWIMAGE(480, 336, 256)

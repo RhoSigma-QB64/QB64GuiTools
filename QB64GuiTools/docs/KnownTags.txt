@@ -97,9 +97,11 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
 
 (TEXT) SORT             pub: Type of list sorting (Always ascending, simply read
                              the list in REVERSE direction for decending order.)
-       - ListC               <alphabet|number|FIFO|none>
+       - ListC               <alphabet|number|FIFO|lifo|none>
                                fifo = first in first out, ie. always append new
                                       records at the end of the list
+                               lifo = last in first out, ie. always insert new
+                                      records at the top of the list
                                none = no defined order, ie. a new record is always
                                       inserted right after the ACTUAL record, hence
                                       you can define the insert position yourself
@@ -417,7 +419,7 @@ proof, ie. "ThisName" = "THISNAME" = "This NAME" = "  T   h I s    n  Am E   ".
 (TEXT) ALTMAX           pub: Alternative level output, if a slider is on its
                              maximum level.
 (BOOL) NOSHOW           pub: Set true to suppress the button frame and the
-       - ButtonC             beckground image. Only the assigned image/symbol
+       - ButtonC             background image. Only the assigned image/symbol
                              and the button text are drawn keeping the the
                              current background of the hot area. Intended
                              for toolbar creation.

@@ -362,9 +362,10 @@ GOSUB RemoveGlobalTemps
 
 '--- cleanup used arrays ---
 ERASE cmdArgs$
-ERASE appErrorArr%
 ERASE guiObjects$
+ERASE fsNearCol~%%
 ERASE guiViews$
+ERASE appErrorArr%
 ERASE appStackArr$
 SYSTEM
 '*********************************************************************
@@ -494,6 +495,7 @@ IF SeekChunk&(crgtFile%, 1, CHtlogID$) > 0 THEN
     PUT crgtFile%, crgtHdr&, crgtTHDR(0)
 END IF
 CLOSE crgtFile%
+_DELAY 0.15
 UnlockMutex crgtMtx%&
 ERASE crgtTLOG
 ERASE crgtTHDR
@@ -514,6 +516,7 @@ FOR crgtLoop% = 1 TO crgtCnt%
     crgtTHDR(0).thdrACCESSORS = crgtTHDR(0).thdrACCESSORS - 1
     PUT crgtFile%, crgtHdr&, crgtTHDR(0)
     CLOSE crgtFile%
+    _DELAY 0.15
     IF crgtPath$ = appTempDir$ THEN
         IF crgtTHDR(0).thdrACCESSORS = 0 THEN KILL crgtPath$ + crgtName$
     END IF

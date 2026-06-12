@@ -34,6 +34,22 @@ TODO:
 
 HISTORY:
 --------
+>> 06/11/2026 v0.21
+   - several fixes and improvements in the INetRadio application, most of
+     the following changes are a direct result of this
+   - relaxed ListC object handling to allow direct list operations even if
+     the list is currently assigned to a multiple-choice object, eases the
+     updating of CycleC/ListviewC objects as it no longer needs a temporary
+     scratch list to do STORE/ADD/REM/DELETE operations
+   - TextC objects with TEXTSCROLL tag automatically reduce CPU load (stop
+     scrolling), if the object is invisible (closed GuiView or covered tab)
+   - fixed typing in TagString API from INTEGER to LONG to allow tag strings
+     with more than 32767 chars
+   - added some delays in the cleanup logic, this hopefully fixes the race
+     condition with Windows and the filesystem happening sometimes especially
+     when closing multi-window applications such as INetRadio
+   - some minor adjustments and description rewording under the hood
+
 >> 08/18/2025 v0.20
    - changed CurrDIR$() to always return with a trailing backslash to be
      in line with the _CWD$ function in QB64-PE v4.1.0 and up

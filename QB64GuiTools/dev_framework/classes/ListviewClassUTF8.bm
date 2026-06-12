@@ -12,19 +12,11 @@
 '|                                                                   |
 '| == This is a GUI object class of the GuiTools Framework Project.  |
 '|                                                                   |
-'| == The only difference to the normal ListviewClass.bm is, that all|
-'| == _PRINTWIDTH/_PRINTSTRING/_FONTHEIGHT occurrences were replaced |
-'| == with their respective _U... versions.                          |
-'|                                                                   |
 '+-------------------------------------------------------------------+
 '| Done by RhoSigma, R.Heyder, provided AS IS, use at your own risk. |
 '| Find me in the QB64 Forum or mail to support@rhosigma-cw.net for  |
 '| any questions or suggestions. Thanx for your interest in my work. |
 '+-------------------------------------------------------------------+
-
-$IF VERSION < 3.8.0 THEN
-    $ERROR 'This class requires at least QB64-PE v3.8.0 to compile.'
-$END IF
 
 '=====================================================================
 '=== Listview Class ==================================================
@@ -215,6 +207,7 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
         END IF
         flag% = -1
     END IF
+    IF BoolTagTrue%(guiObjects$(objData%, this&), "READONLY") THEN SetTag tagsID$, "ACTUAL", "0"
     temp$ = GetTagData$(tagsID$, "ACTUAL", "n/a")
     IF temp$ <> "n/a" THEN
         otag$ = GetTagData$(guiObjects$(objData%, this&), "ACTUAL", "n/a")
@@ -232,7 +225,7 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
                 IF actu& = 0 THEN temp$ = "0"
                 actu& = 1
             END IF
-            resu$ = ListC$("SET", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("ACTUAL", LTRIM$(STR$(actu&))))
+            resu$ = ListC$("SET", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("ACTUAL", LTRIM$(STR$(actu&))))
             IF actu& < tonu& OR actu& >= (tonu& + numT%) THEN
                 resu$ = ScrollerC$("SET", ObjectTag$(guiObjects$(objData%, this&), "SCR0") + NewTag$("TOPNUM", LTRIM$(STR$(numT% * FIX((actu& - 0.1) / numT%)))))
             END IF
@@ -267,7 +260,7 @@ RETURN
 meGet:
 IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
-    reco$ = ListC$("READ", ObjectTag$(guiObjects$(objData%, this&), "LISTOBJECT") + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
+    reco$ = ListC$("READ", ObjectTag$(guiObjects$(objData%, this&), "LISTOBJECT") + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
     IF ValidateTags%(reco$, "ERROR", 0) THEN reco$ = ""
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
     IF temp$ <> "n/a" THEN
@@ -331,7 +324,7 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
     tObL& = VAL(GetTagData$(guiObjects$(objData%, this&), "LST0", "0"))
     numT% = VAL(GetTagData$(guiObjects$(objData%, tObL&), "RECORDS", "0"))
     IF reco& < numT% THEN numT% = reco&
-    lobj$ = NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("REFOBJ", LTRIM$(STR$(this&)))
+    lobj$ = NewTag$("OBJECT", LTRIM$(STR$(lobj&)))
     resu$ = ListC$("SET", lobj$ + NewTag$("ACTUAL", LTRIM$(STR$(tonu& + 1))))
     tObL$ = NewTag$("OBJECT", LTRIM$(STR$(tObL&)))
     resu$ = ListC$("SET", tObL$ + NewTag$("ACTUAL", "1"))
@@ -345,6 +338,7 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
     resu$ = ScrollerC$("DRAW", ObjectTag$(guiObjects$(objData%, this&), "SCR0"))
     resu$ = FrameC$("DRAW", ObjectTag$(guiObjects$(objData%, this&), "FRM0"))
     '--- text output ---
+    orev$ = ExtractTag$(guiObjects$(objData%, lobj&), "REVERSE") 'extract old REVERSE state (make fwd)
     FOR i% = 1 TO numT%
         tobj& = VAL(GetTagData$(ListC$("READ", tObL$), "DATA", "0")): tobj$ = NewTag$("OBJECT", LTRIM$(STR$(tobj&)))
         tlft% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "LEFT", "0")): ttop% = VAL(GetTagData$(guiObjects$(objData%, tobj&), "TOP", "0"))
@@ -378,7 +372,7 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
         END IF
         IF _UPRINTWIDTH(text$, 8) = 0 THEN
             ouc% = _MAPUNICODE(255)
-            nuc% = 160: IF _FONT = 16 THEN nuc% = 255
+            nuc% = 160: IF _FONT < 32 AND appGLVComp% THEN nuc% = 255
             _MAPUNICODE nuc% TO 255
             text$ = AnsiTextToUtf8Text$(text$, "")
             _MAPUNICODE ouc% TO 255
@@ -400,6 +394,7 @@ IF ValidObject%(this&, thisTag$, ListviewRes$, classID$, methodID$, tagsID$) THE
             IF ValidateTags%(guiObjects$(objData%, tobj&), "TOOLTIP", -1) THEN j& = tobj&: ELSE j& = 0
         END IF
     NEXT i%
+    guiObjects$(objData%, lobj&) = guiObjects$(objData%, lobj&) + orev$ 'restore old REVERSE state
     '--- label output ---
     PrintObjectLabel this&, left%, topp%, widt%, heig%
     '--- check on/off state ---
@@ -650,7 +645,7 @@ ELSE
         '--- make sure it's valid Utf-8 ---
         IF _UPRINTWIDTH(text$, 8) = 0 THEN
             ouc% = _MAPUNICODE(255)
-            nuc% = 160: IF _FONT = 16 THEN nuc% = 255
+            nuc% = 160: IF _FONT < 32 AND appGLVComp% THEN nuc% = 255
             _MAPUNICODE nuc% TO 255
             text$ = AnsiTextToUtf8Text$(text$, "")
             _MAPUNICODE ouc% TO 255

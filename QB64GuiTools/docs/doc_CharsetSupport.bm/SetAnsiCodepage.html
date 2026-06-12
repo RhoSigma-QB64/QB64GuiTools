@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>SetAnsiCodepage</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_CharsetSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>SetAnsiCodepage <em>(sub)</em></h2>
+<p>Will set the given ANSI codepage and do the required unicode remapping.
+This is not required for the various _UPRINT functions, but is useful to
+have the correct charset for the regular PRINT/_PRINTSTRING functions.
+Best is the same codepage, which you've set in your QB64 IDE.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>SetAnsiCodepage cpName$
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>cpName$ <em>(STRING)</em></h4>
+<ul>
+<li>
+The desired codepage name as per the list below, upper/lower case
+doesn't matter. If you give an invalid name, then the current unicode
+mapping remains unchanged.
+<ul>
+<li>Pc437, Pc737, Pc775, Pc850, Pc852, Pc855, Pc857, Pc860, Pc861,
+Pc862, Pc863, Pc864, Pc865, Pc866, PcMIK, Pc869, Pc874,
+Win1250, Win1251, Win1252, Win1253, Win1254, Win1255, Win1256,
+Win1257, Win1258</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_CharsetSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

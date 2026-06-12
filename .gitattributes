@@ -62,12 +62,12 @@ FileTypesUser binary
 *.css text eol=crlf
 *.Css text eol=crlf
 *.CSS text eol=crlf
-*.htm -text
-*.Htm -text
-*.HTM -text
-*.html -text
-*.Html -text
-*.HTML -text
+*.htm text eol=crlf
+*.Htm text eol=crlf
+*.HTM text eol=crlf
+*.html text eol=crlf
+*.Html text eol=crlf
+*.HTML text eol=crlf
 *.md text eol=crlf
 *.Md text eol=crlf
 *.MD text eol=crlf

@@ -213,7 +213,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 1024, 768, 0
-appCR$ = "The GuiTools Framework v0.20, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.21, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------
@@ -1343,12 +1343,15 @@ init% = -1 'init state indicator (handler control, don't touch)
 done% = 0 'main loop (ie. program) keeps running until this is set true
 '-----
 subClicks% = 1 'try to find out, what this is used for :)
-IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
-    'FileSelect$() initial drawer (if compiled to qb64 folder)
-    fsStartDir$ = "QB64GuiTools\images"
-ELSE
+IF _FILEEXISTS(FileNamePart$(appExeName$) + ".bas") THEN
     'FileSelect$() initial drawer (if compiled to source folder)
     fsStartDir$ = "..\images"
+ELSEIF _FILEEXISTS("qb64pe.exe") OR _FILEEXISTS("qb64.exe") THEN
+    'FileSelect$() initial drawer (if compiled to qb64(pe) folder)
+    fsStartDir$ = "QB64GuiTools\images"
+ELSE
+    'FileSelect$() initial drawer (if compiled to unknown folder)
+    fsStartDir$ = ""
 END IF
 
 '~~~ My Main Loop
@@ -1460,7 +1463,7 @@ WEND
 '--- Who did it? ---
 IF BoolTagTrue%(abou$, "CHECKED") THEN
     dummy$ = MessageBox$("", "About",_
-                         "The GuiTools Framework v0.20|" +_
+                         "The GuiTools Framework v0.21|" +_
                          "Done by RhoSigma, Roland Heyder|~" +_
                          "Thanx for your interest in my work.",_
                          "{SYM RhoSigma * 10 * 2}It's been a pleasure!")
@@ -1551,22 +1554,24 @@ RETURN
 'this function. If the method call will return any errors or warnings,
 'then these will be shown to you in a MessageBox. If no errors/warnings
 'are returned, then it will simply put through the method call's result.
-'  USAGE:  result$ = ShowErr$(AnyClassC$("ANYMETHOD", methodTags$))
+'You may also specify a description to better identify multiple checks.
+'  USAGE:  result$ = ShowErr$("desc", AnyClassC$("ANYMETHOD", methodTags$))
 'You should remove this function again, after all bugs are fixed and your
 'method calls do work properly without errors/warnings, or at least set
 'the CONST ShowErrSwitch$ right below to "OFF".
 '=====================================================================
 CONST ShowErrSwitch$ = "ON" 'ON or OFF
 '-----
-FUNCTION ShowErr$ (tagString$)
+FUNCTION ShowErr$ (desc$, tagString$)
+IF desc$ = "" THEN iDesc$ = "": ELSE iDesc$ = desc$ + "|"
 ShowErr$ = tagString$
 IF UCASE$(ShowErrSwitch$) = "ON" THEN
     IF ValidateTags%(tagString$, "ERROR", -1) THEN
-        dummy$ = MessageBox$("Error16px.png", "Error Tag",_
+        dummy$ = MessageBox$("Error16px.png", "Error Tag", iDesc$ +_
                              GetTagData$(tagString$, "ERROR", "empty"),_
                              "{IMG Error16px.png 0}Ok, got it...")
     ELSEIF ValidateTags%(tagString$, "WARNING", -1) THEN
-        dummy$ = MessageBox$("Problem16px.png", "Warning Tag",_
+        dummy$ = MessageBox$("Problem16px.png", "Warning Tag", iDesc$ +_
                              GetTagData$(tagString$, "WARNING", "empty"),_
                              "{IMG Problem16px.png 0}Ok, got it...")
     END IF

@@ -20,21 +20,7 @@
 '| any questions or suggestions. Thanx for your interest in my work. |
 '+-------------------------------------------------------------------+
 
-'-----------------------
-'--- SetAnsiCodepage ---
-'-----------------------
-' Will set the given ANSI codepage and do the required unicode remapping.
-' This is not required for the various _UPRINT functions, but is useful to
-' have the correct charset for the regular PRINT/_PRINTSTRING functions.
-' Best is the same codepage, which you've set in your QB64 IDE.
-'----------
-' SYNTAX:
-'   SetAnsiCodepage cpName$
-'----------
-' INPUTS:
-'   --- cpName$ ---
-'    The desired codepage name as per the CASEs list below. If you give
-'    an invalid name, then the current unicode mapping remains unchanged.
+'--- docs\doc_CharsetSupport.bm\SetAnsiCodepage.html
 '---------------------------------------------------------------------
 SUB SetAnsiCodepage (cpName$)
 '--- select codepage ---
@@ -77,19 +63,7 @@ IF valid% THEN
 END IF
 END SUB
 
-'-----------------------
-'--- GetAnsiCodepage ---
-'-----------------------
-' This function will try to identify the currently active unicode mapping
-' and return the respective ANSI codepage name.
-'----------
-' SYNTAX:
-'   cpName$ = GetAnsiCodepage$
-'----------
-' RESULT:
-'   --- cpName$ ---
-'    The active codepage name as per the CASEs list below. Will return
-'    the string "custom", if no standard codepage mapping is active.
+'--- docs\doc_CharsetSupport.bm\GetAnsiCodepage.html
 '---------------------------------------------------------------------
 FUNCTION GetAnsiCodepage$
 '--- identify codepage ---
@@ -143,24 +117,7 @@ END IF
 GetAnsiCodepage$ = cp$
 END FUNCTION
 
-'-------------------------
-'--- UnicodeToUtf8Char ---
-'-------------------------
-' Returns the UTF-8 char sequence for the given Unicode codepoint. The
-' result may be a one- or multiple byte sequence as required in UTF-8.
-' The result is ready to be used with the various _UPRINT functions.
-'----------
-' SYNTAX:
-'   utf8char$ = UnicodeToUtf8Char$ (unicode&)
-'----------
-' INPUTS:
-'   --- unicode& ---
-'    The Unicode codepoint to convert.
-'    (see https://design215.com/toolbox/ascii-utf8.php for lookup)
-'----------
-' RESULT:
-'   --- utf8char$ ---
-'    The UTF-8 notation for the given Unicode codepoint.
+'--- docs\doc_CharsetSupport.bm\UnicodeToUtf8Char.html
 '---------------------------------------------------------------------
 FUNCTION UnicodeToUtf8Char$ (unicode&)
 '--- UTF-8 encoding ---
@@ -183,44 +140,7 @@ ELSE
 END IF
 END FUNCTION
 
-'-------------------
-'--- Utf8CharLen ---
-'-------------------
-' Returns the byte length of the first UTF-8 character in the given string.
-' It checks whether the first 1-4 bytes of the given string represent a
-' valid UTF-8 character and if so, return the length of the UTF-8 sequence.
-' The check starts at the first byte and ends as soon a UTF-8 character
-' is identified or the sequence turns out invalid. If there are less than
-' four bytes in the string, then it is padded in such a way that the check
-' will still work correct. That is, the padding will not randomly turn a
-' invalid sequence into a valid one or vice versa.
-'
-' May also be used to check the validity of an entire string in a loop.
-' For that pass in MID$(str,pos) and if the function's result is greater
-' than zero(0), then add it to the position for the next iteration until
-' the entire string is done. If the result is zero(0) in any iteration,
-' then the string is no valid UTF-8 string. However, using the function
-' _UPRINTWIDTH and checking for a zero(0) result to identify an invalid
-' string is maybe easier than processing the entire string in a loop.
-'  You may pass invalid UTF-8 strings through the AnsiTextToUtf8Text$()
-' function to correct that.
-'----------
-' SYNTAX:
-'   utf8Length% = Utf8CharLen% (utf8Char$)
-'----------
-' INPUTS:
-'   --- utf8Char$ ---
-'    The string to examine for the first character's length. Only the
-'    first four bytes are relevant for this function.
-'----------
-' RESULT:
-'   --- utf8Length% ---
-'    The length of the identified UTF-8 sequence or zero, that is:
-'     - (0) the first four bytes of the string are no valid UTF-8 character
-'     - (1) the first byte is a plain ASCII (0-127) character
-'     - (2) at the first byte starts a valid 2-byte UTF-8 character
-'     - (3) at the first byte starts a valid 3-byte UTF-8 character
-'     - (4) at the first byte starts a valid 4-byte UTF-8 character
+'--- docs\doc_CharsetSupport.bm\Utf8CharLen.html
 '---------------------------------------------------------------------
 FUNCTION Utf8CharLen% (utf8Char$)
 '--- check input length ---
@@ -275,25 +195,7 @@ done:
 Utf8CharLen% = ci%
 END FUNCTION
 
-'-------------------------------
-'--- UnicodeStringToUtf8Text ---
-'-------------------------------
-' Returns the UTF-8 representation of the given Unicode codepoints string.
-' The result is ready to be used with the various _UPRINT functions.
-'----------
-' SYNTAX:
-'   utf8text$ = UnicodeStringToUtf8Text$ (ucStr$)
-'----------
-' INPUTS:
-'   --- ucStr$ ---
-'    A list of comma separated (decimal) Unicode codepoints representing
-'    the text you wanna get in UTF-8 (eg. "1244,252,4530,32,225"). Don't
-'    use whitespace or leading zeros, just write as shown in the example.
-'    See https://design215.com/toolbox/ascii-utf8.php to lookup codepoints.
-'----------
-' RESULT:
-'   --- utf8text$ ---
-'    The text in UTF-8 notation.
+'--- docs\doc_CharsetSupport.bm\UnicodeStringToUtf8Text.html
 '---------------------------------------------------------------------
 FUNCTION UnicodeStringToUtf8Text$ (ucStr$)
 '--- convert string ---
@@ -306,25 +208,7 @@ WEND
 UnicodeStringToUtf8Text$ = utf$
 END FUNCTION
 
-'------------------------------
-'--- UnicodeArrayToUtf8Text ---
-'------------------------------
-' Returns the UTF-8 representation of the given Unicode codepoints array.
-' The result is ready to be used with the various _UPRINT functions.
-'----------
-' SYNTAX:
-'   utf8text$ = UnicodeArrayToUtf8Text$ (ucArr&())
-'----------
-' INPUTS:
-'   --- ucArr&() ---
-'    An 1-dimensional array containing the Unicode codepoints (one per
-'    array element) representing the text you wanna get in UTF-8. The
-'    array will be converted entirely from its LBOUND to the UBOUND.
-'    See https://design215.com/toolbox/ascii-utf8.php to lookup codepoints.
-'----------
-' RESULT:
-'   --- utf8text$ ---
-'    The text in UTF-8 notation.
+'--- docs\doc_CharsetSupport.bm\UnicodeArrayToUtf8Text.html
 '---------------------------------------------------------------------
 FUNCTION UnicodeArrayToUtf8Text$ (ucArr&())
 '--- convert array ---
@@ -335,23 +219,7 @@ NEXT uci&
 UnicodeArrayToUtf8Text$ = utf$
 END FUNCTION
 
-'-----------------------------
-'--- UnicodeDataToUtf8Text ---
-'-----------------------------
-' Returns the UTF-8 representation of the given Unicode codepoints DATA.
-' The result is ready to be used with the various _UPRINT functions.
-'----------
-' SYNTAX:
-'   utf8text$ = UnicodeDataToUtf8Text$
-'----------
-' INPUTS:
-'    You must RESTORE to the Unicode DATA label prior calling this.
-'    The 1st DATA element must designate the number of following Unicodes.
-'    See https://design215.com/toolbox/ascii-utf8.php to lookup codepoints.
-'----------
-' RESULT:
-'   --- utf8text$ ---
-'    The text in UTF-8 notation.
+'--- docs\doc_CharsetSupport.bm\UnicodeDataToUtf8Text.html
 '---------------------------------------------------------------------
 FUNCTION UnicodeDataToUtf8Text$
 '--- convert data ---
@@ -363,29 +231,7 @@ NEXT uci&
 UnicodeDataToUtf8Text$ = utf$
 END FUNCTION
 
-'--------------------------
-'--- AnsiTextToUtf8Text ---
-'--------------------------
-' Returns the UTF-8 representation of the given ANSI text string. Can
-' use any codepage for unicode lookup inclusive the active one, where
-' the latter one may even be a "custom" mapped page. This function can
-' handle strings which already contain UTF-8 (eg. strings which were
-' converted earlier), it will not hurt those already existing UTF-8 chars.
-' The result is ready to be used with the various _UPRINT functions.
-'----------
-' SYNTAX:
-'   utf8text$ = AnsiTextToUtf8Text$ (text$, cpName$)
-'----------
-' INPUTS:
-'   --- text$ ---
-'    Any regular text you wrote in QB64 or any other Editor.
-'   --- cpName$ ---
-'    The original codepage name used when writing the text. Names as
-'    per the CASEs list below, or empty ("") to use the active codepage.
-'----------
-' RESULT:
-'   --- utf8text$ ---
-'    The very same text in UTF-8 notation based on the given codepage.
+'--- docs\doc_CharsetSupport.bm\AnsiTextToUtf8Text.html
 '---------------------------------------------------------------------
 FUNCTION AnsiTextToUtf8Text$ (text$, cpName$)
 '--- convert text ---

@@ -12,19 +12,11 @@
 '|                                                                   |
 '| == This is a GUI object class of the GuiTools Framework Project.  |
 '|                                                                   |
-'| == The only difference to the normal TextClass.bm is, that all    |
-'| == _PRINTWIDTH/_PRINTSTRING/_FONTHEIGHT occurrences were replaced |
-'| == with their respective _U... versions.                          |
-'|                                                                   |
 '+-------------------------------------------------------------------+
 '| Done by RhoSigma, R.Heyder, provided AS IS, use at your own risk. |
 '| Find me in the QB64 Forum or mail to support@rhosigma-cw.net for  |
 '| any questions or suggestions. Thanx for your interest in my work. |
 '+-------------------------------------------------------------------+
-
-$IF VERSION < 3.8.0 THEN
-    $ERROR 'This class requires at least QB64-PE v3.8.0 to compile.'
-$END IF
 
 '=====================================================================
 '=== Text Class ======================================================
@@ -250,7 +242,7 @@ IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
         END SELECT
         IF _UPRINTWIDTH(text$, 8) = 0 THEN
             ouc% = _MAPUNICODE(255)
-            nuc% = 160: IF _FONT = 16 THEN nuc% = 255
+            nuc% = 160: IF _FONT < 32 AND appGLVComp% THEN nuc% = 255
             _MAPUNICODE nuc% TO 255
             text$ = AnsiTextToUtf8Text$(text$, "")
             _MAPUNICODE ouc% TO 255
@@ -306,6 +298,9 @@ RETURN
 '---------------------------------------------------------------------
 meUpdate:
 IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
+    '--- don't update, if on a closed GuiView ---
+    ovix& = VAL(GetTagData$(guiObjects$(objData%, this&), "GUIVIEW", "0"))
+    IF NOT GuiViewIsOpen%(ovix&) THEN RETURN
     '--- get mouse position and object dimensions ---
     moux% = VAL(GetTagData$(tagsID$, "MOUSEX", "-1"))
     mouy% = VAL(GetTagData$(tagsID$, "MOUSEY", "-1"))
@@ -326,7 +321,6 @@ IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
         IF etim# < 0 THEN etim# = etim# + 86400 'midnight fix
         IF etim# >= 0.04 THEN
             IF guiATTProps$ <> "" THEN 'look for tooltip/textfield collision, remove tooltip if required
-                ovix& = VAL(GetTagData$(guiObjects$(objData%, this&), "GUIVIEW", "0"))
                 tvix& = VAL(GetTagData$(guiATTProps$, "GUIVIEW", "0"))
                 IF ovix& = tvix& THEN 'no collision possible, if on different GuiViews
                     bubb& = VAL(GetTagData$(guiATTProps$, "IHANDLE", "-1"))
@@ -411,7 +405,7 @@ ELSE
         '--- make sure it's valid Utf-8 ---
         IF _UPRINTWIDTH(text$, 8) = 0 THEN
             ouc% = _MAPUNICODE(255)
-            nuc% = 160: IF _FONT = 16 THEN nuc% = 255
+            nuc% = 160: IF _FONT < 32 AND appGLVComp% THEN nuc% = 255
             _MAPUNICODE nuc% TO 255
             text$ = AnsiTextToUtf8Text$(text$, "")
             _MAPUNICODE ouc% TO 255

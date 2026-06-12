@@ -49,11 +49,11 @@ END SUB
 'Search given tag and remove it from the tag string. Will do nothing,
 'if the tag does not exist in the tag string.
 SUB RemTag (tagString$, tagName$)
-bra% = INSTR(tagString$, tagIntr$ + UCASE$(LTRIM$(RTRIM$(FilterChars$(tagName$, "")))) + tagSepa$)
-IF bra% > 0 THEN
-    ket% = INSTR(bra% + 1, tagString$, tagTerm$)
-    IF ket% > 0 THEN
-        tagString$ = LEFT$(tagString$, bra% - 1) + MID$(tagString$, ket% + 1)
+bra& = INSTR(tagString$, tagIntr$ + UCASE$(LTRIM$(RTRIM$(FilterChars$(tagName$, "")))) + tagSepa$)
+IF bra& > 0 THEN
+    ket& = INSTR(bra& + 1, tagString$, tagTerm$)
+    IF ket& > 0 THEN
+        tagString$ = LEFT$(tagString$, bra& - 1) + MID$(tagString$, ket& + 1)
     END IF
 END IF
 END SUB
@@ -66,15 +66,15 @@ SUB RemTags (tagString$, remNames$)
 tmpRemNames$ = LTRIM$(RTRIM$(remNames$))
 IF LEFT$(tmpRemNames$, 1) = "," THEN tmpRemNames$ = MID$(tmpRemNames$, 2)
 IF RIGHT$(tmpRemNames$, 1) <> "," THEN tmpRemNames$ = tmpRemNames$ + ","
-ket% = 0
+ket& = 0
 DO
-    bra% = ket% + 1
-    ket% = INSTR(bra%, tmpRemNames$, ",")
-    IF ket% > bra% THEN
-        remName$ = LTRIM$(RTRIM$(MID$(tmpRemNames$, bra%, ket% - bra%)))
+    bra& = ket& + 1
+    ket& = INSTR(bra&, tmpRemNames$, ",")
+    IF ket& > bra& THEN
+        remName$ = LTRIM$(RTRIM$(MID$(tmpRemNames$, bra&, ket& - bra&)))
         IF remName$ <> "" THEN RemTag tagString$, remName$
     END IF
-LOOP WHILE ket% > 0
+LOOP WHILE ket& > 0
 END SUB
 
 '---------------------------------------------------------------------
@@ -96,12 +96,12 @@ ValidateTags% = -1
 tmpChkNames$ = LTRIM$(RTRIM$(chkNames$))
 IF LEFT$(tmpChkNames$, 1) = "," THEN tmpChkNames$ = MID$(tmpChkNames$, 2)
 IF RIGHT$(tmpChkNames$, 1) <> "," THEN tmpChkNames$ = tmpChkNames$ + ","
-ket% = 0
+ket& = 0
 DO
-    bra% = ket% + 1
-    ket% = INSTR(bra%, tmpChkNames$, ",")
-    IF ket% > bra% THEN
-        chkName$ = LTRIM$(RTRIM$(MID$(tmpChkNames$, bra%, ket% - bra%)))
+    bra& = ket& + 1
+    ket& = INSTR(bra&, tmpChkNames$, ",")
+    IF ket& > bra& THEN
+        chkName$ = LTRIM$(RTRIM$(MID$(tmpChkNames$, bra&, ket& - bra&)))
         IF chkName$ <> "" THEN
             IF GetTagData$(tagString$, chkName$, "n/a") = "n/a" THEN
                 ValidateTags% = 0
@@ -113,7 +113,7 @@ DO
             END IF
         END IF
     END IF
-LOOP WHILE ket% > 0
+LOOP WHILE ket& > 0
 END FUNCTION
 
 '---------------------------------------------------------------------
@@ -129,11 +129,11 @@ END FUNCTION
 'not checked for validity, it's returned as it is in the tag string.
 FUNCTION GetTag$ (tagString$, tagName$)
 GetTag$ = ""
-bra% = INSTR(tagString$, tagIntr$ + UCASE$(LTRIM$(RTRIM$(FilterChars$(tagName$, "")))) + tagSepa$)
-IF bra% > 0 THEN
-    ket% = INSTR(bra% + 1, tagString$, tagTerm$)
-    IF ket% > 0 THEN
-        GetTag$ = MID$(tagString$, bra%, ket% - bra% + 1)
+bra& = INSTR(tagString$, tagIntr$ + UCASE$(LTRIM$(RTRIM$(FilterChars$(tagName$, "")))) + tagSepa$)
+IF bra& > 0 THEN
+    ket& = INSTR(bra& + 1, tagString$, tagTerm$)
+    IF ket& > 0 THEN
+        GetTag$ = MID$(tagString$, bra&, ket& - bra& + 1)
     END IF
 END IF
 END FUNCTION
@@ -147,15 +147,15 @@ tags$ = ""
 tmpGetNames$ = LTRIM$(RTRIM$(getNames$))
 IF LEFT$(tmpGetNames$, 1) = "," THEN tmpGetNames$ = MID$(tmpGetNames$, 2)
 IF RIGHT$(tmpGetNames$, 1) <> "," THEN tmpGetNames$ = tmpGetNames$ + ","
-ket% = 0
+ket& = 0
 DO
-    bra% = ket% + 1
-    ket% = INSTR(bra%, tmpGetNames$, ",")
-    IF ket% > bra% THEN
-        getName$ = LTRIM$(RTRIM$(MID$(tmpGetNames$, bra%, ket% - bra%)))
+    bra& = ket& + 1
+    ket& = INSTR(bra&, tmpGetNames$, ",")
+    IF ket& > bra& THEN
+        getName$ = LTRIM$(RTRIM$(MID$(tmpGetNames$, bra&, ket& - bra&)))
         IF getName$ <> "" THEN tags$ = tags$ + GetTag$(tagString$, getName$)
     END IF
-LOOP WHILE ket% > 0
+LOOP WHILE ket& > 0
 GetTags$ = tags$
 END FUNCTION
 
@@ -176,12 +176,12 @@ END FUNCTION
 'with ExtractTag$ to process (unknown) user tags.
 FUNCTION GetTagName$ (tagString$)
 GetTagName$ = ""
-bra% = INSTR(tagString$, tagIntr$)
-IF bra% > 0 THEN
-    ket% = INSTR(bra% + 1, tagString$, tagSepa$)
-    IF ket% > 0 THEN
-        IF ket% > (bra% + 1) THEN 'ket% must be after tag name start
-            GetTagName$ = MID$(tagString$, bra% + 1, ket% - bra% - 1)
+bra& = INSTR(tagString$, tagIntr$)
+IF bra& > 0 THEN
+    ket& = INSTR(bra& + 1, tagString$, tagSepa$)
+    IF ket& > 0 THEN
+        IF ket& > (bra& + 1) THEN 'ket& must be after tag name start
+            GetTagName$ = MID$(tagString$, bra& + 1, ket& - bra& - 1)
         END IF
     END IF
 END IF
@@ -194,16 +194,16 @@ END FUNCTION
 FUNCTION GetTagData$ (tagString$, tagName$, defData$)
 dat$ = defData$
 tmpTagName$ = UCASE$(LTRIM$(RTRIM$(FilterChars$(tagName$, ""))))
-bra% = INSTR(tagString$, tagIntr$ + tmpTagName$ + tagSepa$)
-IF bra% > 0 THEN
-    ket% = INSTR(bra% + 1, tagString$, tagTerm$)
-    bra% = bra% + LEN(tmpTagName$) + 2
-    IF ket% > 0 THEN
-        IF ket% > bra% THEN 'ket% must be after tagIntr$+tagName$+tagSepa$
-            dat$ = MID$(tagString$, bra%, ket% - bra%)
-            FOR i% = 1 TO LEN(dat$)
-                IF MID$(dat$, i%, 1) = tagRepl$ THEN MID$(dat$, i%, 1) = CHR$(0)
-            NEXT i%
+bra& = INSTR(tagString$, tagIntr$ + tmpTagName$ + tagSepa$)
+IF bra& > 0 THEN
+    ket& = INSTR(bra& + 1, tagString$, tagTerm$)
+    bra& = bra& + LEN(tmpTagName$) + 2
+    IF ket& > 0 THEN
+        IF ket& > bra& THEN 'ket& must be after tagIntr$+tagName$+tagSepa$
+            dat$ = MID$(tagString$, bra&, ket& - bra&)
+            FOR i& = 1 TO LEN(dat$)
+                IF MID$(dat$, i&, 1) = tagRepl$ THEN MID$(dat$, i&, 1) = CHR$(0)
+            NEXT i&
         END IF
     END IF
 END IF
@@ -240,17 +240,17 @@ UpdateTags% = 0
 tmpUpdNames$ = LTRIM$(RTRIM$(updNames$))
 IF LEFT$(tmpUpdNames$, 1) = "," THEN tmpUpdNames$ = MID$(tmpUpdNames$, 2)
 IF RIGHT$(tmpUpdNames$, 1) <> "," THEN tmpUpdNames$ = tmpUpdNames$ + ","
-ket% = 0
+ket& = 0
 DO
-    bra% = ket% + 1
-    ket% = INSTR(bra%, tmpUpdNames$, ",")
-    IF ket% > bra% THEN
-        updName$ = LTRIM$(RTRIM$(MID$(tmpUpdNames$, bra%, ket% - bra%)))
+    bra& = ket& + 1
+    ket& = INSTR(bra&, tmpUpdNames$, ",")
+    IF ket& > bra& THEN
+        updName$ = LTRIM$(RTRIM$(MID$(tmpUpdNames$, bra&, ket& - bra&)))
         IF updName$ <> "" THEN
             IF UpdateTag%(oldTagString$, updName$, newTagString$) THEN UpdateTags% = -1
         END IF
     END IF
-LOOP WHILE ket% > 0
+LOOP WHILE ket& > 0
 END FUNCTION
 
 '---------------------------------------------------------------------
@@ -304,11 +304,11 @@ FilterChars$ = temp$
 EXIT FUNCTION
 '----------------
 fcFilter:
-bra% = 1
+bra& = 1
 DO
-    bra% = INSTR(bra%, temp$, char$)
-    IF bra% > 0 THEN temp$ = LEFT$(temp$, bra% - 1) + exg$ + MID$(temp$, bra% + 1)
-LOOP WHILE bra% > 0
+    bra& = INSTR(bra&, temp$, char$)
+    IF bra& > 0 THEN temp$ = LEFT$(temp$, bra& - 1) + exg$ + MID$(temp$, bra& + 1)
+LOOP WHILE bra& > 0
 RETURN
 $CHECKING:ON
 END FUNCTION

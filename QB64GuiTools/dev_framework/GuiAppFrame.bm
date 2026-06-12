@@ -311,7 +311,7 @@ ELSE
     BeginGUIRefresh
     IF guiViews$(0) = "" THEN FillRectRaster 0, 0, _WIDTH, _HEIGHT, guiShinePen%
     EndGUIRefresh
-    _DELAY 0.1: WindowToTop(titl$ + CHR$(0))
+    _DELAY 0.05: WindowToTop(titl$ + CHR$(0))
     DO
         _LIMIT 50
         IF NOT CheckMutex%("Global\RhoSigma-GuiApp-MBParent-" + buttonText$ + CHR$(0)) THEN ERROR 1000 'parent is gone, so we do
@@ -834,7 +834,6 @@ ELSE
     fslv$ = ListviewC$("INIT", NewTag$("LEFT", "8") + NewTag$("TOP", "43") + NewTag$("WIDTH", "424") + NewTag$("HEIGHT", "328") +_
                        NewTag$("SPACING", "3") + NewTag$("READONLY", "true") + ListTag$(rlis$) +_
                        NewTag$("TOOLTIP", "Listing of the currently selected folder.|The dialog is in " + mode$ + "|--------------------|You may navigate the list using the mouse.|While the mouse is resting over the list|area, the arrow keys incl. Home, End, PgUp|and PgDown can be used as well. Also|Ctrl + wheel is same as arrow keys."))
-    refo$ = NewTag$("REFOBJ", GetTagData$(fslv$, "OBJECT", "0"))
     fsre$ = StringC$("INIT", NewTag$("LEFT", "77") + NewTag$("TOP", "375") + NewTag$("WIDTH", "355") + NewTag$("HEIGHT", "30") +_
                      ExtractTag$(tags$, "TEXT") + NewTag$("MAXIMUM", "40") + NewTag$("DISABLED", LTRIM$(STR$(nore% OR nofi%))) +_
                      NewTag$("LABEL", "Pattern:") + NewTag$("LABELHIGH", "true") + NewTag$("LABELPLACE", "left") +_
@@ -1209,12 +1208,12 @@ END IF
 
 fsChkFile:
 file$ = GetObjTagData$(fsfi$, "TEXT", "")
-reco$ = GetObjTagData$(flis$ + refo$, "RECORDS", "0")
+reco$ = GetObjTagData$(flis$, "RECORDS", "0")
 IF nofi% THEN file$ = ""
 IF VAL(reco$) > 0 THEN
     IF file$ <> "" THEN
-        resu$ = ListC$("SEARCH", flis$ + refo$ + NewTag$("DATA", file$) + NewTag$("PARTIAL", "left") + NewTag$("NOCASE", "true") + NewTag$("HOLD", "true"))
-        IF resu$ <> "" THEN actu$ = GetObjTagData$(flis$ + refo$, "ACTUAL", "1")
+        resu$ = ListC$("SEARCH", flis$ + NewTag$("DATA", file$) + NewTag$("PARTIAL", "left") + NewTag$("NOCASE", "true") + NewTag$("HOLD", "true"))
+        IF resu$ <> "" THEN actu$ = GetObjTagData$(flis$, "ACTUAL", "1")
     END IF
     IF file$ = "" OR resu$ = "" THEN actu$ = "0"
 ELSE
@@ -1738,7 +1737,7 @@ END FUNCTION
 '--- undocumented - for internal use only
 '---------------------------------------------------------------------
 FUNCTION VersionGuiTools$
-VersionGuiTools$ = MID$("$VER: GuiTools Framework 0.20 (18-Aug-2025) by RhoSigma :END$", 7, 49)
+VersionGuiTools$ = MID$("$VER: GuiTools Framework 0.21 (11-Jun-2026) by RhoSigma :END$", 7, 49)
 END FUNCTION
 
 '****************************************************

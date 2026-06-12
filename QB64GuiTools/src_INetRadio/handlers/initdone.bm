@@ -4,7 +4,10 @@
         'Use it for for things, which must be done once after successful
         'program start and GUI init, eg. auto start playing music etc..
         IF opts.autoPlay THEN
-            streamUrl$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("HOLD", "true")), "STREAM_URL", "")
+            record$ = ListC$("READ", StationsList$ + NewTag$("ACTUAL", LTRIM$(STR$(opts.idxStation))))
+            streamUrl$ = GetTagData$(record$, "STREAM_URL", "")
+            advertTxt$ = GetTagData$(record$, "ADVERT_TEXT", "")
+            metaDelay$ = GetTagData$(record$, "META_DELAY", "1")
             IF streamUrl$ <> "" THEN
                 redirects% = 0: GOSUB startPlay: IF stream& <> 0 THEN GOSUB togglePlayingState
             END IF

@@ -146,7 +146,7 @@ IF ValidObject%(this&, thisTag$, CycleRes$, classID$, methodID$, tagsID$) THEN
                 temp$ = "1"
                 actu& = 1
             END IF
-            resu$ = ListC$("SET", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("ACTUAL", LTRIM$(STR$(actu&))))
+            resu$ = ListC$("SET", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("ACTUAL", LTRIM$(STR$(actu&))))
             SetTag guiObjects$(objData%, this&), "ACTUAL", temp$
             flag% = -1
         END IF
@@ -178,7 +178,7 @@ RETURN
 meGet:
 IF ValidObject%(this&, thisTag$, CycleRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
-    reco$ = ListC$("READ", ObjectTag$(guiObjects$(objData%, this&), "LISTOBJECT") + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
+    reco$ = ListC$("READ", ObjectTag$(guiObjects$(objData%, this&), "LISTOBJECT") + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
     IF ValidateTags%(reco$, "ERROR", 0) THEN reco$ = ""
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
     IF temp$ <> "n/a" THEN
@@ -249,7 +249,7 @@ IF ValidObject%(this&, thisTag$, CycleRes$, classID$, methodID$, tagsID$) THEN
     LINE (left% + swid% + 11, topp% + 6)-(left% + swid% + 11, topp% + heig% - 7), guiShinePen%
     resu$ = FrameC$("DRAW", ObjectTag$(guiObjects$(objData%, this&), "FRM0") + NewTag$("RECESSED", rebo$))
     '--- text label ---
-    reco$ = ListC$("READ", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
+    reco$ = ListC$("READ", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
     text$ = GetTagData$(reco$, "DATA", "n/a")
     IF text$ <> "n/a" THEN
         text$ = LTRIM$(RTRIM$(text$))

@@ -47,7 +47,21 @@ ELSEIF NOT _FILEEXISTS(cmd$) THEN
     COLOR 15: PRINT "Please check your input !!"
 ELSE
     COLOR 15: PRINT "Checking file "; cmd$; " ...": PRINT
-    result$ = SearchVers$(cmd$)
+    '--- read file ---
+    OPEN cmd$ FOR BINARY AS #1
+    dat$ = SPACE$(LOF(1))
+    GET #1, , dat$
+    CLOSE #1
+    '--- find build info (if any) ---
+    result$ = SearchBuildInfo$(dat$)
+    IF result$ = "" THEN
+        COLOR 12: PRINT "Sorry, the file does not contain any build informations !!": PRINT
+    ELSE
+        COLOR 10: PRINT "The file contains the following build informations:": PRINT
+        COLOR 15: PRINT result$
+    END IF
+    '--- find version(s) ---
+    result$ = SearchVers$(dat$)
     IF result$ = "" THEN
         COLOR 12: PRINT "Sorry, the file does not contain any version informations !!": PRINT
     ELSE
@@ -59,16 +73,36 @@ END IF
 COLOR 7
 END
 
-' This function loads the designated file into a string and searches for
-' the version strings. All found version strings are returned, separated
-' by a single line feed char (CHR$(10)).
+' This function searches for any build information in the provided data.
+' All found build infos are returned, separated by CHR$(10).
 '----------------------------------------------------------------------
-FUNCTION SearchVers$ (file$)
-'--- read file ---
-OPEN file$ FOR BINARY AS #1
-dat$ = SPACE$(LOF(1))
-GET #1, , dat$
-CLOSE #1
+FUNCTION SearchBuildInfo$ (dat$)
+'--- find build info ---
+year% = 2025: found% = 0: dLen& = LEN(dat$): bStr$ = ""
+DO
+    year% = year% + 1
+    bPos& = INSTR(dat$, " " + LTRIM$(STR$(year%)) + CHR$(0))
+    IF bPos& > 0 THEN
+        IF dLen& >= bPos& + 20 THEN
+            IF ASC(dat$, bPos& + 8) = 58 AND ASC(dat$, bPos& + 11) = 58 AND ASC(dat$, bPos& + 14) = 0 AND _
+               MID$(dat$, bPos& + 15, 4) = "QB64" THEN
+                bEnd& = INSTR(bPos& + 15, dat$, CHR$(0))
+                bStr$ = "Build date: " + MID$(dat$, bPos& - 6, 11) + CHR$(10) +_
+                        "Build time: " + MID$(dat$, bPos& + 6, 8) + CHR$(10) +_
+                        "Compiler  : " + MID$(dat$, bPos& + 15, bEnd& - bPos& - 15) + CHR$(10)
+                found% = -1
+            END IF
+        END IF
+    END IF
+LOOP UNTIL found% OR year% = 2050 'next 25 years
+'--- set result ---
+SearchBuildInfo$ = bStr$
+END FUNCTION
+
+' This function searches for any version strings in the provided data.
+' All found version strings are returned, separated by CHR$(10).
+'----------------------------------------------------------------------
+FUNCTION SearchVers$ (dat$)
 '--- find strings ---
 vBeg& = 0: vEnd& = 0: vStr$ = ""
 DO
@@ -89,6 +123,6 @@ END FUNCTION
 ' begin/end markers. Using uppercase for the markers is mandatory.
 '----------------------------------------------------------------------
 FUNCTION VersionFindVersions$
-VersionFindVersions$ = MID$("$VER: FindVersions 1.0 (24-Nov-2023) by RhoSigma :END$", 7, 42)
+VersionFindVersions$ = MID$("$VER: FindVersions 2.0 (05-Mar-2026) by RhoSigma :END$", 7, 42)
 END FUNCTION
 

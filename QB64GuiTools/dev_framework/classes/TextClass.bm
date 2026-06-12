@@ -286,6 +286,9 @@ RETURN
 '---------------------------------------------------------------------
 meUpdate:
 IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
+    '--- don't update, if on a closed GuiView ---
+    ovix& = VAL(GetTagData$(guiObjects$(objData%, this&), "GUIVIEW", "0"))
+    IF NOT GuiViewIsOpen%(ovix&) THEN RETURN
     '--- get mouse position and object dimensions ---
     moux% = VAL(GetTagData$(tagsID$, "MOUSEX", "-1"))
     mouy% = VAL(GetTagData$(tagsID$, "MOUSEY", "-1"))
@@ -306,7 +309,6 @@ IF ValidObject%(this&, thisTag$, TextRes$, classID$, methodID$, tagsID$) THEN
         IF etim# < 0 THEN etim# = etim# + 86400 'midnight fix
         IF etim# >= 0.04 THEN
             IF guiATTProps$ <> "" THEN 'look for tooltip/textfield collision, remove tooltip if required
-                ovix& = VAL(GetTagData$(guiObjects$(objData%, this&), "GUIVIEW", "0"))
                 tvix& = VAL(GetTagData$(guiATTProps$, "GUIVIEW", "0"))
                 IF ovix& = tvix& THEN 'no collision possible, if on different GuiViews
                     bubb& = VAL(GetTagData$(guiATTProps$, "IHANDLE", "-1"))

@@ -1,9 +1,9 @@
-$IF VERSION < 3.12.0 THEN
-    $ERROR 'This program requires at least QB64-PE v3.12.0 to compile.'
+$IF VERSION < 4.0.0 OR VERSION = 4.3.0 OR VERSION > 4.5.0 THEN
+    $ERROR 'INetRadio requires specific QB64-PE versions (see INetRadio.pdf).'
 $END IF
 
 '-----------------------------------------------------------
-$VERSIONINFO:FILEVERSION#=1,2,0,0
+$VERSIONINFO:FILEVERSION#=1,3,0,0
 $VERSIONINFO:FileDescription='A neat small Web-Radio player'
 $VERSIONINFO:LegalCopyright='MIT License'
 '-----------------------------------------------------------
@@ -60,12 +60,14 @@ UserInitHandler:
 'SUBs and FUNCTIONs. It's also considered good style to TempLog() the
 'written files in order for a correct cleanup in error/crash cases.
 '=====================================================================
+Add16ImgName$ = WriteAdd16ImgArray$(appTempDir$ + "Add16px.png", -1)
 Cancel16ImgName$ = WriteCancel16ImgArray$(appTempDir$ + "Cancel16px.png", -1)
+Import16ImgName$ = WriteImport16ImgArray$(appTempDir$ + "Import16px.png", -1)
 BackImgName$ = WriteBackImgArray$(appTempDir$ + "Back.jpg", -1)
 MarbleImgName$ = WriteMarbleImgArray$(appTempDir$ + "Marble.jpg", -1)
 TissueImgName$ = WriteTissueImgArray$(appTempDir$ + "Tissue.jpg", -1)
-TempLog Cancel16ImgName$, "": TempLog BackImgName$, ""
-TempLog MarbleImgName$, "": TempLog TissueImgName$, ""
+TempLog Add16ImgName$, "": TempLog Cancel16ImgName$, "": TempLog Import16ImgName$, ""
+TempLog BackImgName$, "": TempLog MarbleImgName$, "": TempLog TissueImgName$, ""
 '--- the next 3 blocks should always be kept ---
 DIM SHARED Info16Img$, Info32Img$ 'for Info MsgBoxes
 Info16Img$ = WriteInfo16ImgData$(appTempDir$ + "Info16px.png")
@@ -80,6 +82,7 @@ Error16Img$ = WriteError16ImgData$(appTempDir$ + "Error16px.png")
 Error32Img$ = WriteError32ImgData$(appTempDir$ + "Error32px.png")
 TempLog Error16Img$, "": TempLog Error32Img$, ""
 '--- prepare defaults for 1st start ---
+userList% = -1 'user list handle invalid for now
 cvfs% = 0 '(c)urrent (v)ersion (f)irst (s)tart flag
 IF (NOT _FILEEXISTS(appLocalDir$ + "INR-Options.bin")) OR _
    (NOT _FILEEXISTS(appLocalDir$ + "INR-Stations.txt")) THEN
@@ -89,7 +92,22 @@ ELSE
        _READFILE$(appLocalDir$ + "INR-Version.txt") <> VersionINetRadio$ THEN cvfs% = -1
 END IF
 IF cvfs% THEN
-    _WRITEFILE appLocalDir$ + "INR-Options.bin", ReadOptionsBinArray$
+    sta% = SafeOpenFile%("I", appLocalDir$ + "INR-Stations.txt")
+    IF sta% > 0 THEN
+        nsl$ = ReadStationsTxtArray$: userList% = CreateBuf%
+        WHILE NOT EOF(sta%)
+            LINE INPUT #sta%, sn$: LINE INPUT #sta%, tsu$: su$ = tsu$
+            IF LCASE$(LEFT$(tsu$, 4)) = "http" THEN tsu$ = MID$(tsu$, INSTR(tsu$, "://") + 3)
+            IF INSTR(nsl$, tsu$) = 0 THEN
+                WriteBufLine userList%, sn$: WriteBufLine userList%, su$
+                WriteBufLine userList%, "": WriteBufLine userList%, ""
+            END IF
+        WEND
+        CLOSE sta%
+    END IF
+    IF NOT _FILEEXISTS(appLocalDir$ + "INR-Options.bin") THEN
+        _WRITEFILE appLocalDir$ + "INR-Options.bin", ReadOptionsBinArray$
+    END IF
     _WRITEFILE appLocalDir$ + "INR-Stations.txt", ReadStationsTxtArray$
     _WRITEFILE appLocalDir$ + "INR-Version.txt", VersionINetRadio$
 END IF
@@ -110,20 +128,27 @@ DIM SHARED opts AS Settings
 optsFile% = SafeOpenFile%("B", appLocalDir$ + "INR-Options.bin")
 GET optsFile%, , opts: CLOSE optsFile%
 '--- read Stations list ---
-MainStationsList$ = ListC$("INIT", NewTag$("SORT", "alphabet"))
 listFile% = FileToBuf%(appLocalDir$ + "INR-Stations.txt")
+IF CheckHandle%(userList%) _ANDALSO GetBufLen&(userList%) >= 10 THEN
+    BufInsertBuf listFile%, userList%
+    DisposeBuf userList%: userList% = -1 'invalidate
+    nul& = SeekBuf&(listFile%, 0, SBM_BufStart)
+END IF
+StationsList$ = ListC$("INIT", NewTag$("SORT", "alphabet"))
 WHILE NOT EndOfBuf%(listFile%)
-    ok$ = ListC$("STORE", MainStationsList$ +_
-        NewTag$("DATA", ReadBufLine$(listFile%)) +_
-        NewTag$("STREAM_URL", ReadBufLine$(listFile%)))
+    sn$ = ReadBufLine$(listFile%): su$ = ReadBufLine$(listFile%)
+    ad$ = ReadBufLine$(listFile%): md$ = ReadBufLine$(listFile%)
+    ok$ = ListC$("STORE", StationsList$ +_
+        NewTag$("DATA", sn$) +_
+        NewTag$("STREAM_URL", su$) +_
+        NewTag$("ADVERT_TEXT", ad$) +_
+        NewTag$("META_DELAY", md$))
 WEND
 DisposeBuf listFile%
 '--- preparations for recent view ---
 RecentFile% = CreateBuf%: RecentMarked% = 0
-RecentListWrite$ = ListC$("INIT", "")
-ok$ = ListC$("STORE", RecentListWrite$ + NewTag$("DATA", CHR$(255)))
-RecentListLinked$ = ListC$("INIT", "")
-ok$ = ListC$("STORE", RecentListLinked$ + NewTag$("DATA", CHR$(255)))
+RecentList$ = ListC$("INIT", NewTag$("SORT", "lifo"))
+ok$ = ListC$("STORE", RecentList$ + NewTag$("DATA", CHR$(255)))
 '--- further temporary file names ---
 svrresName$ = "INR-SvrRes(" + appProgID$ + ").txt"
 TempLog svrresName$, "CONTENTS: Server response from Radio Station."
@@ -154,17 +179,22 @@ KILL Problem32Img$: KILL Problem16Img$
 KILL Info32Img$: KILL Info16Img$
 '-----
 IF nowPlaying% THEN GOSUB togglePlayingState: GOSUB stopPlay
-IF opts.remStation THEN opts.idxStation = VAL(GetObjTagData$(MainStationsList$, "ACTUAL", "0"))
 '--- save Stations list ---
-listFile% = CreateBuf%
-FOR i% = 1 TO VAL(GetObjTagData$(MainStationsList$, "RECORDS", "0"))
-    record$ = ListC$("READ", MainStationsList$)
+ok$ = ListC$("SET", StationsList$ + NewTag$("ACTUAL", "1") + NewTag$("REVERSE", "false"))
+listFile% = CreateBuf%: reco% = VAL(GetObjTagData$(StationsList$, "RECORDS", "1"))
+FOR i% = 1 TO reco%
+    record$ = ListC$("READ", StationsList$)
     WriteBufLine listFile%, GetTagData$(record$, "DATA", "")
     WriteBufLine listFile%, GetTagData$(record$, "STREAM_URL", "")
+    WriteBufLine listFile%, GetTagData$(record$, "ADVERT_TEXT", "")
+    WriteBufLine listFile%, GetTagData$(record$, "META_DELAY", "")
 NEXT i%
 BufToFile listFile%, appLocalDir$ + "INR-Stations.txt"
 DisposeBuf listFile%
 '--- save settings ---
+IF NOT opts.remStation THEN
+    RANDOMIZE TIMER: opts.idxStation = INT(RND(1) * reco%) + 1
+END IF
 optsFile% = SafeOpenFile%("B", appLocalDir$ + "INR-Options.bin")
 PUT optsFile%, , opts: CLOSE optsFile%
 RETURN
@@ -291,7 +321,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 640, 230, 0
-appCR$ = "The Internet Radio Player v1.2, Done by RhoSigma, Roland Heyder"
+appCR$ = "The Internet Radio Player v1.3, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - " + appCR$
 
 '------------------------------
@@ -352,8 +382,7 @@ MainTextCommon$ =_
         NewTag$("TEXTSCROLL", "true") +_
         NewTag$("AREA", "true") +_
         NewTag$("IMAGEFILE", "Tissue.jpg")
-IF opts.remStation THEN actu% = opts.idxStation: ELSE actu% = 1
-temp$ = GetTagData$(ListC$("READ", MainStationsList$ + NewTag$("ACTUAL", LTRIM$(STR$(actu%))) + NewTag$("HOLD", "true")), "DATA", "")
+temp$ = GetTagData$(ListC$("READ", StationsList$ + NewTag$("ACTUAL", LTRIM$(STR$(opts.idxStation)))), "DATA", "")
 IF opts.scrStation THEN WHILE _UPRINTWIDTH(temp$, 8) < 400: temp$ = temp$ + " - - - - - " + temp$: WEND
 MainStationText$ = TextC$("INIT", MainTextCommon$ +_
         NewTag$("TOP", "26") +_
@@ -617,7 +646,7 @@ startPlay:
 '--- prepare args ---
 IF LEFT$(LCASE$(streamUrl$), 8) = "https://" THEN
     IF NOT opts.chgQuiet THEN
-        ok$ = MessageBox$("Error16px.png", appExeName$,_
+        ok$ = MessageBox$("", appExeName$,_
                 "This Station uses https:// connections, which is not supported.|" +_
                 "It is now changed to use a http:// connection instead. However,|" +_
                 "if it fails, then this Station is unusable and can be deleted.",_
@@ -638,7 +667,7 @@ streamFile% = FREEFILE
 stream& = _OPENCLIENT("TCP/IP:80:" + host$)
 IF stream& = 0 THEN
     ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
-    ok$ = MessageBox$("Error16px.png", appExeName$,_
+    ok$ = MessageBox$("", appExeName$,_
             "Sorry, no connection could be|established to that Station.|" +_
             "- Make sure you are online.",_
             "{IMG Error16px.png 0}Ok, got it...")
@@ -649,7 +678,7 @@ OPEN "B", streamFile%, appTempDir$ + streamName$
 '--- send request ---
 request$ = "GET " + file$ + " HTTP/1.0" + eol$ '1.0 to avoid "chunked" transfer
 request$ = request$ + "Host: " + host$ + eol$
-request$ = request$ + "User-Agent: INetRadio/1.2 (QB64-PE; GuiTools Framework;)" + eol$
+request$ = request$ + "User-Agent: INetRadio/1.3 (QB64-PE; GuiTools Framework;)" + eol$
 request$ = request$ + "Accept: audio/mpeg, audio/ogg, audio/wav, audio/x-aiff" + eol$
 request$ = request$ + "Accept-Charset: utf-8" + eol$
 request$ = request$ + "Icy-MetaData: 1" + eol$ 'https://stackoverflow.com/questions/44050266/get-info-from-streaming-radio
@@ -657,6 +686,8 @@ request$ = request$ + eol$
 PUT stream&, , request$
 '--- reset state variables ---
 received$ = "": response$ = "": metainterval& = 0: soundHandle& = 0
+metaDelay% = 0: oldFeeds$ = ""
+fadeDelay% = 0: fadeOut% = 0: fadeIn% = 0: oldLevel% = 0
 RETURN
 
 streamPlay:
@@ -672,7 +703,7 @@ ELSEIF MID$(received$, 10, 3) <> "404" AND MID$(received$, 10, 3) <> "302" AND _
         _WRITEFILE "INR-SvrRes.txt", LEFT$(received$, er% + 3)
         GOSUB togglePlayingState: GOSUB stopPlay
         ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
-        ok$ = MessageBox$("Error16px.png", appExeName$,_
+        ok$ = MessageBox$("", appExeName$,_
                 "Sorry, got a Server response which INetRadio can't handle.|" +_
                 "- See logfile INR-SvrRes.txt for response details.",_
                 "{IMG Error16px.png 0}Ok, got it...")
@@ -681,7 +712,7 @@ ELSEIF MID$(received$, 10, 3) <> "404" AND MID$(received$, 10, 3) <> "302" AND _
 ELSEIF MID$(received$, 10, 3) = "404" AND LEN(response$) = 0 THEN
     GOSUB togglePlayingState: GOSUB stopPlay
     ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
-    ok$ = MessageBox$("Error16px.png", appExeName$,_
+    ok$ = MessageBox$("", appExeName$,_
             "Sorry, that Station was not found (404).|" +_
             "- Delete it and try re-importing it.",_
             "{IMG Error16px.png 0}Ok, got it...")
@@ -702,7 +733,7 @@ ELSEIF MID$(received$, 10, 3) = "200" AND LEN(response$) = 0 THEN
         IF INSTR("audio/mpeg,audio/ogg,audio/wav,audio/x-aiff", mime$) = 0 THEN
             GOSUB togglePlayingState: GOSUB stopPlay
             ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
-            ok$ = MessageBox$("Error16px.png", appExeName$,_
+            ok$ = MessageBox$("", appExeName$,_
                     "Sorry, that Station is using an unsupported audio format.|" +_
                     "- If the Station offers multiple stream formats, then|" +_
                     "  take Mp3, Ogg, Wav or Aiff/Aifc, if available.",_
@@ -753,9 +784,25 @@ ELSEIF LEN(response$) > 0 THEN
             ste% = INSTR(st%, feeds$, "';")
             feeds$ = MID$(feeds$, st%, ste% - st%)
             IF _UPRINTWIDTH(feeds$, 8) = 0 THEN feeds$ = AnsiTextToUtf8Text$(feeds$, "Win1252")
-            AddMarkRecent feeds$
-            IF opts.scrFeeds THEN WHILE _UPRINTWIDTH(feeds$, 8) < 400: feeds$ = feeds$ + " - - - - - " + feeds$: WEND
-            ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", feeds$))
+            IF LEN(advertTxt$) > 0 THEN
+                adver$ = AnsiTextToUtf8Text$(advertTxt$, "")
+                IF INSTR(feeds$, adver$) > 0 AND INSTR(oldFeeds$, adver$) = 0 THEN
+                    IF LEN(oldFeeds$) > 0 THEN fadeDelay% = VAL(metaDelay$) - 10
+                    fadeOut% = 25
+                ELSEIF INSTR(feeds$, adver$) = 0 AND INSTR(oldFeeds$, adver$) > 0 THEN
+                    fadeDelay% = VAL(metaDelay$) + 10: fadeIn% = 25
+                END IF
+            END IF
+            IF LEN(oldFeeds$) > 0 THEN
+                IF metaDelay% <= 0 OR fadeIn% > 0 THEN metaDelay% = VAL(metaDelay$): fcBT# = TIMER(0.001): fcET# = 0
+            ELSE
+                IF LEN(advertTxt$) = 0 _ORELSE INSTR(feeds$, adver$) = 0 THEN AddMarkRecent feeds$
+                IF opts.scrFeeds THEN
+                    WHILE _UPRINTWIDTH(feeds$, 8) < 400: feeds$ = feeds$ + " - - - - - " + feeds$: WEND
+                END IF
+                ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", feeds$))
+            END IF
+            oldFeeds$ = feeds$
         END IF
         received$ = MID$(received$, metalength% + 1): RETURN
     END IF
@@ -768,6 +815,52 @@ IF soundHandle& > 0 THEN _SNDSTOP soundHandle&: _SNDCLOSE soundHandle&
 CLOSE streamFile%
 CLOSE stream&: stream& = 0
 RETURN
+
+feedsControl:
+fcRT# = TIMER(0.001) - fcBT#
+IF fcRT# < 0 THEN fcRT# = fcRT# + 86400 'midnight fix
+IF fcRT# >= 0.1# THEN 'keep fading logic low on 10 FPS
+    fcBT# = TIMER(0.001): fcET# = fcET# + (fcRT# - 0.1#)
+    IF metaDelay% > 0 THEN
+        metaDelay% = metaDelay% - 1
+        IF fcET# >= 0.1# THEN metaDelay% = metaDelay% - 1
+        IF metaDelay% <= 0 THEN
+            IF LEN(advertTxt$) = 0 _ORELSE INSTR(feeds$, adver$) = 0 THEN AddMarkRecent feeds$
+            IF opts.scrFeeds THEN
+                WHILE _UPRINTWIDTH(feeds$, 8) < 400: feeds$ = feeds$ + " - - - - - " + feeds$: WEND
+            END IF
+            ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", feeds$))
+        END IF
+    END IF
+    IF fadeDelay% > 0 THEN
+        fadeDelay% = fadeDelay% - 1
+        IF fcET# >= 0.1# THEN fadeDelay% = fadeDelay% - 1
+    ELSEIF fadeOut% > 0 THEN
+        IF oldLevel% = 0 THEN
+            oldLevel% = VAL(GetObjTagData$(MainVolumeSlider$, "LEVEL", "67"))
+            fadeLevel! = oldLevel% / 100: fadeStep! = fadeLevel! / fadeOut%
+        END IF
+        fadeLevel! = fadeLevel! - fadeStep!: fadeOut% = fadeOut% - 1
+        IF fcET# >= 0.1# THEN fadeLevel! = fadeLevel! - fadeStep!: fadeOut% = fadeOut% - 1
+        IF fadeLevel! < 0 THEN fadeLevel! = 0
+        ok$ = GenC$("SET", MainVolumeSlider$ + NewTag$("LEVEL", LTRIM$(STR$(CINT(fadeLevel! * 100)))))
+        _SNDVOL soundHandle&, fadeLevel!
+    ELSEIF fadeIn% > 0 THEN
+        IF oldLevel% > 0 THEN
+            fadeLevel! = 0: fadeStep! = (oldLevel% / 100) / fadeIn%
+            oldLevel% = -oldLevel%
+        END IF
+        fadeLevel! = fadeLevel! + fadeStep!: fadeIn% = fadeIn% - 1
+        IF fcET# >= 0.1# THEN fadeLevel! = fadeLevel! + fadeStep!: fadeIn% = fadeIn% - 1
+        IF fadeLevel! > (-oldLevel% / 100) THEN fadeLevel! = (-oldLevel% / 100)
+        ok$ = GenC$("SET", MainVolumeSlider$ + NewTag$("LEVEL", LTRIM$(STR$(CINT(fadeLevel! * 100)))))
+        _SNDVOL soundHandle&, fadeLevel!
+    ELSEIF oldLevel% < 0 THEN
+        oldLevel% = 0
+    END IF
+    IF fcET# >= 0.1# THEN fcET# = fcET# - 0.1#
+END IF
+RETURN
 '~~~~~
 '---------------------------------------------------------------------
 '~~~ My SUBs/FUNCs
@@ -777,22 +870,24 @@ RETURN
 'this function. If the method call will return any errors or warnings,
 'then these will be shown to you in a MessageBox. If no errors/warnings
 'are returned, then it will simply put through the method call's result.
-'  USAGE:  result$ = ShowErr$(AnyClassC$("ANYMETHOD", methodTags$))
+'You may also specify a description to better identify multiple checks.
+'  USAGE:  result$ = ShowErr$("desc", AnyClassC$("ANYMETHOD", methodTags$))
 'You should remove this function again, after all bugs are fixed and your
 'method calls do work properly without errors/warnings, or at least set
 'the CONST ShowErrSwitch$ right below to "OFF".
 '=====================================================================
 CONST ShowErrSwitch$ = "ON" 'ON or OFF
 '-----
-FUNCTION ShowErr$ (tagString$)
+FUNCTION ShowErr$ (desc$, tagString$)
+IF desc$ = "" THEN iDesc$ = "": ELSE iDesc$ = desc$ + "|"
 ShowErr$ = tagString$
 IF UCASE$(ShowErrSwitch$) = "ON" THEN
     IF ValidateTags%(tagString$, "ERROR", -1) THEN
-        dummy$ = MessageBox$("Error16px.png", "Error Tag",_
+        dummy$ = MessageBox$("Error16px.png", "Error Tag", iDesc$ +_
                              GetTagData$(tagString$, "ERROR", "empty"),_
                              "{IMG Error16px.png 0}Ok, got it...")
     ELSEIF ValidateTags%(tagString$, "WARNING", -1) THEN
-        dummy$ = MessageBox$("Problem16px.png", "Warning Tag",_
+        dummy$ = MessageBox$("Problem16px.png", "Warning Tag", iDesc$ +_
                              GetTagData$(tagString$, "WARNING", "empty"),_
                              "{IMG Problem16px.png 0}Ok, got it...")
     END IF
@@ -800,8 +895,8 @@ END IF
 END FUNCTION
 '-----
 SUB AddMarkRecent (entry$)
-SHARED RecentView&, RecentFile%, RecentMarked%
-SHARED RecentListWrite$, RecentListLinked$, RecentListListview$
+SHARED RecentFile%, RecentMarked%, RecentList$
+STATIC amrFirstCallDone%
 nul& = SeekBuf&(RecentFile%, 0, SBM_BufStart)
 IF entry$ = "*****" AND GetBufLen&(RecentFile%) >= 9 THEN
     tmp$ = ReadBufRawData$(RecentFile%, 7)
@@ -816,22 +911,20 @@ IF entry$ = "*****" AND GetBufLen&(RecentFile%) >= 9 THEN
 ELSEIF entry$ = "-----" THEN
     WriteBufLine RecentFile%, AnsiTextToUtf8Text$(MKI$(&HFFFF) + STRING$(32, 196), "Pc437")
 ELSEIF entry$ <> "*****" AND entry$ <> "-----" THEN
-    WriteBufLine RecentFile%, AnsiTextToUtf8Text$(LEFT$(TIME$, 5) + " " + CHR$(179) + " " + entry$, "")
+    WriteBufLine RecentFile%, AnsiTextToUtf8Text$(LEFT$(TIME$, 5) + " " + CHR$(179) + " " + entry$, "Pc437")
 END IF
-ok$ = ListC$("KILL", RecentListWrite$): RecentListWrite$ = ListC$("INIT", "")
 nul& = SeekBuf&(RecentFile%, 0, SBM_BufStart)
-WHILE NOT EndOfBuf%(RecentFile%)
-    ok$ = ListC$("STORE", RecentListWrite$ + NewTag$("DATA", ReadBufLine$(RecentFile%)))
-WEND
-IF RecentView& > 0 THEN
-    ok$ = GenC$("SET", RecentListListview$ + ListTag$(RecentListWrite$))
-    SWAP RecentListWrite$, RecentListLinked$
+IF entry$ = "*****" THEN ok$ = ListC$("DELETE", RecentList$ + NewTag$("ACTUAL", "1"))
+ok$ = ListC$("STORE", RecentList$ + NewTag$("DATA", ReadBufLine$(RecentFile%)))
+IF NOT amrFirstCallDone% THEN
+    ok$ = ListC$("DELETE", RecentList$ + NewTag$("ACTUAL", "-1"))
+    IF NOT ValidateTags%(ok$, "ERROR", -1) THEN amrFirstCallDone% = -1
 END IF
 END SUB
 '--- Function to define/return the program's version string.
 '-----
 FUNCTION VersionINetRadio$
-VersionINetRadio$ = MID$("$VER: INetRadio 1.2 (14-Aug-2025) by RhoSigma :END$", 7, 39)
+VersionINetRadio$ = MID$("$VER: INetRadio 1.3 (26-May-2026) by RhoSigma :END$", 7, 39)
 END FUNCTION
 '~~~~~
 '=====================================================================
@@ -881,7 +974,7 @@ IF appFont& > 0 THEN _FONT appFont&: ELSE _FONT 16
 'uncomment and adjust the _LOADIMAGE line below to load a specific icon,
 'otherwise the GuiTools Framework's default icon is used as embedded via
 'the GuiAppIcon.h/.bm files located in the dev_framework folder
-'newIcon& = _LOADIMAGE("QB64GuiTools\images\icons\RhoSigma32px.png", 32)
+'newIcon& = _LOADIMAGE(SearchFile$(appHomePath$, "", "radio.png"), 32)
 IF newIcon& < -1 THEN appIcon& = newIcon& 'on success override default with new one
 'IF appIcon& < -1 THEN _ICON appIcon&
 'if you rather use $EXEICON then comment out the IF appIcon& ... line above
@@ -967,7 +1060,9 @@ END SUB
 '$INCLUDE: 'inline\Error16Img.bm'
 '$INCLUDE: 'inline\Error32Img.bm'
 
+'$INCLUDE: 'inline\Add16Img.bm'
 '$INCLUDE: 'inline\Cancel16Img.bm'
+'$INCLUDE: 'inline\Import16Img.bm'
 '$INCLUDE: 'inline\BackImg.bm'
 '$INCLUDE: 'inline\MarbleImg.bm'
 '$INCLUDE: 'inline\TissueImg.bm'

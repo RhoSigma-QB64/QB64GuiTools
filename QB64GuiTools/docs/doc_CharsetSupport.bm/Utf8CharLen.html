@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Utf8CharLen</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_CharsetSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>Utf8CharLen <em>(function)</em></h2>
+<p>Returns the byte length of the first UTF-8 character in the given string.
+It checks whether the first 1-4 bytes of the given string represent a
+valid UTF-8 character and if so, return the length of the UTF-8 sequence.
+The check starts at the first byte and ends as soon a UTF-8 character
+is identified or the sequence turns out invalid. If there are less than
+four bytes in the string, then it is padded in such a way that the check
+will still work correct. That is, the padding will not randomly turn a
+invalid sequence into a valid one or vice versa.</p>
+<p>May also be used to check the validity of an entire string in a loop.
+For that pass in MID$(str,pos) and if the function's result is greater
+than zero(0), then add it to the position for the next iteration until
+the entire string is done. If the result is zero(0) in any iteration,
+then the string is no valid UTF-8 string. However, using the function
+_UPRINTWIDTH and checking for a zero(0) result to identify an invalid
+string is maybe easier than processing the entire string in a loop.
+You may pass invalid UTF-8 strings through the <a href="AnsiTextToUtf8Text.html">AnsiTextToUtf8Text$()</a>
+function to correct that.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>utf8Length% = Utf8CharLen% (utf8Char$)
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>utf8Char$ <em>(STRING)</em></h4>
+<ul>
+<li>The string to examine for the first character's length. Only the first
+four bytes are relevant for this function.</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>utf8Length% <em>(INTEGER)</em></h4>
+<ul>
+<li>
+The length of the identified UTF-8 sequence or zero, that is:
+<ul>
+<li>(0) the first four bytes of the string are no valid UTF-8 character</li>
+<li>(1) the first byte is a plain ASCII (0-127) character</li>
+<li>(2) at the first byte starts a valid 2-byte UTF-8 character</li>
+<li>(3) at the first byte starts a valid 3-byte UTF-8 character</li>
+<li>(4) at the first byte starts a valid 4-byte UTF-8 character</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_CharsetSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

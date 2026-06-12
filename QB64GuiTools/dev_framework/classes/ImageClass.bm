@@ -280,9 +280,8 @@ RETURN
 '---------------------------------------------------------------------
 meKill:
 IF ValidObject%(this&, thisTag$, ImageRes$, classID$, methodID$, tagsID$) THEN
-    '--- check use count ---
-    reco& = VAL(GetTagData$(guiObjects$(objData%, this&), "RECORDS", "0"))
-    IF reco& > 0 THEN
+    '--- check use state ---
+    IF MID$(guiObjects$(objFlags%, this&), 2, 1) = "a" THEN
         SetTag ImageRes$, "ERROR", classID$ + "::" + methodID$ + " -> object still in use"
     ELSE
         '--- 1st remove interconnections to this object ---

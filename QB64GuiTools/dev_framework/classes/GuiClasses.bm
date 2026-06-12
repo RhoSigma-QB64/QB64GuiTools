@@ -31,7 +31,7 @@
 'file KnownTags.txt). You may control the framerate of this process
 'simply by _LIMITing your main loop (50 should be enough for smooth
 'operation of the GUI). You should store the GetGUIMsg$() result into
-'a string variable and then immediatly enter an event handler as seen
+'a string variable and then immediately enter an event handler as seen
 'in GuiAppDemo.bas, which handles the received events according to your
 'needs. After that handler your main loop should be closed, hence your
 'main loop could be as simple as:
@@ -232,7 +232,7 @@ IF mi% <> 0 OR ik$ <> "" OR BoolTagTrue%(guiObjects$(0, 0), "EGRFLAG") _
     IF lastIn& > UBOUND(guiObjects$, 2) THEN lastIn& = 0
     FOR oix& = guiALBIndex& TO UBOUND(guiObjects$, 2)
         IF RIGHT$(guiObjects$(objFlags%, oix&), 1) = "u" THEN
-            IF MID$(guiObjects$(objFlags%, oix&), 2, 1) = "-" OR MID$(guiObjects$(objFlags%, oix&), 2, 1) = "p" THEN
+            IF INSTR("-p", MID$(guiObjects$(objFlags%, oix&), 2, 1)) > 0 THEN
                 IF BoolTagTrue%(guiObjects$(objData%, oix&), "FOCUS") AND _
                    VAL(GetTagData$(guiObjects$(objData%, oix&), "GUIVIEW", "0")) = vix& THEN
                     SetTag mess$, "MOUSEOVER", LTRIM$(STR$(oix&))
@@ -276,8 +276,10 @@ UpdateGuiViews: _AUTODISPLAY
 '--- save (new) historic data ---
 guiObjects$(0, 0) = GetTags$(mess$, "MOUSEX,MOUSEY,MOUSELB,MOUSERB,MOUSEMB,GUIVIEW,IMMFLAG")
 RemTags mess$, "GUIVIEW,IMMFLAG"
-IF _SCREENX <> -32000 AND _SCREENY <> -32000 THEN 'minimized?
-    guiWinX% = _SCREENX: guiWinY% = _SCREENY
+IF appScreen& < -1 THEN
+    IF _SCREENX <> -32000 AND _SCREENY <> -32000 THEN 'minimized?
+        guiWinX% = _SCREENX: guiWinY% = _SCREENY
+    END IF
 END IF
 ggmSetResultAndExit:
 GetGUIMsg$ = mess$
@@ -528,6 +530,16 @@ PRINT #ff%, "'Views: [00] - index of view, 0 = no view (implies main program win
 PRINT #ff%, "'       [ih] - child objects do inherit the view from its parent object"
 PRINT #ff%, "'       [--] - non-visible & empty objects don't have a view assignment"
 PRINT #ff%, "'"
+PRINT #ff%, "'Flags: [123] - pos. 1 = - or d, whether the object supports the DRAW method"
+PRINT #ff%, "'             - pos. 2 = mutually exclusive conditions"
+PRINT #ff%, "'                        - = generic user created objects"
+PRINT #ff%, "'                        a = currently assigned ListC, ImageC or SymbolC objects"
+PRINT #ff%, "'                        b = currently set backfill image for the respective view"
+PRINT #ff%, "'                        c = internally created/used child objects"
+PRINT #ff%, "'                        i = user created ModelC objects (interconnections)"
+PRINT #ff%, "'                        p = user created objects placed on a PagerC object"
+PRINT #ff%, "'             - pos. 3 = - or u, whether the object supports the UPDATE method"
+PRINT #ff%, "'"
 PRINT #ff%, "'Object -- View -- Type/Flags --  --  -- Properties"
 PRINT #ff%, "'"; STRING$(75, "-")
 FOR oix& = 1 TO UBOUND(guiObjects$, 2)
@@ -539,7 +551,7 @@ FOR oix& = 1 TO UBOUND(guiObjects$, 2)
     ELSE
         dat$ = guiObjects$(objData%, oix&): flg$ = guiObjects$(objFlags%, oix&)
         gvi$ = GetTagData$(ExtractTag$(dat$, "GUIVIEW"), "GUIVIEW", "0")
-        IF MID$(flg$, 2, 1) = "c" THEN gvi$ = "ih"
+        IF INSTR("ac", MID$(flg$, 2, 1)) > 0 THEN gvi$ = "ih"
         IF LEFT$(typ$, 5) = "ListC" OR typ$ = "ModelC" THEN gvi$ = "--"
         PRINT #ff%, "["; RIGHT$("00" + gvi$, 2); "] - ";
         PRINT #ff%, "["; RIGHT$(SPACE$(13) + typ$, 13); "/"; flg$; "] - ";: nlf% = 0
@@ -989,23 +1001,18 @@ IF this& < 1 OR this& > UBOUND(guiObjects$, 2) THEN
     END IF
 ELSE
     objectID$ = guiObjects$(objType%, this&)
-    IF classID$ <> "GenC" AND objectID$ = "ListC" AND MID$(guiObjects$(objFlags%, this&), 2, 1) = "c" AND _
-       GetTag$(guiObjects$(objData%, this&), "REFOBJ") <> GetTag$(tagsID$, "REFOBJ") THEN
-        SetTag classRes$, "ERROR", classID$ + "::" + methodID$ + " -> not allowed on multiple choice list"
-    ELSE
-        IF objectID$ <> classID$ AND classID$ <> "GenC" THEN
-            IF objectID$ = "" THEN
-                SetTag classRes$, "ERROR", classID$ + "::" + methodID$ + " -> undefined object"
-            ELSE
-                SetTag classRes$, "ERROR", classID$ + "::" + methodID$ + " -> wrong object type"
-            END IF
+    IF objectID$ <> classID$ AND classID$ <> "GenC" THEN
+        IF objectID$ = "" THEN
+            SetTag classRes$, "ERROR", classID$ + "::" + methodID$ + " -> undefined object"
         ELSE
-            IF MID$(guiObjects$(objFlags%, this&), 2, 1) <> "c" THEN
-                SourceDestGuiView VAL(GetTagData$(guiObjects$(objData%, this&), "GUIVIEW", "0"))
-            END IF
-            thisTag$ = GetTag$(tagsID$, "OBJECT")
-            ValidObject% = -1
+            SetTag classRes$, "ERROR", classID$ + "::" + methodID$ + " -> wrong object type"
         END IF
+    ELSE
+        IF INSTR("-bp", MID$(guiObjects$(objFlags%, this&), 2, 1)) > 0 THEN 'only main objects
+            SourceDestGuiView VAL(GetTagData$(guiObjects$(objData%, this&), "GUIVIEW", "0"))
+        END IF
+        thisTag$ = GetTag$(tagsID$, "OBJECT")
+        ValidObject% = -1
     END IF
 END IF
 END FUNCTION
@@ -1610,6 +1617,7 @@ ELSE
 END IF
 '--- cleanup ---
 CLOSE iff%
+IF sm% THEN _DELAY 0.15
 UnlockMutex mtx%&
 ERASE winp
 END SUB
@@ -1673,7 +1681,8 @@ ELSE
         SetTag classRes$, "ERROR", classID$ + "::" + methodID$ + " -> given LISTOBJECT = wrong object type"
         flag% = -1
     ELSE
-        IF MID$(guiObjects$(objFlags%, lobj&), 2, 1) = "c" THEN
+        IF MID$(guiObjects$(objFlags%, lobj&), 2, 1) = "a" AND _
+           VAL(GetTagData$(guiObjects$(objData%, lobj&), "REFOBJ", "0")) <> this& THEN
             SetTag classRes$, "ERROR", classID$ + "::" + methodID$ + " -> given LISTOBJECT = list already in use"
             flag% = -1
         ELSE
@@ -1689,13 +1698,12 @@ ELSE
                     actu& = 1
                 END IF
                 resu$ = ListC$("SET", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("ACTUAL", LTRIM$(STR$(actu&))))
-                MID$(guiObjects$(objFlags%, lobj&), 2, 1) = "c"
-                SetTag guiObjects$(objData%, lobj&), "REFOBJ", LTRIM$(STR$(this&))
-                RemTag guiObjects$(objData%, lobj&), "REVERSE" 'make sure list is read forward
                 IF methodID$ = "Set" THEN
                     KillAssignedList this& '1st release old list
                     SetTag guiObjects$(objData%, this&), "LISTOBJECT", LTRIM$(STR$(lobj&)) 'then set new
                 END IF
+                MID$(guiObjects$(objFlags%, lobj&), 2, 1) = "a"
+                SetTag guiObjects$(objData%, lobj&), "REFOBJ", LTRIM$(STR$(this&))
             END IF
         END IF
     END IF
@@ -1821,7 +1829,7 @@ IF temp$ <> "n/a" THEN
                 SetTag classRes$, "WARNING", classID$ + "::" + methodID$ + " -> cannot assign STANDALONE " + object$
                 flag% = -1
             ELSE
-                MID$(guiObjects$(objFlags%, obje&), 2, 1) = "c"
+                MID$(guiObjects$(objFlags%, obje&), 2, 1) = "a"
                 SetTag guiObjects$(objData%, obje&), "RECORDS", LTRIM$(STR$(VAL(GetTagData$(guiObjects$(objData%, obje&), "RECORDS", "0")) + 1))
             END IF
         END IF
@@ -1899,7 +1907,7 @@ IF temp$ <> "n/a" THEN
         END IF
     END IF
     IF obje& > 0 THEN
-        MID$(guiObjects$(objFlags%, obje&), 2, 1) = "c"
+        MID$(guiObjects$(objFlags%, obje&), 2, 1) = "a"
         SetTag guiObjects$(objData%, obje&), "RECORDS", LTRIM$(STR$(VAL(GetTagData$(guiObjects$(objData%, obje&), "RECORDS", "0")) + 1))
         SetTag guiObjects$(objData%, this&), typeTag$, LTRIM$(STR$(obje&))
     ELSE

@@ -115,10 +115,10 @@ ELSE
             BeginChildInit
             priw% = 0: lobj& = VAL(GetTagData$(tagsID$, "LISTOBJECT", "0"))
             reco& = VAL(GetTagData$(guiObjects$(objData%, lobj&), "RECORDS", "0"))
-            FOR i% = 1 TO reco&
-                temp% = _PRINTWIDTH(GetTagData$(ListC$("READ", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("REFOBJ", LTRIM$(STR$(this&)))), "DATA", ""))
+            FOR i& = 1 TO reco&
+                temp% = _PRINTWIDTH(GetTagData$(ListC$("READ", NewTag$("OBJECT", LTRIM$(STR$(lobj&)))), "DATA", ""))
                 IF temp% > priw% THEN priw% = temp%
-            NEXT i%
+            NEXT i&
             spac% = VAL(GetTagData$(tagsID$, "SPACING", "5"))
             IF LCASE$(GetTagData$(tagsID$, "TEXTPLACE", "right")) = "right" THEN dire% = 1: ELSE dire% = -1
             leto$ = NewTag$("LEFT", LTRIM$(STR$(dire% * -widt%))) + NewTag$("TOP", LTRIM$(STR$(-widt%)))
@@ -177,7 +177,7 @@ IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
                 IF actu& = 0 THEN temp$ = "0"
                 actu& = 1
             END IF
-            resu$ = ListC$("SET", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("ACTUAL", LTRIM$(STR$(actu&))))
+            resu$ = ListC$("SET", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("ACTUAL", LTRIM$(STR$(actu&))))
             SetTag guiObjects$(objData%, this&), "ACTUAL", temp$
             flag% = -1
         END IF
@@ -209,7 +209,7 @@ RETURN
 meGet:
 IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
     '--- get the requested tags ---
-    reco$ = ListC$("READ", ObjectTag$(guiObjects$(objData%, this&), "LISTOBJECT") + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
+    reco$ = ListC$("READ", ObjectTag$(guiObjects$(objData%, this&), "LISTOBJECT") + NewTag$("HOLD", "true") + GetTag$(guiObjects$(objData%, this&), "ACTUAL"))
     IF ValidateTags%(reco$, "ERROR", 0) THEN reco$ = ""
     temp$ = GetTagData$(tagsID$, "TAGNAMES", "n/a")
     IF temp$ <> "n/a" THEN
@@ -263,17 +263,17 @@ IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
     resu$ = FrameC$("DRAW", ObjectTag$(guiObjects$(objData%, this&), "FRM0") + GetTags$(guiObjects$(objData%, this&), "LEFT,TOP"))
     '--- draw radio buttons ---
     priw% = 0
-    FOR i% = 1 TO reco&
+    FOR i& = 1 TO reco&
         shin% = guiShinePen%: shad% = guiShadowPen%: lamp% = guiBackPen%: focu% = guiHighPen%
-        IF i% = actu& THEN SWAP shin%, shad%: lamp% = guiFillPen%: focu% = guiFillTextPen%
+        IF i& = actu& THEN SWAP shin%, shad%: lamp% = guiFillPen%: focu% = guiFillTextPen%
         radi% = widt% \ 2: GOSUB meDrawButt
-        IF i% = VAL(GetTagData$(guiObjects$(objData%, this&), "FOCUS", "0")) THEN
-            CIRCLE (left%, topp% + ((i% - 1) * dist%)), (widt% \ 2) - 3, focu%
-            CIRCLE (left%, topp% + ((i% - 1) * dist%)), (widt% \ 2) - 4, focu%
-            BrightenObjectBG this&, left% - (widt% \ 2), topp% + ((i% - 1) * dist%) - (widt% \ 2), widt% + 1, widt% + 1
+        IF i& = VAL(GetTagData$(guiObjects$(objData%, this&), "FOCUS", "0")) THEN
+            CIRCLE (left%, topp% + ((i& - 1) * dist%)), (widt% \ 2) - 3, focu%
+            CIRCLE (left%, topp% + ((i& - 1) * dist%)), (widt% \ 2) - 4, focu%
+            BrightenObjectBG this&, left% - (widt% \ 2), topp% + ((i& - 1) * dist%) - (widt% \ 2), widt% + 1, widt% + 1
         END IF
         '--- text label ---
-        reco$ = ListC$("READ", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("REFOBJ", LTRIM$(STR$(this&))) + NewTag$("HOLD", "true") + NewTag$("ACTUAL", LTRIM$(STR$(i%))))
+        reco$ = ListC$("READ", NewTag$("OBJECT", LTRIM$(STR$(lobj&))) + NewTag$("HOLD", "true") + NewTag$("ACTUAL", LTRIM$(STR$(i&))))
         text$ = GetTagData$(reco$, "DATA", "n/a")
         IF text$ <> "n/a" THEN
             text$ = LTRIM$(RTRIM$(text$))
@@ -285,11 +285,11 @@ IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
                 CASE "left"
                     dire% = -1
                     txle% = (left% - (widt% \ 2)) - temp% - 6
-                    txto% = topp% + ((i% - 1) * dist%) - INT(_FONTHEIGHT / 2) + 1
+                    txto% = topp% + ((i& - 1) * dist%) - INT(_FONTHEIGHT / 2) + 1
                 CASE "right"
                     dire% = 1
                     txle% = (left% + (widt% \ 2)) + 6
-                    txto% = topp% + ((i% - 1) * dist%) - INT(_FONTHEIGHT / 2) + 1
+                    txto% = topp% + ((i& - 1) * dist%) - INT(_FONTHEIGHT / 2) + 1
             END SELECT
             prim% = _PRINTMODE
             SetPrintMode pmKEEP%
@@ -297,7 +297,7 @@ IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
             _PRINTSTRING (txle% + 1 + xmov%, txto% + 1 + ymov%), text$
             SetPrintMode prim%
         END IF
-    NEXT i%
+    NEXT i&
     '--- label output ---
     llft% = left% + (dire% * -widt%): ltop% = topp% - widt%
     lwid% = (2 * widt%) + priw% + 6: lhei% = (reco& * dist%) - spac% + widt%
@@ -332,7 +332,7 @@ meDrawCirc:
 FOR angl! = sang% TO eang% STEP 1.25
     xpos% = CINT(radi% * COS(0.017453292519943 * angl!))
     ypos% = CINT(radi% * SIN(0.017453292519943 * angl!))
-    PSET (left% + xpos%, topp% + ((i% - 1) * dist%) - ypos%), colo%
+    PSET (left% + xpos%, topp% + ((i& - 1) * dist%) - ypos%), colo%
 NEXT angl!
 RETURN
 '---------------------------------------------------------------------
@@ -372,10 +372,10 @@ IF ValidObject%(this&, thisTag$, RadioRes$, classID$, methodID$, tagsID$) THEN
     '--- check for mouse trigger ---
     IF moux% >= (left% - (widt% \ 2) - 2) AND moux% < (left% + (widt% \ 2) + 2) AND mouy% >= (topp% - (widt% \ 2) - 2) AND mouy% < (topp% - (widt% \ 2) + (reco& * dist%) - spac% + 2) THEN
         sval% = 32765: fbut% = 0
-        FOR i% = 1 TO reco&
-            sdis% = CartToPolR!(moux% - left%, (topp% + ((i% - 1) * dist%)) - mouy%)
-            IF sdis% < sval% THEN sval% = sdis%: fbut% = i%
-        NEXT i%
+        FOR i& = 1 TO reco&
+            sdis% = CartToPolR!(moux% - left%, (topp% + ((i& - 1) * dist%)) - mouy%)
+            IF sdis% < sval% THEN sval% = sdis%: fbut% = i&
+        NEXT i&
         SetTag guiObjects$(objData%, this&), "FOCUS", LTRIM$(STR$(fbut%))
         IF BoolTagTrue%(tagsID$, "MOUSELBDOWN") THEN
             SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(fbut%))

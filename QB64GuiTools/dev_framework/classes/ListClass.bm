@@ -55,10 +55,15 @@
 '           from the INIT method call becomes invalid after calling
 '           this method. Note that deleting a list object will also
 '           delete any remaining records in the list.
+'            Note that you cannot KILL a list object while it is still
+'           assigned to a multiple choice object, ie. the multiple choice
+'           object must be either killed first or you must assign another
+'           list, so that the list you wanna KILL is released.
 '
-'  STORE -- Store a new record in the given list object. If sorting is
-'           active, then the new record will be enqueued accordingly,
-'           otherwise the new record is inserted right after the selected
+'  STORE -- Store a new record in the given list object. The new record
+'           will be enqueued according to the list its sort mode given at
+'           INIT time (SORT tag). If explicitly "none" was specified, then
+'           the new record is inserted right after the currently selected
 '           record (if ACTUAL tag is given, then first adjust the selected
 '           record accordingly). The selected record (ACTUAL tag) will be
 '           adjusted, if this is required according to the insert position.
@@ -94,8 +99,13 @@
 ' DELETE -- Delete the selected record (if ACTUAL tag is given, then first
 '           adjust the selected record accordingly). Following remaining
 '           records are moved up to fill the gap. The selected record
-'           (ACTUAL tag) is only adjusted when deleting the last (bottom)
-'           record in list.
+'           (ACTUAL tag) is only adjusted when deleting the last record
+'           in a list (ie. the record in the bottom/tail position).
+'            Note that you cannot DELETE, if only one record remains in
+'           the list and the list object is still assigned to a multiple
+'           choice object, ie. the multiple choice object must be either
+'           killed first or you must assign another list, so that the list
+'           you wanna empty out is released.
 '---------------------------------------------------------------------
 FUNCTION ListC$ (method$, tagString$)
 ListRes$ = ""
@@ -249,17 +259,22 @@ RETURN
 '---------------------------------------------------------------------
 meKill:
 IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
-    '--- 1st remove interconnections to this object ---
-    KillInterconnections this&
-    '--- delete remaining records ---
-    DO
-        resu$ = ListC$("DELETE", thisTag$ + GetTag$(tagsID$, "REFOBJ"))
-    LOOP WHILE resu$ = ""
-    '--- then delete the list object ---
-    guiObjects$(objData%, this&) = ""
-    guiObjects$(objType%, this&) = ""
-    guiObjects$(objFlags%, this&) = ""
-    guiObjects$(objConn%, this&) = ""
+    '--- check use state ---
+    IF MID$(guiObjects$(objFlags%, this&), 2, 1) = "a" THEN
+        SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> object still in use"
+    ELSE
+        '--- 1st remove interconnections to this object ---
+        KillInterconnections this&
+        '--- delete remaining records ---
+        DO
+            resu$ = ListC$("DELETE", thisTag$)
+        LOOP WHILE resu$ = ""
+        '--- then delete the list object ---
+        guiObjects$(objData%, this&) = ""
+        guiObjects$(objType%, this&) = ""
+        guiObjects$(objFlags%, this&) = ""
+        guiObjects$(objConn%, this&) = ""
+    END IF
 END IF
 RETURN
 '---------------------------------------------------------------------
@@ -272,11 +287,18 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
         '--- adjust actual position ---
         temp$ = GetTag$(tagsID$, "ACTUAL")
         IF temp$ <> "" THEN
-            resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$ + GetTag$(tagsID$, "REFOBJ")), "WARNING", "n/a")
+            resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$), "WARNING", "n/a")
             IF resu$ <> "n/a" THEN 'remap error + exit
                 SetTag ListRes$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
                 RETURN
             END IF
+        END IF
+        '--- check multiple choice conditions ---
+        refo& = VAL(GetTagData$(guiObjects$(objData%, this&), "REFOBJ", "0"))
+        reft$ = "": IF refo& > 0 THEN reft$ = guiObjects$(objType%, refo&)
+        IF reft$ = "RadioC" THEN
+            SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> cannot change RadioC assigned list"
+            RETURN
         END IF
         '--- init new record ---
         stor& = NewObject&
@@ -303,6 +325,7 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
         prev& = VAL(GetTagData$(guiObjects$(objData%, this&), "CURRENT", "0"))
         node& = VAL(GetTagData$(guiObjects$(objData%, prev&), "NEXT", "0"))
         sort$ = LCASE$(GetTagData$(guiObjects$(objData%, this&), "SORT", "fifo"))
+        head% = 0: tail% = 0 'flags for later multi-choice adjustments
         IF sort$ = "fifo" OR sort$ = "none" OR reco& = 0 THEN
             '--- no real sort or first record ---
             IF sort$ = "fifo" OR reco& = 0 OR node& = 0 THEN
@@ -313,8 +336,11 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
                     SetTag guiObjects$(objData%, this&), "ACTUAL", "1"
                 END IF
             ELSE
-                GOSUB meInsert
+                GOSUB meInsert: ipos& = actu& 'insert ACTUAL for multi-choice adjustments
             END IF
+        ELSEIF sort$ = "lifo" THEN
+            GOSUB meAddHead
+            SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu& + 1))
         ELSE
             '--- sort by alphabet or numbers ---
             ndat$ = UCASE$(GetTagData$(guiObjects$(objData%, stor&), "DATA", ""))
@@ -323,16 +349,14 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
             IF sort$ = "alphabet" THEN less% = (ndat$ < odat$): ELSE less% = (VAL(ndat$) < VAL(odat$))
             IF less% THEN
                 '--- special case, new record becomes first ---
-                SetTag guiObjects$(objData%, this&), "FIRST", LTRIM$(STR$(stor&))
-                SetTag guiObjects$(objData%, stor&), "PREVIOUS", "0"
-                SetTag guiObjects$(objData%, stor&), "NEXT", LTRIM$(STR$(node&))
-                SetTag guiObjects$(objData%, node&), "PREVIOUS", LTRIM$(STR$(stor&))
+                GOSUB meAddHead
                 SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu& + 1))
             ELSE
                 '--- enqueue new record, use FIFO for equals ---
-                addi% = 1
+                addi% = 1: ipos& = 0
                 curr& = VAL(GetTagData$(guiObjects$(objData%, this&), "CURRENT", "0"))
                 DO
+                    ipos& = ipos& + 1 'counts real insert ACTUAL for multi-choice adjustments
                     prev& = node&: IF prev& = curr& THEN addi% = 0
                     node& = VAL(GetTagData$(guiObjects$(objData%, prev&), "NEXT", "0"))
                     IF node& = 0 THEN EXIT DO
@@ -348,8 +372,29 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
             END IF
         END IF
         SetTag guiObjects$(objData%, this&), "RECORDS", LTRIM$(STR$(reco& + 1))
+        '--- update assigned multiple choice object (if any) ---
+        IF MID$(guiObjects$(objFlags%, this&), 2, 1) = "a" THEN
+            refa& = VAL(GetTagData$(guiObjects$(objData%, refo&), "ACTUAL", "0"))
+            IF head% OR (refa& > ipos& AND (NOT tail%)) THEN
+                refa& = refa& + 1
+            END IF
+            save$ = guiObjects$(objData%, this&)
+            resu$ = GenC$("SET", NewTag$("OBJECT", LTRIM$(STR$(refo&))) +_
+                                 NewTag$("ACTUAL", LTRIM$(STR$(refa&))) +_
+                                 NewTag$("LISTOBJECT", LTRIM$(STR$(this&))))
+            guiObjects$(objData%, this&) = save$
+        END IF
     END IF
 END IF
+RETURN
+'----------------------------------
+meAddHead:
+head% = -1
+node& = VAL(GetTagData$(guiObjects$(objData%, this&), "FIRST", "0"))
+SetTag guiObjects$(objData%, this&), "FIRST", LTRIM$(STR$(stor&))
+SetTag guiObjects$(objData%, stor&), "PREVIOUS", "0"
+SetTag guiObjects$(objData%, stor&), "NEXT", LTRIM$(STR$(node&))
+SetTag guiObjects$(objData%, node&), "PREVIOUS", LTRIM$(STR$(stor&))
 RETURN
 '----------------------------------
 meInsert:
@@ -360,6 +405,7 @@ SetTag guiObjects$(objData%, node&), "PREVIOUS", LTRIM$(STR$(stor&))
 RETURN
 '----------------------------------
 meAddTail:
+tail% = -1
 prev& = VAL(GetTagData$(guiObjects$(objData%, this&), "LAST", "0"))
 SetTag guiObjects$(objData%, prev&), "NEXT", LTRIM$(STR$(stor&))
 SetTag guiObjects$(objData%, stor&), "PREVIOUS", LTRIM$(STR$(prev&))
@@ -372,7 +418,7 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- adjust actual position ---
     temp$ = GetTag$(tagsID$, "ACTUAL")
     IF temp$ <> "" THEN
-        resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$ + GetTag$(tagsID$, "REFOBJ")), "WARNING", "n/a")
+        resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$), "WARNING", "n/a")
         IF resu$ <> "n/a" THEN 'remap error + exit
             SetTag ListRes$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
             RETURN
@@ -401,7 +447,7 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- adjust read position/direction ---
     temp$ = GetTags$(tagsID$, "ACTUAL,REVERSE")
     IF temp$ <> "" THEN
-        resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$ + GetTag$(tagsID$, "REFOBJ")), "WARNING", "n/a")
+        resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$), "WARNING", "n/a")
         IF resu$ <> "n/a" THEN 'remap error + exit
             SetTag ListRes$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
             RETURN
@@ -501,7 +547,7 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- adjust actual position ---
     temp$ = GetTag$(tagsID$, "ACTUAL")
     IF temp$ <> "" THEN
-        resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$ + GetTag$(tagsID$, "REFOBJ")), "WARNING", "n/a")
+        resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$), "WARNING", "n/a")
         IF resu$ <> "n/a" THEN 'remap error + exit
             SetTag ListRes$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
             RETURN
@@ -519,17 +565,17 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
         temp$ = UCASE$(LTRIM$(RTRIM$(temp$)))
         IF LEFT$(temp$, 1) = "," THEN temp$ = MID$(temp$, 2)
         IF RIGHT$(temp$, 1) <> "," THEN temp$ = temp$ + ","
-        ket% = 0
+        ket& = 0
         DO
-            bra% = ket% + 1
-            ket% = INSTR(bra%, temp$, ",")
-            IF ket% > bra% THEN
-                utag$ = LTRIM$(RTRIM$(MID$(temp$, bra%, ket% - bra%)))
+            bra& = ket& + 1
+            ket& = INSTR(bra&, temp$, ",")
+            IF ket& > bra& THEN
+                utag$ = LTRIM$(RTRIM$(MID$(temp$, bra&, ket& - bra&)))
                 IF utag$ <> "" THEN
                     IF utag$ <> "DATA" THEN RemTag guiObjects$(objData%, stor&), utag$
                 END IF
             END IF
-        LOOP WHILE ket% > 0
+        LOOP WHILE ket& > 0
     END IF
 END IF
 RETURN
@@ -539,7 +585,7 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- adjust actual position ---
     temp$ = GetTag$(tagsID$, "ACTUAL")
     IF temp$ <> "" THEN
-        resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$ + GetTag$(tagsID$, "REFOBJ")), "WARNING", "n/a")
+        resu$ = GetTagData$(ListC$("SET", thisTag$ + temp$), "WARNING", "n/a")
         IF resu$ <> "n/a" THEN 'remap error + exit
             SetTag ListRes$, "ERROR", LEFT$(resu$, 7) + methodID$ + MID$(resu$, 11)
             RETURN
@@ -548,7 +594,15 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     '--- remove current record from list ---
     actu& = VAL(GetTagData$(guiObjects$(objData%, this&), "ACTUAL", "0"))
     reco& = VAL(GetTagData$(guiObjects$(objData%, this&), "RECORDS", "0"))
-    IF reco& = 0 THEN
+    refo& = VAL(GetTagData$(guiObjects$(objData%, this&), "REFOBJ", "0"))
+    reft$ = "": IF refo& > 0 THEN reft$ = guiObjects$(objType%, refo&)
+    IF reft$ = "RadioC" THEN
+        SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> cannot change RadioC assigned list"
+        RETURN
+    ELSEIF reco& = 1 AND refo& > 0 THEN
+        SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> cannot empty assigned list (record kept)"
+        RETURN
+    ELSEIF reco& = 0 THEN
         SetTag ListRes$, "ERROR", classID$ + "::" + methodID$ + " -> no records (list empty)"
         RETURN
     END IF
@@ -572,7 +626,21 @@ IF ValidObject%(this&, thisTag$, ListRes$, classID$, methodID$, tagsID$) THEN
     END IF
     SetTag guiObjects$(objData%, this&), "RECORDS", LTRIM$(STR$(reco& - 1))
     IF VAL(succ$) = 0 THEN SetTag guiObjects$(objData%, this&), "ACTUAL", LTRIM$(STR$(actu& - 1))
-    '--- check for assigned Symbol/Image ---
+    '--- update assigned multiple choice object (if any) ---
+    IF MID$(guiObjects$(objFlags%, this&), 2, 1) = "a" THEN
+        refa& = VAL(GetTagData$(guiObjects$(objData%, refo&), "ACTUAL", "0"))
+        IF refa& = actu& THEN
+            IF reft$ = "CycleC" THEN refa& = 1: ELSE refa& = 0
+        ELSEIF refa& > actu& THEN
+            refa& = refa& - 1
+        END IF
+        save$ = guiObjects$(objData%, this&)
+        resu$ = GenC$("SET", NewTag$("OBJECT", LTRIM$(STR$(refo&))) +_
+                             NewTag$("ACTUAL", LTRIM$(STR$(refa&))) +_
+                             NewTag$("LISTOBJECT", LTRIM$(STR$(this&))))
+        guiObjects$(objData%, this&) = save$
+    END IF
+    '--- check removed record for assigned Symbol/Image ---
     KillAssignedImgSym stor&, "SYMBOLOBJECT"
     KillAssignedImgSym stor&, "IMAGEOBJECT"
     '--- finally delete record ---

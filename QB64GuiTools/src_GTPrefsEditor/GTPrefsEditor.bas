@@ -234,6 +234,7 @@ IF num% < 60 THEN
         pff% = SafeOpenFile%("B", appLocalDir$ + "gtprefs.bin")
         PUT pff%, 51, ac% 'current accessor count
         CLOSE pff%
+        _DELAY 0.1
         UnlockMutex mtx%&
     END IF
 END IF
@@ -1113,10 +1114,12 @@ IF section$ <> "Global.Colors" THEN
             fsDir$ = LEFT$(fsDir$, sPo% - 1)
         ELSE
             fsFile$ = fsDir$
-            IF _FILEEXISTS("qb64.exe") OR _FILEEXISTS("qb64pe.exe") THEN
+            IF _FILEEXISTS(FileNamePart$(appExeName$) + ".bas") THEN
+                fsDir$ = "..\images\patterns"
+            ELSEIF _FILEEXISTS("qb64pe.exe") OR _FILEEXISTS("qb64.exe") THEN
                 fsDir$ = "QB64GuiTools\images\patterns"
             ELSE
-                fsDir$ = "..\images\patterns"
+                fsDir$ = ""
             END IF
         END IF
     END IF
@@ -1147,22 +1150,24 @@ RETURN
 'this function. If the method call will return any errors or warnings,
 'then these will be shown to you in a MessageBox. If no errors/warnings
 'are returned, then it will simply put through the method call's result.
-'  USAGE:  result$ = ShowErr$(AnyClassC$("ANYMETHOD", methodTags$))
+'You may also specify a description to better identify multiple checks.
+'  USAGE:  result$ = ShowErr$("desc", AnyClassC$("ANYMETHOD", methodTags$))
 'You should remove this function again, after all bugs are fixed and your
 'method calls do work properly without errors/warnings, or at least set
 'the CONST ShowErrSwitch$ right below to "OFF".
 '=====================================================================
 CONST ShowErrSwitch$ = "ON" 'ON or OFF
 '-----
-FUNCTION ShowErr$ (tagString$)
+FUNCTION ShowErr$ (desc$, tagString$)
+IF desc$ = "" THEN iDesc$ = "": ELSE iDesc$ = desc$ + "|"
 ShowErr$ = tagString$
 IF UCASE$(ShowErrSwitch$) = "ON" THEN
     IF ValidateTags%(tagString$, "ERROR", -1) THEN
-        dummy$ = MessageBox$("Error16px.png", "Error Tag",_
+        dummy$ = MessageBox$("Error16px.png", "Error Tag", iDesc$ +_
                              GetTagData$(tagString$, "ERROR", "empty"),_
                              "{IMG Error16px.png 0}Ok, got it...")
     ELSEIF ValidateTags%(tagString$, "WARNING", -1) THEN
-        dummy$ = MessageBox$("Problem16px.png", "Warning Tag",_
+        dummy$ = MessageBox$("Problem16px.png", "Warning Tag", iDesc$ +_
                              GetTagData$(tagString$, "WARNING", "empty"),_
                              "{IMG Problem16px.png 0}Ok, got it...")
     END IF
@@ -1207,6 +1212,7 @@ ELSE
 END IF
 '--- cleanup ---
 CLOSE iff%
+_DELAY 0.1
 UnlockMutex mtx%&
 END SUB
 '----------------------------------
@@ -1239,6 +1245,7 @@ END IF
 PUT iff%, ptr&, opts
 '--- cleanup ---
 CLOSE iff%
+_DELAY 0.1
 UnlockMutex mtx%&
 END SUB
 '----------------------------------

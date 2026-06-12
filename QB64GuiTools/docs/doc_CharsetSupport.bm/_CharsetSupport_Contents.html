@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>_CharsetSupport_Contents</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<pre><code>'+---------------+---------------------------------------------------+
+'| ###### ###### |     .--. .         .-.                            |
+'| ##  ## ##   # |     |   )|        (   ) o                         |
+'| ##  ##  ##    |     |--' |--. .-.  `-.  .  .-...--.--. .-.        |
+'| ######   ##   |     |  \ |  |(   )(   ) | (   ||  |  |(   )       |
+'| ##      ##    |     '   `'  `-`-'  `-'-' `-`-`|'  '  `-`-'`-      |
+'| ##     ##   # |                            ._.'                   |
+'| ##     ###### | Sources &amp; Documents placed under the MIT License. |
+'+---------------+---------------------------------------------------+
+'|                                                                   |
+'| === CharsetSupport.bm ===                                         |
+'|                                                                   |
+'| == This include file is part of the GuiTools Framework Project.   |
+'| == It provides some useful SUBs/FUNCTIONs for codepage switching  |
+'| == and ANSI to UTF-8 conversion.                                  |
+'|                                                                   |
+'+-------------------------------------------------------------------+
+'| Done by RhoSigma, R.Heyder, provided AS IS, use at your own risk. |
+'| Find me in the QB64 Forum or mail to support@rhosigma-cw.net for  |
+'| any questions or suggestions. Thanx for your interest in my work. |
+'+-------------------------------------------------------------------+
+</code></pre>
+
+<h1>Codepage switching &amp; UTF-8 generator</h1>
+<hr />
+<blockquote>
+<p><em>This library is for foreign QB64 users who need to use another codepage
+than the standard Pc437. While it's easy to switch the IDE codepage in the
+options, the made programs must always manually remap all 128 codepoints.
+This library provides a simple routine to perform the switch and do all
+required unicode remapping. The library also has various functions to
+convert any text or unicode sequences to UTF-8, ready to be used with
+QB64-PE's _UPRINT... functions.</em></p>
+</blockquote>
+<hr />
+<h3><u>Table of Contents</u></h3>
+<blockquote>
+<p><strong><em>CODEPAGE SWITCHING</em></strong></p>
+</blockquote>
+<ul>
+<li>
+<a href="SetAnsiCodepage.html">SetAnsiCodepage</a>
+<ul>
+<li>set a new codepage and do required remapping</li>
+</ul>
+</li>
+<li>
+<a href="GetAnsiCodepage.html">GetAnsiCodepage$</a>
+<ul>
+<li>return the currently active codepage name</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p><strong><em>UNICODE CONVERSION</em></strong></p>
+</blockquote>
+<ul>
+<li>
+<a href="UnicodeToUtf8Char.html">UnicodeToUtf8Char$</a>
+<ul>
+<li>convert a single unicode into UTF-8 notation</li>
+</ul>
+</li>
+<li>
+<a href="Utf8CharLen.html">Utf8CharLen</a>
+<ul>
+<li>determine the byte length of a UTF-8 char</li>
+</ul>
+</li>
+<li>
+<a href="UnicodeStringToUtf8Text.html">UnicodeStringToUtf8Text$</a>
+<ul>
+<li>convert a string of unicodes into UTF-8 text</li>
+</ul>
+</li>
+<li>
+<a href="UnicodeArrayToUtf8Text.html">UnicodeArrayToUtf8Text$</a>
+<ul>
+<li>convert an array of unicodes into UTF-8 text</li>
+</ul>
+</li>
+<li>
+<a href="UnicodeDataToUtf8Text.html">UnicodeDataToUtf8Text$</a>
+<ul>
+<li>convert hardcoded unicode DATAs into UTF-8 text</li>
+</ul>
+</li>
+<li>
+<a href="AnsiTextToUtf8Text.html">AnsiTextToUtf8Text$</a>
+<ul>
+<li>convert any text into UTF-8 text using a certain codepage</li>
+</ul>
+</li>
+</ul>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->

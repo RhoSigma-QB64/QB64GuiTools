@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AnsiTextToUtf8Text</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+/* This file is deliberately empty. */
+</style>
+<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+<p><em><a href="_CharsetSupport_Contents.html">back to Table of Contents</a></em></p>
+<hr />
+<h2>AnsiTextToUtf8Text$ <em>(function)</em></h2>
+<p>Returns the UTF-8 representation of the given ANSI text string. Can
+use any codepage for unicode lookup inclusive the active one, where
+the latter one may even be a &quot;custom&quot; mapped page. This function can
+handle strings which already contain UTF-8 (eg. strings which were
+converted earlier), it will not hurt those already existing UTF-8 chars.
+The result is ready to be used with the various _UPRINT functions.</p>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>SYNTAX:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<pre><code>utf8text$ = AnsiTextToUtf8Text$ (text$, cpName$)
+</code></pre>
+
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>INPUTS:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>text$ <em>(STRING)</em></h4>
+<ul>
+<li>Any regular text you wrote in QB64 or any other Editor.</li>
+</ul>
+<h4>cpName$ <em>(STRING)</em></h4>
+<ul>
+<li>
+The original codepage name used when writing the text. Names as
+per the list below, or empty (&quot;&quot;) to use the active codepage.
+<ul>
+<li>Pc437, Pc737, Pc775, Pc850, Pc852, Pc855, Pc857, Pc860, Pc861,
+Pc862, Pc863, Pc864, Pc865, Pc866, PcMIK, Pc869, Pc874,
+Win1250, Win1251, Win1252, Win1253, Win1254, Win1255, Win1256,
+Win1257, Win1258</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<hr />
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p><strong><em>RESULT:</em></strong></p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4>utf8text$ <em>(STRING)</em></h4>
+<ul>
+<li>The very same text in UTF-8 notation based on the given codepage.</li>
+</ul>
+</blockquote>
+<hr />
+<p><em><a href="_CharsetSupport_Contents.html">back to Table of Contents</a></em></p>
+
+</body>
+</html>
+<!-- This document was created with MarkdownPad, the Markdown editor for Windows (http://markdownpad.com) -->
