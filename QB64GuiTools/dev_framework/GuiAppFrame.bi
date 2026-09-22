@@ -159,6 +159,8 @@ DECLARE LIBRARY
     'Used in the dev_framework\GuiAppFrame.bm function CurrDIR$().
     FUNCTION GetKeyboardLayout&& (BYVAL thread&)
     'Used during program init to setup some internal input flags.
+    FUNCTION SetThreadExecutionState& (BYVAL esFlags&)
+    'May be used to switch power saving features (off=&H80000003, on=&H80000000)
 END DECLARE
 DECLARE LIBRARY "QB64GuiTools\dev_framework\GuiAppFrame" 'Do not add .h here !!
     SUB QB64ErrorOff ()
@@ -227,6 +229,8 @@ DIM SHARED appGLVComp% 'compiled with QB64-GL yes(-1), no(0) = QB64-SDL
 appGLVComp% = -1
 DIM SHARED appKBLIdent% 'detected keyboard layout identifier
 appKBLIdent% = 0
+DIM SHARED appLPUDisp$ 'LastPositionUpdate() displacement
+appLPUDisp$ = MKI$(0)
 '--- main view handles ---
 DIM SHARED appScreen& 'main screen handle (see SetupScreen())
 DIM SHARED appIcon& 'default icon handle
@@ -275,9 +279,11 @@ temp$ = SPACE$(264): i% = GetModuleFileNameA&(0, temp$, 264)
 appFullExe$ = LEFT$(temp$, i%): appHomeDrive$ = LEFT$(appFullExe$, 3)
 appHomePath$ = PathPart$(appFullExe$): appExeName$ = FilePart$(appFullExe$)
 OPEN "B", #1, appFullExe$: temp$ = SPACE$(LOF(1)): GET #1, , temp$: CLOSE #1
-IF INSTR(temp$, UCASE$("sdl.") + "dll") > 0 AND _
-   INSTR(temp$, UCASE$("opengl32.") + "dll") = 0 AND _
-   INSTR(temp$, UCASE$("opengl32.dll")) = 0 THEN appGLVComp% = 0
+IF INSTR(temp$, UCASE$("sDl.") + "dll") > 0 AND _
+   INSTR(temp$, UCASE$("oPenGl32.") + "dll") = 0 AND _
+   INSTR(temp$, UCASE$("oPenGl32.dLl")) = 0 THEN appGLVComp% = 0: appLPUDisp$ = MKI$(&H0505)
+IF INSTR(temp$, UCASE$("egL.") + "dll") > 0 AND _
+   INSTR(temp$, LCASE$("OpENgl32.dLL")) > 0 THEN appGLVComp% = 0: appLPUDisp$ = MKI$(&H1E08)
 IF appGLVComp% THEN
     kbli% = GetKeyboardLayout&&(0) \ 65536
     temp$ = "," + LTRIM$(STR$(kbli%)) + ","

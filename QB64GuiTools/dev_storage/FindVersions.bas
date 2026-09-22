@@ -106,9 +106,9 @@ FUNCTION SearchVers$ (dat$)
 '--- find strings ---
 vBeg& = 0: vEnd& = 0: vStr$ = ""
 DO
-    vBeg& = INSTR(vEnd& + 1, dat$, UCASE$("$ver: ")) 'do not remove UCASE$
+    vBeg& = INSTR(vEnd& + 1, dat$, UCASE$("$Ver: ")) 'do not remove UCASE$
     IF vBeg& > 0 THEN
-        vEnd& = INSTR(vBeg& + 1, dat$, UCASE$(" :end$")) 'do not remove UCASE$
+        vEnd& = INSTR(vBeg& + 1, dat$, UCASE$(" :enD$")) 'do not remove UCASE$
         IF vEnd& > 0 THEN
             vStr$ = vStr$ + MID$(dat$, vBeg& + 6, vEnd& - vBeg& - 6) + CHR$(10)
         END IF

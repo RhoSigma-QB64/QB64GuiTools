@@ -213,7 +213,7 @@ UserMain:
 '=====================================================================
 
 SetupScreen 1024, 768, 0
-appCR$ = "The GuiTools Framework v0.21, Done by RhoSigma, Roland Heyder"
+appCR$ = "The GuiTools Framework v0.22, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - [" + appPCName$ + "] - " + appCR$
 
 '------------------------------
@@ -1463,7 +1463,7 @@ WEND
 '--- Who did it? ---
 IF BoolTagTrue%(abou$, "CHECKED") THEN
     dummy$ = MessageBox$("", "About",_
-                         "The GuiTools Framework v0.21|" +_
+                         "The GuiTools Framework v0.22|" +_
                          "Done by RhoSigma, Roland Heyder|~" +_
                          "Thanx for your interest in my work.",_
                          "{SYM RhoSigma * 10 * 2}It's been a pleasure!")

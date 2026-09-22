@@ -9,6 +9,8 @@
         IF nowPlaying% AND stream& <> 0 THEN
             GOSUB streamPlay
             GOSUB feedsControl
+            IF decoding% AND _SNDRAWLEN < 0.2 THEN GOSUB mp3decode
+            IF decoding% AND LEN(sig$) > 0 THEN GOSUB drawBars
         END IF
         IF editing% THEN
             IF NOT GuiViewIsOpen%(EditView&) THEN

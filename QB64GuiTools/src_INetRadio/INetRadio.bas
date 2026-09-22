@@ -1,12 +1,14 @@
-$IF VERSION < 4.0.0 OR VERSION = 4.3.0 OR VERSION > 4.5.0 THEN
-    $ERROR 'INetRadio requires specific QB64-PE versions (see INetRadio.pdf).'
+$IF VERSION < 3.14.0 THEN
+    $ERROR 'INetRadio requires at least QB64-PE v3.14.0 !!'
 $END IF
 
 '-----------------------------------------------------------
-$VERSIONINFO:FILEVERSION#=1,3,0,0
+$VERSIONINFO:FILEVERSION#=1,4,0,0
 $VERSIONINFO:FileDescription='A neat small Web-Radio player'
 $VERSIONINFO:LegalCopyright='MIT License'
 '-----------------------------------------------------------
+
+'$INCLUDE: 'QB64GuiTools\src_INetRadio\inline\mp3dec.bi'
 
 '$INCLUDE: 'QB64GuiTools\dev_framework\classes\GuiClasses.bi'
 '$INCLUDE: 'QB64GuiTools\dev_framework\support\TagSupport.bi'
@@ -88,27 +90,33 @@ IF (NOT _FILEEXISTS(appLocalDir$ + "INR-Options.bin")) OR _
    (NOT _FILEEXISTS(appLocalDir$ + "INR-Stations.txt")) THEN
     cvfs% = -1
 ELSE
-    IF NOT _FILEEXISTS(appLocalDir$ + "INR-Version.txt") _ORELSE _
-       _READFILE$(appLocalDir$ + "INR-Version.txt") <> VersionINetRadio$ THEN cvfs% = -1
+    IF NOT _FILEEXISTS(appLocalDir$ + "INR-Version.txt") THEN
+        ivs$ = "1.0": cvfs% = -1
+    ELSE
+        ivs$ = _READFILE$(appLocalDir$ + "INR-Version.txt")
+        IF ivs$ <> VersionINetRadio$ THEN cvfs% = -1
+    END IF
 END IF
 IF cvfs% THEN
-    sta% = SafeOpenFile%("I", appLocalDir$ + "INR-Stations.txt")
-    IF sta% > 0 THEN
-        nsl$ = ReadStationsTxtArray$: userList% = CreateBuf%
-        WHILE NOT EOF(sta%)
-            LINE INPUT #sta%, sn$: LINE INPUT #sta%, tsu$: su$ = tsu$
-            IF LCASE$(LEFT$(tsu$, 4)) = "http" THEN tsu$ = MID$(tsu$, INSTR(tsu$, "://") + 3)
-            IF INSTR(nsl$, tsu$) = 0 THEN
-                WriteBufLine userList%, sn$: WriteBufLine userList%, su$
-                WriteBufLine userList%, "": WriteBufLine userList%, ""
-            END IF
-        WEND
-        CLOSE sta%
+    IF INSTR(ivs$, "1.3") = 0 THEN
+        sta% = SafeOpenFile%("I", appLocalDir$ + "INR-Stations.txt")
+        IF sta% > 0 THEN
+            nsl$ = ReadStationsTxtArray$: userList% = CreateBuf%
+            WHILE NOT EOF(sta%)
+                LINE INPUT #sta%, sn$: LINE INPUT #sta%, tsu$: su$ = tsu$
+                IF LCASE$(LEFT$(tsu$, 4)) = "http" THEN tsu$ = MID$(tsu$, INSTR(tsu$, "://") + 3)
+                IF INSTR(nsl$, tsu$) = 0 THEN
+                    WriteBufLine userList%, sn$: WriteBufLine userList%, su$
+                    WriteBufLine userList%, "": WriteBufLine userList%, ""
+                END IF
+            WEND
+            CLOSE sta%
+        END IF
+        IF NOT _FILEEXISTS(appLocalDir$ + "INR-Options.bin") THEN
+            _WRITEFILE appLocalDir$ + "INR-Options.bin", ReadOptionsBinArray$
+        END IF
+        _WRITEFILE appLocalDir$ + "INR-Stations.txt", ReadStationsTxtArray$
     END IF
-    IF NOT _FILEEXISTS(appLocalDir$ + "INR-Options.bin") THEN
-        _WRITEFILE appLocalDir$ + "INR-Options.bin", ReadOptionsBinArray$
-    END IF
-    _WRITEFILE appLocalDir$ + "INR-Stations.txt", ReadStationsTxtArray$
     _WRITEFILE appLocalDir$ + "INR-Version.txt", VersionINetRadio$
 END IF
 '--- read settings ---
@@ -152,8 +160,6 @@ ok$ = ListC$("STORE", RecentList$ + NewTag$("DATA", CHR$(255)))
 '--- further temporary file names ---
 svrresName$ = "INR-SvrRes(" + appProgID$ + ").txt"
 TempLog svrresName$, "CONTENTS: Server response from Radio Station."
-streamName$ = "INR-Stream(" + appProgID$ + ").bin"
-TempLog streamName$, "CONTENTS: The running radio stream."
 RETURN
 '=====================================================================
 '===================== END OF USER INIT HANDLER ======================
@@ -320,8 +326,8 @@ UserMain:
 'where the EXE file of your program is located (ie. appHomePath$).
 '=====================================================================
 
-SetupScreen 640, 230, 0
-appCR$ = "The Internet Radio Player v1.3, Done by RhoSigma, Roland Heyder"
+SetupScreen 640, 312, 0
+appCR$ = "The Internet Radio Player v1.4, Done by RhoSigma, Roland Heyder"
 _TITLE appExeName$ + " - " + appCR$
 
 '------------------------------
@@ -336,7 +342,7 @@ _TITLE appExeName$ + " - " + appCR$
 '--- of the palette (eg. 1 reserved = pen 255, 2 reserved = pens 254-255)
 CONST guiReservedPens% = 0 'no reserved pens
 '-----
-COLOR 39: _PRINTSTRING (260, 110), "initializing..."
+COLOR 39: _PRINTSTRING (260, 150), "initializing..."
 about$ = VersionINetRadio$ + "|Powered by QB64-PE"
 MID$(about$, INSTR(about$, ")") + 1, 1) = "|"
 
@@ -390,10 +396,28 @@ MainStationText$ = TextC$("INIT", MainTextCommon$ +_
 MainFeedsText$ = TextC$("INIT", MainTextCommon$ +_
         NewTag$("TOP", "104") +_
         NewTag$("TEXT", "press play to listen..."))
+'--- Spectrum ---
+MainSpecRuler$ = RulerC$("INIT",_
+        NewTag$("LEFT", "10") +_
+        NewTag$("TOP", "167") +_
+        NewTag$("LENGTH", "620") +_
+        NewTag$("FORM", "ridge"))
+MainSpecCommon$ =_
+        NewTag$("TOP", "178") +_
+        NewTag$("WIDTH", "298") +_
+        NewTag$("HEIGHT", "60") +_
+        NewTag$("FORM", "simple") +_
+        NewTag$("TEXTPLACE", "center") +_
+        NewTag$("AREA", "true") +_
+        NewTag$("IMAGEFILE", "Tissue.jpg")
+MainSpecLeft$ = TextC$("INIT", MainSpecCommon$ +_
+        NewTag$("LEFT", "15"))
+MainSpecRight$ = TextC$("INIT", MainSpecCommon$ +_
+        NewTag$("LEFT", "327") )
 '--- Toolbar ---
 MainToolRuler$ = RulerC$("INIT",_
         NewTag$("LEFT", "10") +_
-        NewTag$("TOP", "168") +_
+        NewTag$("TOP", "250") +_
         NewTag$("LENGTH", "620") +_
         NewTag$("FORM", "ridge"))
 MainToolimageCommon$ =_
@@ -419,7 +443,7 @@ MainNextImage$ = ImageC$("INIT", MainToolimageCommon$ +_
 MainEditImage$ = ImageC$("INIT", MainToolimageCommon$ +_
         NewTag$("IMAGEFILE", "Edit32px.png"))
 MainToolbuttonCommon$ =_
-        NewTag$("TOP", "179") +_
+        NewTag$("TOP", "261") +_
         NewTag$("WIDTH", "44") +_
         NewTag$("HEIGHT", "44") +_
         NewTag$("AREA", "true") +_
@@ -452,7 +476,7 @@ MainRecentButton$ = ButtonC$("INIT", MainToolbuttonCommon$ +_
         ImageTag$(MainRecentImage$))
 MainVolumeSlider$ = SliderC$("INIT",_
         NewTag$("LEFT", "345") +_
-        NewTag$("TOP", "179") +_
+        NewTag$("TOP", "261") +_
         NewTag$("WIDTH", "130") +_
         NewTag$("HEIGHT", "25") +_
         NewTag$("MINIMUM", "0") +_
@@ -486,6 +510,9 @@ MainEditButton$ = ButtonC$("INIT", MainToolbuttonCommon$ +_
 init% = -1 'init state indicator (handler control, don't touch)
 done% = 0 'main loop (ie. program) keeps running until this is set true
 '-----
+DIM decInfo AS mp3_decoder_info, pcm AS _MEM 'decoder info data
+REDIM lSig#(2048, 100), rSig#(2048, 100) 'rFFT input
+REDIM FFTr#(2048), FFTi#(2048) 'rFFT output
 eol$ = CHR$(13) + CHR$(10) 'http headers & parsing
 nowPlaying% = 0 'current playing state
 
@@ -662,7 +689,6 @@ IF LEFT$(LCASE$(streamUrl$), 7) = "http://" THEN streamUrl$ = MID$(streamUrl$, 8
 sl% = INSTR(streamUrl$, "/")
 host$ = LEFT$(streamUrl$, sl% - 1)
 file$ = MID$(streamUrl$, sl%)
-streamFile% = FREEFILE
 '--- open client ---
 stream& = _OPENCLIENT("TCP/IP:80:" + host$)
 IF stream& = 0 THEN
@@ -673,21 +699,23 @@ IF stream& = 0 THEN
             "{IMG Error16px.png 0}Ok, got it...")
     RETURN
 END IF
-OPEN "O", streamFile%, appTempDir$ + streamName$: CLOSE streamFile%
-OPEN "B", streamFile%, appTempDir$ + streamName$
 '--- send request ---
 request$ = "GET " + file$ + " HTTP/1.0" + eol$ '1.0 to avoid "chunked" transfer
 request$ = request$ + "Host: " + host$ + eol$
-request$ = request$ + "User-Agent: INetRadio/1.3 (QB64-PE; GuiTools Framework;)" + eol$
-request$ = request$ + "Accept: audio/mpeg, audio/ogg, audio/wav, audio/x-aiff" + eol$
+request$ = request$ + "User-Agent: INetRadio/1.4 (QB64-PE; GuiTools Framework;)" + eol$
+request$ = request$ + "Accept: audio/mpeg" + eol$
 request$ = request$ + "Accept-Charset: utf-8" + eol$
 request$ = request$ + "Icy-MetaData: 1" + eol$ 'https://stackoverflow.com/questions/44050266/get-info-from-streaming-radio
 request$ = request$ + eol$
 PUT stream&, , request$
 '--- reset state variables ---
-received$ = "": response$ = "": metainterval& = 0: soundHandle& = 0
-metaDelay% = 0: oldFeeds$ = ""
+streamData$ = "": received$ = "": response$ = "": mime$ = ""
+decoding% = 0: rawAhead# = 0.3: sig$ = "": sig% = 0
+metainterval& = 0: metaDelay% = 0: oldFeeds$ = ""
 fadeDelay% = 0: fadeOut% = 0: fadeIn% = 0: oldLevel% = 0
+ok$ = TextC$("SET", MainSpecLeft$ + NewTag$("TEXT", "buffering..."))
+ok$ = TextC$("SET", MainSpecRight$ + NewTag$("TEXT", LTRIM$(STR$(LEN(streamData$))) + " / " + LTRIM$(STR$(opts.bufSize * 1024)) + " bytes"))
+opss& = SetThreadExecutionState&(&H80000003) 'disable power saving options
 RETURN
 
 streamPlay:
@@ -697,7 +725,7 @@ received$ = received$ + incomming$
 IF LEN(received$) < 12 AND LEN(response$) = 0 THEN
     RETURN
 ELSEIF MID$(received$, 10, 3) <> "404" AND MID$(received$, 10, 3) <> "302" AND _
-       MID$(received$, 10, 3) <> "200" AND LEN(response$) = 0 THEN
+       MID$(received$, 10, 3) <> "301" AND MID$(received$, 10, 3) <> "200" AND LEN(response$) = 0 THEN
     er% = INSTR(received$, eol$ + eol$)
     IF er% > 0 THEN
         _WRITEFILE "INR-SvrRes.txt", LEFT$(received$, er% + 3)
@@ -717,7 +745,7 @@ ELSEIF MID$(received$, 10, 3) = "404" AND LEN(response$) = 0 THEN
             "- Delete it and try re-importing it.",_
             "{IMG Error16px.png 0}Ok, got it...")
     RETURN
-ELSEIF MID$(received$, 10, 3) = "302" AND LEN(response$) = 0 THEN
+ELSEIF (MID$(received$, 10, 3) = "302" OR MID$(received$, 10, 3) = "301") AND LEN(response$) = 0 THEN
     lo% = INSTR(LCASE$(received$), "location:")
     IF lo% > 0 THEN el% = INSTR(lo%, received$, eol$)
     IF lo% > 0 AND el% > 0 THEN
@@ -729,14 +757,14 @@ ELSEIF MID$(received$, 10, 3) = "200" AND LEN(response$) = 0 THEN
     ct% = INSTR(LCASE$(received$), "content-type:")
     IF ct% > 0 THEN
         et% = INSTR(ct%, received$, eol$)
-        IF et% > 0 THEN mime$ = LTRIM$(RTRIM$(MID$(received$, ct% + 13, et% - ct% - 13)))
-        IF INSTR("audio/mpeg,audio/ogg,audio/wav,audio/x-aiff", mime$) = 0 THEN
+        IF et% > 0 THEN mime$ = LCASE$(LTRIM$(RTRIM$(MID$(received$, ct% + 13, et% - ct% - 13))))
+        IF INSTR("audio/mpeg", mime$) = 0 THEN
             GOSUB togglePlayingState: GOSUB stopPlay
             ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "press play to listen..."))
             ok$ = MessageBox$("", appExeName$,_
                     "Sorry, that Station is using an unsupported audio format.|" +_
                     "- If the Station offers multiple stream formats, then|" +_
-                    "  take Mp3, Ogg, Wav or Aiff/Aifc, if available.",_
+                    "  take Mp3, if available.",_
                     "{IMG Error16px.png 0}Ok, got it...")
             RETURN
         END IF
@@ -755,14 +783,15 @@ ELSEIF MID$(received$, 10, 3) = "200" AND LEN(response$) = 0 THEN
         END IF
     END IF
 ELSEIF LEN(response$) > 0 THEN
-    IF soundHandle& = 0 AND LOF(streamFile%) > (opts.bufSize * 1024) THEN
-        soundHandle& = _SNDOPEN(appTempDir$ + streamName$, "stream")
-        IF soundHandle& > 0 THEN
-            _SNDVOL soundHandle&, VAL(GetObjTagData$(MainVolumeSlider$, "LEVEL", "67")) / 100
-            _SNDPLAY soundHandle&
-        END IF
-    ELSEIF soundHandle& > 0 THEN
-        IF NOT _SNDPLAYING(soundHandle&) THEN 'stalled ?
+    IF decoding% = 0 AND LEN(streamData$) < (opts.bufSize * 1024) THEN
+        ok$ = TextC$("SET", MainSpecRight$ + NewTag$("TEXT", LTRIM$(STR$(LEN(streamData$))) + " / " + LTRIM$(STR$(opts.bufSize * 1024)) + " bytes"))
+    ELSEIF decoding% = 0 AND LEN(streamData$) >= (opts.bufSize * 1024) THEN
+        IF mp3_decoder_init% THEN decoding% = -1: ELSE ERROR 7
+        ok$ = TextC$("SET", MainSpecLeft$ + NewTag$("TEXT", ""))
+        ok$ = TextC$("SET", MainSpecRight$ + NewTag$("TEXT", ""))
+        dbBT# = TIMER(0.001): dbST# = 0: dbDT# = TIMER(0.001)
+    ELSEIF decoding% THEN
+        IF _SNDRAWLEN = 0 AND LEN(streamData$) < 5230 THEN 'stalled ?
             IF opts.autoRetry THEN 'retry ?
                 GOSUB stopPlay: _DELAY 0.1: GOSUB startPlay: IF stream& = 0 THEN GOSUB togglePlayingState: RETURN
             ELSE
@@ -770,12 +799,18 @@ ELSEIF LEN(response$) > 0 THEN
                 ok$ = GenC$("SET", MainFeedsText$ + NewTag$("TEXT", "Stream has stalled, press play to restart. If it happens frequently, then try raising the buffer size."))
                 RETURN
             END IF
+        ELSE
+            dbRT# = TIMER(0.001) - dbBT#
+            IF dbRT# < 0 THEN dbRT# = dbRT# + 86400 'midnight fix
+            IF dbRT# >= dbST# + 0.1 THEN 'out of sync? (4+ frames behind)
+                dbBT# = TIMER(0.001): dbST# = 0: dbDT# = TIMER(0.001)
+            END IF
         END IF
     END IF
     IF metainterval& > 0 THEN
         'https://stackoverflow.com/questions/44050266/get-info-from-streaming-radio
         IF LEN(received$) < metainterval& + 4081 THEN RETURN
-        soundData$ = LEFT$(received$, metainterval&): PUT streamFile%, , soundData$
+        soundData$ = LEFT$(received$, metainterval&): streamData$ = streamData$ + soundData$
         received$ = MID$(received$, metainterval& + 1)
         metalength% = ASC(received$, 1) * 16 + 1
         IF metalength% > 1 THEN
@@ -806,14 +841,58 @@ ELSEIF LEN(response$) > 0 THEN
         END IF
         received$ = MID$(received$, metalength% + 1): RETURN
     END IF
-    PUT streamFile%, , received$: received$ = ""
+    streamData$ = streamData$ + received$: received$ = ""
 END IF
+RETURN
+mp3decode:
+WHILE _SNDRAWLEN < (0.2 + rawAhead#) AND LEN(streamData$) > 5230
+    IF mp3_decoder_loop%(streamData$, LEN(streamData$), -1, _OFFSET(decInfo)) THEN
+        streamData$ = MID$(streamData$, decInfo.fit.frame_bytes + 1)
+        IF decInfo.pcm_frames > 0 THEN
+            volu! = VAL(GetObjTagData$(MainVolumeSlider$, "LEVEL", "67")) / 100
+            sig$ = sig$ + MKD$(dbST#) + CHR$(sig%)
+            sig% = sig% + 1: IF sig% = 100 THEN sig% = 0
+            dbST# = dbST# + (decInfo.pcm_frames / _SNDRATE)
+            'make sure we only pass a power of 2 to the FFT algorithm
+            'by leaving out every n-th sample
+            pow% = 2 ^ INT(LOG(decInfo.pcm_frames) / LOG(2))
+            dif% = decInfo.pcm_frames - pow%: fft% = 0
+            nth% = INT(decInfo.pcm_frames / dif%) + 1
+            '-----
+            pcm = _MEM(decInfo.pcm_out, PCM_OUT_SIZE): pcmOff%& = pcm.OFFSET
+            FOR i% = 0 TO decInfo.pcm_frames - 1
+                lsv# = _MEMGET(pcm, pcmOff%&, SINGLE)
+                pcmOff%& = pcmOff%& + 4
+                IF decInfo.fit.channels = 2 THEN
+                    rsv# = _MEMGET(pcm, pcmOff%&, SINGLE)
+                    pcmOff%& = pcmOff%& + 4
+                ELSE
+                    rsv# = lsv# 'right = left signal for mono
+                END IF
+                '-----
+                IF (i% MOD nth%) > 0 THEN
+                    lSig#(fft%, sig%) = lsv# 'fill FFT signal array with
+                    rSig#(fft%, sig%) = rsv# 'original signal levels
+                    IF fft% < pow% THEN fft% = fft% + 1 'stop at calculated power
+                END IF
+                '-----
+                lsv# = lsv# * volu!: rsv# = rsv# * volu! 'apply volume factor
+                IF ABS(lsv#) > 1 THEN lsv# = SGN(lsv#) 'clip out of range peaks
+                IF ABS(rsv#) > 1 THEN rsv# = SGN(rsv#) 'before sending to soundcard
+                _SNDRAW lsv#, rsv#
+            NEXT i%
+            _MEMFREE pcm
+        END IF
+    END IF
+WEND
 RETURN
 
 stopPlay:
-IF soundHandle& > 0 THEN _SNDSTOP soundHandle&: _SNDCLOSE soundHandle&
-CLOSE streamFile%
+IF decoding% THEN mp3_decoder_free: decoding% = 0
 CLOSE stream&: stream& = 0
+ok$ = TextC$("SET", MainSpecLeft$ + NewTag$("TEXT", ""))
+ok$ = TextC$("SET", MainSpecRight$ + NewTag$("TEXT", ""))
+ok& = SetThreadExecutionState&(opss&) 'restore power saving options
 RETURN
 
 feedsControl:
@@ -844,7 +923,6 @@ IF fcRT# >= 0.1# THEN 'keep fading logic low on 10 FPS
         IF fcET# >= 0.1# THEN fadeLevel! = fadeLevel! - fadeStep!: fadeOut% = fadeOut% - 1
         IF fadeLevel! < 0 THEN fadeLevel! = 0
         ok$ = GenC$("SET", MainVolumeSlider$ + NewTag$("LEVEL", LTRIM$(STR$(CINT(fadeLevel! * 100)))))
-        _SNDVOL soundHandle&, fadeLevel!
     ELSEIF fadeIn% > 0 THEN
         IF oldLevel% > 0 THEN
             fadeLevel! = 0: fadeStep! = (oldLevel% / 100) / fadeIn%
@@ -854,13 +932,78 @@ IF fcRT# >= 0.1# THEN 'keep fading logic low on 10 FPS
         IF fcET# >= 0.1# THEN fadeLevel! = fadeLevel! + fadeStep!: fadeIn% = fadeIn% - 1
         IF fadeLevel! > (-oldLevel% / 100) THEN fadeLevel! = (-oldLevel% / 100)
         ok$ = GenC$("SET", MainVolumeSlider$ + NewTag$("LEVEL", LTRIM$(STR$(CINT(fadeLevel! * 100)))))
-        _SNDVOL soundHandle&, fadeLevel!
     ELSEIF oldLevel% < 0 THEN
         oldLevel% = 0
     END IF
     IF fcET# >= 0.1# THEN fcET# = fcET# - 0.1#
 END IF
 RETURN
+
+drawBars:
+dbRT# = TIMER(0.001) - dbDT#
+IF dbRT# < 0 THEN dbRT# = dbRT# + 86400 'midnight fix
+IF dbRT# < 0.05 THEN RETURN
+dbDT# = TIMER(0.001)
+'-----
+dbRT# = TIMER(0.001) - dbBT#
+IF dbRT# < 0 THEN dbRT# = dbRT# + 86400 'midnight fix
+WHILE dbRT# >= CVD(LEFT$(sig$, 8))
+    sig$ = MID$(sig$, 10): IF LEN(sig$) = 0 THEN RETURN
+WEND
+_DISPLAY
+'-----
+tto& = VAL(GetTagData$(guiATTProps$, "OBJECT", "0"))
+ttv& = VAL(GetTagData$(guiATTProps$, "GUIVIEW", "0")) 
+IF tto& > 0 AND ttv& = 0 THEN PrintObjectTooltip 0
+'-----
+ok$ = TextC$("DRAW", MainSpecLeft$)
+VinceRFFT FFTr#(), FFTi#(), lSig#(), ASC(sig$, 9), fft%
+oh% = 54: x% = 22: y% = 235
+RESTORE barRanges
+FOR bar% = 0 TO 31
+    READ n1%, n2%
+    xp% = ((31 - bar%) * 9) + x%
+    yp% = (GetMax#(FFTr#(), FFTi#(), n1%, n2%) / 128) * oh%
+    IF yp% > oh% THEN yp% = y% - oh%: ELSE yp% = y% - yp%
+    LINE (xp%, y%)-(xp% + 4, yp%), 184 + bar%, BF
+NEXT bar%
+'-----
+ok$ = TextC$("DRAW", MainSpecRight$)
+VinceRFFT FFTr#(), FFTi#(), rSig#(), ASC(sig$, 9), fft%
+oh% = 54: x% = 334: y% = 235
+RESTORE barRanges
+FOR bar% = 0 TO 31
+    READ n1%, n2%
+    xp% = (bar% * 9) + x%
+    yp% = (GetMax#(FFTr#(), FFTi#(), n1%, n2%) / 128) * oh%
+    IF yp% > oh% THEN yp% = y% - oh%: ELSE yp% = y% - yp%
+    LINE (xp%, y%)-(xp% + 4, yp%), 184 + bar%, BF
+NEXT bar%
+'-----
+IF tto& > 0 AND ttv& = 0 THEN PrintObjectTooltip tto&
+'-----
+_AUTODISPLAY
+sig$ = MID$(sig$, 10)
+RETURN
+barRanges:
+'8 bars taking 1 slot each (47-376Hz)
+DATA 1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8
+'8 bars taking 2 slots each (423-1128Hz)
+DATA 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+'4 bars taking 4 slots each (1175-1880Hz)
+DATA 25,28,29,32,33,36,37,40
+'4 bars taking 8 slots each (1927-3384Hz)
+DATA 41,48,49,56,57,64,65,72
+'2 bars taking 16 slots each (3431-4888Hz)
+DATA 73,88,89,104
+'2 bars taking 32 slots each (4935-7896Hz)
+DATA 105,136,137,168
+'2 bars taking 64 slots each (7943-13912Hz)
+DATA 169,232,233,296
+'1 bar taking 128 slots (13959-19928Hz)
+DATA 297,424
+'1 bar takes the remaining 87 slots (19975-24000Hz) = inaudible
+DATA 425,511
 '~~~~~
 '---------------------------------------------------------------------
 '~~~ My SUBs/FUNCs
@@ -921,10 +1064,82 @@ IF NOT amrFirstCallDone% THEN
     IF NOT ValidateTags%(ok$, "ERROR", -1) THEN amrFirstCallDone% = -1
 END IF
 END SUB
+'-----
+FUNCTION GetMax# (xx_r#(), xx_i#(), n1%, n2%)
+res# = 0.0
+FOR i% = n1% TO n2%
+    cur# = SQR((xx_r#(i%) * xx_r#(i%)) + (xx_i#(i%) * xx_i#(i%)))
+    IF cur# > res# THEN res# = cur#
+NEXT i%
+GetMax# = res#
+END FUNCTION
+'-----
+'--- Real signal FFT by _vince (changed to use type suffixes)
+'--- https://qb64forum.alephc.xyz/index.php?topic=1938.msg111661#msg111661
+'---------------------------------------------------------------------
+SUB VinceRFFT (xx_r#(), xx_i#(), x_r#(), c%, n%)
+DIM w_r#, w_i#, wm_r#, wm_i#, u_r#, u_i#, v_r#, v_i#
+DIM pi#, xpr#, xpi#, xmr#, xmi#
+DIM log2n%, rev%, i%, j%, k%, m%, p%, q%
+pi# = 3.141592653589793
+log2n% = LOG(n% / 2) / LOG(2)
+FOR i% = 0 TO n% / 2 - 1
+    rev% = 0
+    FOR j% = 0 TO log2n% - 1
+        IF i% AND (2 ^ j%) THEN rev% = rev% + (2 ^ (log2n% - 1 - j%))
+    NEXT
+    xx_r#(i%) = x_r#(2 * rev%, c%)
+    xx_i#(i%) = x_r#(2 * rev% + 1, c%)
+NEXT
+FOR i% = 1 TO log2n%
+    m% = 2 ^ i%
+    wm_r# = COS(-2 * pi# / m%)
+    wm_i# = SIN(-2 * pi# / m%)
+    FOR j% = 0 TO n% / 2 - 1 STEP m%
+        w_r# = 1
+        w_i# = 0
+        FOR k% = 0 TO m% / 2 - 1
+            p% = j% + k%
+            q% = p% + (m% \ 2)
+            u_r# = w_r# * xx_r#(q%) - w_i# * xx_i#(q%)
+            u_i# = w_r# * xx_i#(q%) + w_i# * xx_r#(q%)
+            v_r# = xx_r#(p%)
+            v_i# = xx_i#(p%)
+            xx_r#(p%) = v_r# + u_r#
+            xx_i#(p%) = v_i# + u_i#
+            xx_r#(q%) = v_r# - u_r#
+            xx_i#(q%) = v_i# - u_i#
+            u_r# = w_r#
+            u_i# = w_i#
+            w_r# = u_r# * wm_r# - u_i# * wm_i#
+            w_i# = u_r# * wm_i# + u_i# * wm_r#
+        NEXT
+    NEXT
+NEXT
+xx_r#(n% / 2) = xx_r#(0)
+xx_i#(n% / 2) = xx_i#(0)
+FOR i% = 1 TO n% / 2 - 1
+    xx_r#(n% / 2 + i%) = xx_r#(n% / 2 - i%)
+    xx_i#(n% / 2 + i%) = xx_i#(n% / 2 - i%)
+NEXT
+FOR i% = 0 TO n% / 2 - 1
+    xpr# = (xx_r#(i%) + xx_r#(n% / 2 + i%)) / 2
+    xpi# = (xx_i#(i%) + xx_i#(n% / 2 + i%)) / 2
+    xmr# = (xx_r#(i%) - xx_r#(n% / 2 + i%)) / 2
+    xmi# = (xx_i#(i%) - xx_i#(n% / 2 + i%)) / 2
+    xx_r#(i%) = xpr# + xpi# * COS(2 * pi# * i% / n%) - xmr# * SIN(2 * pi# * i% / n%)
+    xx_i#(i%) = xmi# - xpi# * SIN(2 * pi# * i% / n%) - xmr# * COS(2 * pi# * i% / n%)
+NEXT
+'symmetry, complex conj
+FOR i% = 0 TO n% / 2 - 1
+    xx_r#(n% / 2 + i%) = xx_r#(n% / 2 - 1 - i%)
+    xx_i#(n% / 2 + i%) = -xx_i#(n% / 2 - 1 - i%)
+NEXT
+END SUB
 '--- Function to define/return the program's version string.
 '-----
 FUNCTION VersionINetRadio$
-VersionINetRadio$ = MID$("$VER: INetRadio 1.3 (26-May-2026) by RhoSigma :END$", 7, 39)
+VersionINetRadio$ = MID$("$VER: INetRadio 1.4 (12-Sep-2026) by RhoSigma :END$", 7, 39)
 END FUNCTION
 '~~~~~
 '=====================================================================

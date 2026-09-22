@@ -250,6 +250,7 @@ IF winTitle$ <> "*** RhoSigma-MessageBox-HandlerCall ***" THEN
     SHELL _HIDE _DONTWAIT CHR$(34) + appFullExe$ + CHR$(34) + " XOBEGASSEM '" + winIcon$ + "' " + file$ + " " + appProgID$
     WHILE NOT CheckMutex%("Global\RhoSigma-GuiApp-MessageBoxHandler-" + appProgID$ + CHR$(0))
         _LIMIT 20
+        ERROR 1001 'keep calling permanent handler while waiting
     WEND
     UnlockMutex putMtx%&
     WHILE CheckMutex%("Global\RhoSigma-GuiApp-MessageBoxHandler-" + appProgID$ + CHR$(0))
@@ -264,6 +265,7 @@ IF winTitle$ <> "*** RhoSigma-MessageBox-HandlerCall ***" THEN
     RemoveMutex parMtx%&
     WHILE CheckMutex%("Global\RhoSigma-GuiApp-MessageBoxHandler-" + appProgID$ + CHR$(0))
         _LIMIT 20
+        ERROR 1001 'keep calling permanent handler while waiting
     WEND
     _DELAY 0.1
 
@@ -750,6 +752,7 @@ IF winTitle$ <> "*** RhoSigma-FileSelect-HandlerCall ***" THEN
     SHELL _HIDE _DONTWAIT CHR$(34) + appFullExe$ + CHR$(34) + " TCELESELIF '" + winIcon$ + "' " + LTRIM$(STR$(opMode%)) + " " + file$ + " " + appProgID$
     WHILE NOT CheckMutex%("Global\RhoSigma-GuiApp-FileSelectHandler-" + appProgID$ + CHR$(0))
         _LIMIT 20
+        ERROR 1001 'keep calling permanent handler while waiting
     WEND
     UnlockMutex putMtx%&
     WHILE CheckMutex%("Global\RhoSigma-GuiApp-FileSelectHandler-" + appProgID$ + CHR$(0))
@@ -764,6 +767,7 @@ IF winTitle$ <> "*** RhoSigma-FileSelect-HandlerCall ***" THEN
     RemoveMutex parMtx%&
     WHILE CheckMutex%("Global\RhoSigma-GuiApp-FileSelectHandler-" + appProgID$ + CHR$(0))
         _LIMIT 20
+        ERROR 1001 'keep calling permanent handler while waiting
     WEND
     _DELAY 0.1
 
@@ -1737,7 +1741,7 @@ END FUNCTION
 '--- undocumented - for internal use only
 '---------------------------------------------------------------------
 FUNCTION VersionGuiTools$
-VersionGuiTools$ = MID$("$VER: GuiTools Framework 0.21 (11-Jun-2026) by RhoSigma :END$", 7, 49)
+VersionGuiTools$ = MID$("$VER: GuiTools Framework 0.22 (20-Sep-2026) by RhoSigma :END$", 7, 49)
 END FUNCTION
 
 '****************************************************

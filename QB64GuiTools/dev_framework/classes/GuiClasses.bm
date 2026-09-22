@@ -693,6 +693,7 @@ IF winTitle$ <> "*** RhoSigma-OpenGuiView-HandlerCall ***" THEN
     SHELL _HIDE _DONTWAIT CHR$(34) + appFullExe$ + CHR$(34) + " IUGNEPO '" + winIcon$ + "' " + LTRIM$(STR$(vix&)) + " " + file$ + " " + appProgID$ + " " + viewID$
     WHILE NOT CheckMutex%("Global\RhoSigma-GuiApp-OpenGuiViewHandler-" + viewID$ + CHR$(0))
         _LIMIT 20
+        ERROR 1001 'keep calling permanent handler while waiting
     WEND
     UnlockMutex putMtx%&
     SetTag guiViews$(vix&), "ISOPEN", LTRIM$(STR$(PlantMutex%&("Global\RhoSigma-GuiApp-GuiViewIsOpen-" + viewID$ + CHR$(0))))
@@ -1595,22 +1596,26 @@ END IF
 '--- found = ok, missed = init defaults ---
 IF found% THEN
     IF NOT sm% THEN
-        guiWinX% = winp(0).wposXPOS: guiWinY% = winp(0).wposYPOS
+        guiWinX% = winp(0).wposXPOS + ASC(appLPUDisp$, 1)
+        guiWinY% = winp(0).wposYPOS + ASC(appLPUDisp$, 2)
         _SCREENMOVE guiWinX%, guiWinY%
     ELSE
-        winp(0).wposXPOS = guiWinX%: winp(0).wposYPOS = guiWinY%
+        winp(0).wposXPOS = guiWinX% - ASC(appLPUDisp$, 1)
+        winp(0).wposYPOS = guiWinY% - ASC(appLPUDisp$, 2)
         PUT iff%, ptr&, winp(0)
     END IF
 ELSE
     IF NOT sm% THEN
-        guiWinX% = 25: guiWinY% = 25
+        guiWinX% = 25 + ASC(appLPUDisp$, 1)
+        guiWinY% = 25 + ASC(appLPUDisp$, 2)
         _SCREENMOVE guiWinX%, guiWinY%
     ELSE
         winp(0).wposSTDC.chunkID = CHwposID$
         winp(0).wposSTDC.chunkLEN = CHwposLEN%
         winp(0).wposNAME = LEFT$(appExeName$, 30)
         winp(0).wposVCRC = guiVCRCSum&
-        winp(0).wposXPOS = guiWinX%: winp(0).wposYPOS = guiWinY%
+        winp(0).wposXPOS = guiWinX% - ASC(appLPUDisp$, 1)
+        winp(0).wposYPOS = guiWinY% - ASC(appLPUDisp$, 2)
         PUT iff%, LOF(iff%) + 1, winp(0)
         SizeUpdate iff%, wposSIZEOF%
     END IF

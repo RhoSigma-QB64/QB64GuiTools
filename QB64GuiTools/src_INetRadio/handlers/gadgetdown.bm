@@ -13,11 +13,6 @@
         'build handling blocks for your objects:
         ' eg. IF ThisObject%(myObj$, message$, "GADGETDOWN") THEN ...
         '--- Main View Events ---
-        IF ThisObject%(MainVolumeSlider$, mess$, "GADGETDOWN") THEN
-            IF nowPlaying% AND soundHandle& > 0 THEN
-                _SNDVOL soundHandle&, VAL(GetObjTagData$(MainVolumeSlider$, "LEVEL", "67")) / 100
-            END IF
-        END IF
         '--- Info View Events ---
         IF ThisObject%(InfoCopyButton$, mess$, "GADGETDOWN") THEN
             ok$ = GenC$("SET", InfoCopyButton$ + ImageTag$(InfoOkImage$))

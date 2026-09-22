@@ -17,6 +17,7 @@
         END IF
         IF ThisObject%(MainSettingsButton$, mess$, "GADGETUP") THEN
             IF SettingsView& = 0 THEN
+                rawAhead# = 1.8: GOSUB mp3decode: rawAhead# = 0.3
                 SettingsView& = CreateGuiView& ("Program Settings", 550, 377)
                 SettingsBackImage$ = ImageC$("INIT",_
                         ViewTag$(SettingsView&) +_
@@ -175,6 +176,7 @@
         END IF
         IF ThisObject%(MainInfoButton$, mess$, "GADGETUP") THEN
             IF InfoView& = 0 THEN
+                rawAhead# = 1.8: GOSUB mp3decode: rawAhead# = 0.3
                 InfoView& = CreateGuiView& ("Server Informations", 640, 316)
                 InfoBackImage$ = ImageC$("INIT",_
                         ViewTag$(InfoView&) +_
@@ -290,6 +292,7 @@
         END IF
         IF ThisObject%(MainRecentButton$, mess$, "GADGETUP") THEN
             IF RecentView& = 0 THEN
+                rawAhead# = 1.8: GOSUB mp3decode: rawAhead# = 0.3
                 RecentView& = CreateGuiView& ("Recent Titles", 640, 316)
                 RecentBackImage$ = ImageC$("INIT",_
                         ViewTag$(RecentView&) +_
@@ -364,11 +367,6 @@
             END IF
             OpenGuiView "", "", RecentView&
         END IF
-        IF ThisObject%(MainVolumeSlider$, mess$, "GADGETUP") THEN
-            IF nowPlaying% AND soundHandle& > 0 THEN
-                _SNDVOL soundHandle&, VAL(GetObjTagData$(MainVolumeSlider$, "LEVEL", "67")) / 100
-            END IF
-        END IF
         IF ThisObject%(MainPreviousButton$, mess$, "GADGETUP") THEN
             wasPlaying% = nowPlaying% 'remember
             IF nowPlaying% THEN
@@ -433,6 +431,7 @@
         END IF
         IF ThisObject%(MainEditButton$, mess$, "GADGETUP") THEN
             IF StationsView& = 0 THEN
+                rawAhead# = 1.8: GOSUB mp3decode: rawAhead# = 0.3
                 StationsView& = CreateGuiView& ("Stations Manager", 550, 312)
                 StationsBackImage$ = ImageC$("INIT",_
                         ViewTag$(StationsView&) +_
@@ -746,6 +745,7 @@
         IF ThisObject%(StationsChangeButton$, mess$, "GADGETUP") THEN
             changeButtonAction:
             IF EditView& = 0 THEN
+                rawAhead# = 1.8: GOSUB mp3decode: rawAhead# = 0.3
                 EditView& = CreateGuiView& ("Station Details", 550, 286)
                 EditBackImage$ = ImageC$("INIT",_
                         ViewTag$(EditView&) +_

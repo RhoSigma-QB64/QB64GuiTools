@@ -34,6 +34,15 @@ TODO:
 
 HISTORY:
 --------
+>> 09/20/2026 v0.22
+   - a rather minor maintenance update to prepare everything for the new
+     upcomming GLFW based versions of QB64-PE
+   - INetRadio now uses minimp3.h for Mp3 decoding, this detaches it from
+     the miniaudio.h quirk which allowed tailing to a Mp3 file while playing
+     and makes it future proof for the new QB64-PE versions
+   - also INetRadio now features separate realtime frequency spectroscopes
+     for the left and right channel
+
 >> 06/11/2026 v0.21
    - several fixes and improvements in the INetRadio application, most of
      the following changes are a direct result of this
